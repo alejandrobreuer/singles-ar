@@ -21,6 +21,7 @@ interface CardRow {
   set_name:    string;
   set_code:    string;
   rarity:      string;
+  color:       string | null;
   image_url:   string | null;
   game:        "onepiece";
   lang:        string;
@@ -34,6 +35,7 @@ function toCardRow(c: OPTCGCard): CardRow {
     set_name:    c.set_name,
     set_code:    c.set_id,
     rarity:      c.rarity,
+    color:       c.card_color || null,
     image_url:   c.card_image || null,
     game:        "onepiece",
     lang:        "en",
@@ -104,7 +106,7 @@ export async function fetchAndSyncOPTCG(): Promise<OPTCGSyncResult> {
     const { error } = await supabase
       .from("cards")
       .upsert(batch, {
-        onConflict:       "external_id",
+        onConflict:       "game,external_id",
         ignoreDuplicates: false,
       });
 

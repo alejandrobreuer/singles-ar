@@ -9,6 +9,7 @@ const nextConfig = {
       { protocol: "https", hostname: "images.pokemontcg.io" },
       // One Piece TCG
       { protocol: "https", hostname: "en.onepiece-cardgame.com" },
+      { protocol: "https", hostname: "www.optcgapi.com" },
       // Supabase Storage (user uploads)
       { protocol: "https", hostname: "*.supabase.co" },
     ],

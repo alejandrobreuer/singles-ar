@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS public.cards (
   set_code            text,
   card_number         text,
   rarity              text,
+  color               text,                                   -- card color (One Piece: Red/Green/Blue/…; future: Magic/Pokémon)
   image_url           text,                                   -- canonical image from source API
   image_override_url  text,                                   -- admin can override the image
   tcgplayer_id        text,

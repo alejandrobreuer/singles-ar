@@ -13,29 +13,27 @@ import type { Game } from "@/types/database";
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
 
-  const q     = searchParams.get("q")?.trim()    ?? "";
-  const game  = searchParams.get("game")         ?? "";
-  const set   = searchParams.get("set")          ?? "";
-  const page  = Math.max(1, parseInt(searchParams.get("page")  ?? "1", 10));
-  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
-  const from  = (page - 1) * limit;
-  const to    = from + limit - 1;
+  const q      = searchParams.get("q")?.trim()    ?? "";
+  const game   = searchParams.get("game")         ?? "";
+  const set    = searchParams.get("set")          ?? "";
+  const rarity = searchParams.get("rarity")       ?? "";
+  const color  = searchParams.get("color")        ?? "";
+  const page   = Math.max(1, parseInt(searchParams.get("page")  ?? "1", 10));
+  const limit  = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
+  const from   = (page - 1) * limit;
+  const to     = from + limit - 1;
 
   const supabase = createClient();
 
   let query = supabase
     .from("cards")
-    .select("id, name, set_name, set_code, card_number, rarity, image_url, game", { count: "exact" })
+    .select("id, name, set_name, set_code, card_number, rarity, color, image_url, game", { count: "exact" })
     .range(from, to)
     .order("name", { ascending: true });
 
-  // Full-text search on name + set_name when a term is provided
+  // Trigram-based search on name (GIN index: idx_cards_name_trgm)
   if (q) {
-    // websearch_to_tsquery handles multi-word, quoted phrases, negation
-    query = query.textSearch("search_vector", q, {
-      type:   "websearch",
-      config: "english",
-    });
+    query = query.ilike("name", `%${q}%`);
   }
 
   if (game && ["magic", "pokemon", "onepiece"].includes(game)) {
@@ -44,6 +42,14 @@ export async function GET(req: NextRequest) {
 
   if (set) {
     query = query.ilike("set_code", set);
+  }
+
+  if (rarity) {
+    query = query.ilike("rarity", rarity);
+  }
+
+  if (color) {
+    query = query.ilike("color", color);
   }
 
   const { data, count, error } = await query;

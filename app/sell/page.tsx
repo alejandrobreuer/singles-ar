@@ -3,13 +3,12 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingBag, Repeat2, ChevronRight,
-  MessageSquare, Camera, Check,
+  ShoppingBag, Repeat2, ChevronRight, ChevronDown,
+  MessageSquare, Camera, Check, Search, Loader2, Tag, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Topbar }               from "@/components/layout/Topbar";
 import { StepIndicator }        from "@/components/auth/StepIndicator";
-import { CardAutocomplete }     from "@/components/sell/CardAutocomplete";
 import { PriceValidator }       from "@/components/sell/PriceValidator";
 import { CommissionBreakdown }  from "@/components/sell/CommissionBreakdown";
 import { ListingPreview }       from "@/components/sell/ListingPreview";
@@ -17,11 +16,12 @@ import { Button }               from "@/components/ui/button";
 import { Input }                from "@/components/ui/input";
 import { Divider }              from "@/components/ui/divider";
 import { Spinner }              from "@/components/ui/spinner";
+import { Badge }                from "@/components/ui/badge";
 import { toast }               from "sonner";
 import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
-import type { CardSearchResult, Condition, ListingType, AdminSettings } from "@/types/database";
+import type { CardSearchResult, Condition, ListingType, AdminSettings, Game } from "@/types/database";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -39,6 +39,24 @@ const CONDITIONS: Array<{ value: Condition; label: string; desc: string; color: 
   { value: "DMG", label: "DMG", desc: "Damaged",             color: "border-error/30 data-[selected]:bg-error-subtle data-[selected]:border-error data-[selected]:text-error" },
 ];
 
+const GAME_OPTIONS: Array<{ game: Game; label: string; sublabel: string; accent: string; badge: React.ComponentProps<typeof Badge>["variant"] }> = [
+  { game: "onepiece", label: "One Piece",        sublabel: "Card Game",     accent: "bg-red-50 border-red-200 hover:border-red-400 text-red-900",     badge: "op" },
+  { game: "magic",    label: "Magic",            sublabel: "the Gathering", accent: "bg-purple-50 border-purple-200 hover:border-purple-400 text-purple-900", badge: "magic" },
+  { game: "pokemon",  label: "Pokémon",          sublabel: "TCG",           accent: "bg-yellow-50 border-yellow-200 hover:border-yellow-400 text-yellow-900", badge: "poke" },
+];
+
+const GAME_LABEL: Record<Game, string> = {
+  onepiece: "One Piece",
+  magic:    "Magic: the Gathering",
+  pokemon:  "Pokémon TCG",
+};
+
+interface FilterOptions {
+  sets:     { code: string; name: string }[];
+  rarities: string[];
+  colors:   string[];
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SellPage() {
@@ -49,24 +67,38 @@ export default function SellPage() {
   const [step,         setStep]         = React.useState<1 | 2 | 3>(1);
   const [selectedCard, setSelectedCard] = React.useState<CardSearchResult | null>(null);
 
+  // ── Step 1: game + filter + search state ─────────────────────────────────
+  const [selectedGame,    setSelectedGame]    = React.useState<Game | null>(null);
+  const [filterOptions,   setFilterOptions]   = React.useState<FilterOptions | null>(null);
+  const [filtersLoading,  setFiltersLoading]  = React.useState(false);
+  const [filterSet,       setFilterSet]       = React.useState("");
+  const [filterRarity,    setFilterRarity]    = React.useState("");
+  const [filterColor,     setFilterColor]     = React.useState("");
+  const [searchQuery,     setSearchQuery]     = React.useState("");
+  const [cardResults,     setCardResults]     = React.useState<CardSearchResult[]>([]);
+  const [resultsMeta,     setResultsMeta]     = React.useState<{ total: number; pages: number; page: number } | null>(null);
+  const [searching,       setSearching]       = React.useState(false);
+  const [searchError,     setSearchError]     = React.useState<string | null>(null);
+  const [hasSearched,     setHasSearched]     = React.useState(false);
+
   // ── Form state ────────────────────────────────────────────────────────────
   const [listingType, setListingType] = React.useState<ListingType>("sale");
   const [condition,   setCondition]   = React.useState<Condition>("NM");
-  const [priceRaw,    setPriceRaw]    = React.useState("");   // raw input string
+  const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,       setNotes]       = React.useState("");
   const [tradeFor,    setTradeFor]    = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
-  // ── Price reference (fetched when card selected) ──────────────────────────
+  // ── Price reference ───────────────────────────────────────────────────────
   const [cardPriceUSD,  setCardPriceUSD]  = React.useState<number | null>(null);
   const [usdToARS,      setUsdToARS]      = React.useState<number>(DEFAULT_SETTINGS.usd_to_ars_rate);
   const [settings,      setSettings]      = React.useState<AdminSettings>(DEFAULT_SETTINGS);
   const [priceLoading,  setPriceLoading]  = React.useState(false);
 
   // ── Submission ────────────────────────────────────────────────────────────
-  const [submitting, setSubmitting] = React.useState(false);
-  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [submitting,   setSubmitting]   = React.useState(false);
+  const [submitError,  setSubmitError]  = React.useState<string | null>(null);
 
   // ── Fetch settings once ───────────────────────────────────────────────────
   React.useEffect(() => {
@@ -75,6 +107,65 @@ export default function SellPage() {
       .then((data: AdminSettings) => setSettings(data))
       .catch(() => {});
   }, []);
+
+  // ── Load filter options when game is selected ─────────────────────────────
+  async function handleGameSelect(game: Game) {
+    setSelectedGame(game);
+    setFilterSet("");
+    setFilterRarity("");
+    setFilterColor("");
+    setSearchQuery("");
+    setCardResults([]);
+    setHasSearched(false);
+    setResultsMeta(null);
+    setFiltersLoading(true);
+    try {
+      const res  = await fetch(`/api/cards/filters?game=${game}`);
+      const data = await res.json() as FilterOptions;
+      setFilterOptions(data);
+    } catch {
+      setFilterOptions({ sets: [], rarities: [], colors: [] });
+    } finally {
+      setFiltersLoading(false);
+    }
+  }
+
+  // ── Search cards ──────────────────────────────────────────────────────────
+  async function handleSearch(e?: React.FormEvent, page = 1) {
+    e?.preventDefault();
+    if (!selectedGame) return;
+    setSearching(true);
+    setSearchError(null);
+    try {
+      const params = new URLSearchParams({ game: selectedGame, page: String(page), limit: "24" });
+      if (searchQuery.trim()) params.set("q", searchQuery.trim());
+      if (filterSet)          params.set("set", filterSet);
+      if (filterRarity)       params.set("rarity", filterRarity);
+      if (filterColor)        params.set("color", filterColor);
+
+      const res  = await fetch(`/api/cards/search?${params}`);
+      const data = await res.json() as { data?: CardSearchResult[]; error?: string; meta?: { total: number; pages: number; page: number } };
+
+      if (!res.ok) {
+        setSearchError(data.error ?? "Error al buscar cartas.");
+        setHasSearched(true);
+        return;
+      }
+
+      if (page === 1) {
+        setCardResults(data.data ?? []);
+      } else {
+        setCardResults((prev) => [...prev, ...(data.data ?? [])]);
+      }
+      setResultsMeta(data.meta ?? null);
+      setHasSearched(true);
+    } catch {
+      setSearchError("Error de red al buscar cartas.");
+      setHasSearched(true);
+    } finally {
+      setSearching(false);
+    }
+  }
 
   // ── When card is selected, fetch its TCGPlayer price ─────────────────────
   async function handleCardSelect(card: CardSearchResult) {
@@ -88,7 +179,7 @@ export default function SellPage() {
       setCardPriceUSD(data.price_usd ?? null);
       if (data.usd_to_ars) setUsdToARS(data.usd_to_ars);
     } catch {
-      // Non-critical: just skip price reference
+      // Non-critical
     } finally {
       setPriceLoading(false);
     }
@@ -97,7 +188,7 @@ export default function SellPage() {
   }
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const priceARS  = parseARSInput(priceRaw);
+  const priceARS     = parseARSInput(priceRaw);
   const priceDiffNum = priceDiff ? parseARSInput(priceDiff) : null;
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -155,7 +246,7 @@ export default function SellPage() {
     );
   }
 
-  // ─── Step 2 validation ────────────────────────────────────────────────────
+  // ── Step 2 validation ─────────────────────────────────────────────────────
   const step2Valid =
     listingType === "trade"
       ? tradeFor.trim().length > 0
@@ -166,7 +257,7 @@ export default function SellPage() {
       <Topbar />
 
       <main className="flex-1">
-        {/* ── Page header ───────────────────────────────────────────────────── */}
+        {/* ── Page header ───────────────────────────────────────────────── */}
         <div className="border-b border-border bg-surface">
           <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6">
             <h1 className="text-2xl font-serif font-semibold text-text-primary mb-1">
@@ -178,30 +269,182 @@ export default function SellPage() {
           </div>
         </div>
 
-        {/* ── Content ───────────────────────────────────────────────────────── */}
+        {/* ── Content ───────────────────────────────────────────────────── */}
         <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
-          {/* Step indicator */}
           <StepIndicator steps={STEPS} currentStep={step - 1} className="mb-8" />
 
           {/* ════════════════════════════════════════════════════
-              STEP 1 — Card search
+              STEP 1 — Game picker + card search
           ════════════════════════════════════════════════════ */}
           {step === 1 && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in flex flex-col gap-5">
               <div className="surface-raised p-6">
-                <h2 className="text-base font-semibold font-sans text-text-primary mb-1">
-                  ¿Qué carta querés publicar?
-                </h2>
-                <p className="text-sm text-text-muted font-sans mb-5">
-                  Buscá por nombre. Soportamos Magic, Pokémon y One Piece.
-                </p>
 
-                <CardAutocomplete onSelect={handleCardSelect} />
+                {/* ── 1a: Game picker ─────────────────────────────────── */}
+                {!selectedGame ? (
+                  <>
+                    <h2 className="text-base font-semibold font-sans text-text-primary mb-1">
+                      ¿Qué tipo de carta querés publicar?
+                    </h2>
+                    <p className="text-sm text-text-muted font-sans mb-5">
+                      Elegí el juego para ver los filtros disponibles.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {GAME_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.game}
+                          type="button"
+                          onClick={() => handleGameSelect(opt.game)}
+                          className={cn(
+                            "rounded-xl border-2 px-4 py-5 text-center transition-all duration-150 flex flex-col items-center gap-1",
+                            opt.accent
+                          )}
+                        >
+                          <Badge variant={opt.badge} size="sm" className="mb-1" />
+                          <span className="text-sm font-semibold font-sans">{opt.label}</span>
+                          <span className="text-xs font-sans opacity-60">{opt.sublabel}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  /* ── 1b: Filters + search ──────────────────────────── */
+                  <>
+                    {/* Game indicator */}
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={GAME_OPTIONS.find((o) => o.game === selectedGame)!.badge}
+                          size="sm"
+                        />
+                        <span className="text-sm font-semibold font-sans text-text-primary">
+                          {GAME_LABEL[selectedGame]}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedGame(null); setCardResults([]); setHasSearched(false); }}
+                        className="text-xs text-text-muted hover:text-primary font-sans transition-colors"
+                      >
+                        Cambiar juego
+                      </button>
+                    </div>
 
-                <p className="text-xs text-text-muted font-sans mt-4 text-center">
+                    {/* Filters row */}
+                    {filtersLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-text-muted font-sans py-3 mb-4">
+                        <Spinner size="xs" /> Cargando filtros…
+                      </div>
+                    ) : filterOptions && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {/* Set filter */}
+                        {filterOptions.sets.length > 0 && (
+                          <FilterSelect
+                            label="Set"
+                            value={filterSet}
+                            onChange={setFilterSet}
+                            options={filterOptions.sets.map((s) => ({ value: s.code, label: s.name }))}
+                          />
+                        )}
+
+                        {/* Rarity filter */}
+                        {filterOptions.rarities.length > 0 && (
+                          <FilterSelect
+                            label="Rareza"
+                            value={filterRarity}
+                            onChange={setFilterRarity}
+                            options={filterOptions.rarities.map((r) => ({ value: r, label: r }))}
+                          />
+                        )}
+
+                        {/* Color filter (One Piece only) */}
+                        {selectedGame === "onepiece" && filterOptions.colors.length > 0 && (
+                          <FilterSelect
+                            label="Color"
+                            value={filterColor}
+                            onChange={setFilterColor}
+                            options={filterOptions.colors.map((c) => ({ value: c, label: c }))}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Search bar */}
+                    <form onSubmit={handleSearch} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+                          {searching
+                            ? <Loader2 size={16} className="animate-spin" />
+                            : <Search size={16} />
+                          }
+                        </span>
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Buscar por nombre…"
+                          className={cn(
+                            "w-full h-10 rounded-lg border border-border bg-surface",
+                            "pl-9 pr-3 font-sans text-sm text-text-primary",
+                            "placeholder:text-text-muted transition-colors",
+                            "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                          )}
+                        />
+                      </div>
+                      <Button type="submit" variant="primary" size="sm" loading={searching} disabled={searching}>
+                        Buscar
+                      </Button>
+                    </form>
+
+                    {/* Results */}
+                    {hasSearched && (
+                      <div className="mt-5">
+                        {searchError ? (
+                          <p className="text-sm text-error font-sans text-center py-8">{searchError}</p>
+                        ) : cardResults.length === 0 && !searching ? (
+                          <p className="text-sm text-text-muted font-sans text-center py-8">
+                            Sin resultados. Probá con otro nombre o filtros distintos.
+                          </p>
+                        ) : (
+                          <>
+                            {resultsMeta && (
+                              <p className="text-xs text-text-muted font-sans mb-3">
+                                {resultsMeta.total.toLocaleString()} carta{resultsMeta.total !== 1 ? "s" : ""} encontrada{resultsMeta.total !== 1 ? "s" : ""}
+                              </p>
+                            )}
+
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                              {cardResults.map((card) => (
+                                <CardTile key={card.id} card={card} onClick={() => handleCardSelect(card)} />
+                              ))}
+                            </div>
+
+                            {/* Load more */}
+                            {resultsMeta && resultsMeta.page < resultsMeta.pages && (
+                              <div className="mt-4 flex justify-center">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  loading={searching}
+                                  onClick={() => handleSearch(undefined, (resultsMeta.page ?? 1) + 1)}
+                                >
+                                  Cargar más
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {!selectedGame && (
+                <p className="text-xs text-text-muted font-sans text-center">
                   ¿No encontrás la carta? El catálogo se actualiza semanalmente.
                 </p>
-              </div>
+              )}
             </div>
           )}
 
@@ -211,7 +454,6 @@ export default function SellPage() {
           {step === 2 && selectedCard && (
             <div className="animate-fade-in flex flex-col gap-6">
 
-              {/* Selected card recap */}
               <SelectedCardRecap card={selectedCard} onChangeCard={() => setStep(1)} />
 
               <div className="surface-raised p-6 flex flex-col gap-6">
@@ -297,7 +539,6 @@ export default function SellPage() {
                       helperText="Ingresá el precio que querés cobrar. Verás las comisiones abajo."
                     />
 
-                    {/* Live price validation */}
                     {priceLoading ? (
                       <div className="flex items-center gap-2 text-sm text-text-muted font-sans py-2">
                         <Spinner size="xs" />
@@ -314,7 +555,6 @@ export default function SellPage() {
                       )
                     )}
 
-                    {/* Live commission preview */}
                     {priceARS > 0 && (
                       <CommissionBreakdown
                         priceARS={priceARS}
@@ -402,14 +642,8 @@ export default function SellPage() {
                 </div>
               </div>
 
-              {/* Navigation */}
               <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => setStep(1)}
-                >
+                <Button variant="secondary" size="lg" className="flex-1" onClick={() => setStep(1)}>
                   Volver
                 </Button>
                 <Button
@@ -446,7 +680,6 @@ export default function SellPage() {
                 mpFeePercent={settings.mp_fee_percent}
               />
 
-              {/* Error */}
               {submitError && (
                 <div
                   role="alert"
@@ -457,15 +690,8 @@ export default function SellPage() {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="flex-1"
-                  disabled={submitting}
-                  onClick={() => setStep(2)}
-                >
+                <Button variant="secondary" size="lg" className="flex-1" disabled={submitting} onClick={() => setStep(2)}>
                   Editar
                 </Button>
                 <Button
@@ -495,14 +721,107 @@ export default function SellPage() {
   );
 }
 
+// ─── Card tile (results grid) ─────────────────────────────────────────────────
+
+function CardTile({ card, onClick }: { card: CardSearchResult; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center gap-1.5 rounded-xl border border-border",
+        "bg-surface hover:border-primary/50 hover:bg-secondary/30",
+        "transition-all duration-150 p-2 text-left group cursor-pointer"
+      )}
+    >
+      <div className="w-full aspect-[3/4] rounded-lg overflow-hidden bg-secondary border border-border/50">
+        {card.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={card.image_url}
+            alt={card.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Tag size={14} className="text-border" />
+          </div>
+        )}
+      </div>
+      <p className="text-xs font-medium font-sans text-text-primary text-center leading-tight line-clamp-2 w-full">
+        {card.name}
+      </p>
+      {card.set_name && (
+        <p className="text-2xs text-text-muted font-sans text-center truncate w-full">
+          {card.set_name}
+        </p>
+      )}
+      {card.rarity && (
+        <span className="text-2xs font-sans text-text-muted opacity-70">{card.rarity}</span>
+      )}
+    </button>
+  );
+}
+
+// ─── Filter select ────────────────────────────────────────────────────────────
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label:    string;
+  value:    string;
+  onChange: (v: string) => void;
+  options:  { value: string; label: string }[];
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "appearance-none h-8 pl-3 pr-7 rounded-lg border border-border bg-surface",
+          "font-sans text-xs text-text-primary transition-colors cursor-pointer",
+          "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
+          "hover:border-primary/30",
+          !value && "text-text-muted"
+        )}
+      >
+        <option value="">{label}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={12}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+          aria-label={`Limpiar filtro ${label}`}
+        >
+          <X size={11} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Selected card recap ──────────────────────────────────────────────────────
 
 function SelectedCardRecap({
   card,
   onChangeCard,
 }: {
-  card:          CardSearchResult;
-  onChangeCard:  () => void;
+  card:         CardSearchResult;
+  onChangeCard: () => void;
 }) {
   const GAME_LABELS: Record<string, string> = {
     magic: "Magic", pokemon: "Pokémon", onepiece: "One Piece",

@@ -90,6 +90,7 @@ export interface Card {
   set_code:           string | null;
   card_number:        string | null;
   rarity:             string | null;
+  color:              string | null;
   image_url:          string | null;
   image_override_url: string | null;  // admin-set override; takes precedence over image_url
   tcgplayer_id:       string | null;
@@ -380,6 +381,7 @@ export interface CardSearchResult {
   set_code:    string | null;
   card_number: string | null;
   rarity:      string | null;
+  color:       string | null;
   image_url:   string | null;
   game:        Game;
 }
