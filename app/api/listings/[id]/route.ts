@@ -2,16 +2,44 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
+// ─── GET /api/listings/[id] ───────────────────────────────────────────────────
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*, cards(id, name, image_url, game, set_name)")
+    .eq("id", params.id)
+    .eq("seller_id", user.id)
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Listing no encontrado o sin permisos." }, { status: 404 });
+  }
+
+  return NextResponse.json({ data });
+}
+
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const patchSchema = z.object({
-  price:     z.number().positive().optional(),
-  condition: z.enum(["NM", "LP", "MP", "HP", "DMG"]).optional(),
-  quantity:  z.number().int().min(1).max(99).optional(),
-  notes:     z.string().max(300).nullable().optional(),
-  trade_for: z.string().max(500).nullable().optional(),
-  price_diff: z.number().nullable().optional(),
-  status:    z.enum(["active", "reserved"]).optional(),
+  listing_type: z.enum(["sale", "trade"]).optional(),
+  price:        z.number().positive().nullable().optional(),
+  condition:    z.enum(["NM", "LP", "MP", "HP", "DMG"]).optional(),
+  quantity:     z.number().int().min(1).max(99).optional(),
+  notes:        z.string().max(300).nullable().optional(),
+  trade_for:    z.string().max(500).nullable().optional(),
+  price_diff:   z.number().nullable().optional(),
+  status:       z.enum(["active", "reserved"]).optional(),
 }).strict();
 
 // ─── Ownership guard ──────────────────────────────────────────────────────────

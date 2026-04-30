@@ -242,8 +242,8 @@ export default async function HomePage({
 
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-text-muted font-sans">
               {[
-                ["Explorar",      "/explorar"        ],
-                ["Vender",        "/vender"          ],
+                ["Explorar",      "/"                ],
+                ["Vender",        "/sell"            ],
                 ["Cómo funciona", "/como-funciona"   ],
                 ["Términos",      "/terminos"        ],
                 ["Privacidad",    "/privacidad"      ],

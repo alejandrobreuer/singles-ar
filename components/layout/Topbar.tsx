@@ -29,10 +29,9 @@ export interface TopbarProps {}
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/explorar",   label: "Explorar"      },
-  { href: "/vender",     label: "Vender"        },
-  { href: "/listings",   label: "Mis listings"  },
-  { href: "/chat",       label: "Mis chats"     },
+  { href: "/",       label: "Explorar"     },
+  { href: "/sell",   label: "Vender"       },
+  { href: "/chat",   label: "Mis chats"    },
 ];
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
@@ -154,8 +153,8 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
 
           <Divider className="my-1" />
 
-          <DropdownItem href="/profile"   icon={<User size={14} />}    label="Mi cuenta"    onClick={() => setOpen(false)} />
-          <DropdownItem href="/listings"  icon={<Package size={14} />} label="Mis listings" onClick={() => setOpen(false)} />
+          <DropdownItem href="/profile"  icon={<User size={14} />}    label="Mi cuenta"    onClick={() => setOpen(false)} />
+          <DropdownItem href="/sell"     icon={<Package size={14} />} label="Vender carta" onClick={() => setOpen(false)} />
 
           <Divider className="my-1" />
 

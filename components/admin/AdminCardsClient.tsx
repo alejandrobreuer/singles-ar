@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Pencil, Plus, X } from "lucide-react";
+import { Pencil, Plus, RefreshCw, X } from "lucide-react";
 import type { Game } from "@/types/database";
 
 interface AdminCard {
@@ -244,7 +244,28 @@ export function AdminCardsClient({ cards, total, page, limit, q, game }: Props) 
   const [gameFilter, setGameFilter] = React.useState(game);
   const [overrideCard, setOverrideCard] = React.useState<AdminCard | null>(null);
   const [showCreate, setShowCreate]     = React.useState(false);
+  const [syncing, setSyncing]           = React.useState(false);
+  const [syncMsg, setSyncMsg]           = React.useState<{ ok: boolean; text: string } | null>(null);
   const totalPages = Math.ceil(total / limit);
+
+  async function handleSyncOPTCG() {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res  = await fetch("/api/admin/sync/optcg", { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSyncMsg({ ok: true,  text: json.message ?? "Sync complete." });
+        router.refresh();
+      } else {
+        setSyncMsg({ ok: false, text: json.error ?? "Error al sincronizar." });
+      }
+    } catch {
+      setSyncMsg({ ok: false, text: "Error de red." });
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -296,7 +317,22 @@ export function AdminCardsClient({ cards, total, page, limit, q, game }: Props) 
           <Plus size={14} />
           Nueva carta
         </button>
+        <button
+          type="button"
+          onClick={handleSyncOPTCG}
+          disabled={syncing}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface border border-border text-sm font-medium font-sans text-text-primary hover:bg-secondary transition-colors disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+          {syncing ? "Sincronizando…" : "Sync One Piece"}
+        </button>
       </form>
+
+      {syncMsg && (
+        <div className={`mb-4 px-4 py-2.5 rounded-lg text-sm font-sans border ${syncMsg.ok ? "bg-success/10 border-success/20 text-success" : "bg-error/10 border-error/20 text-error"}`}>
+          {syncMsg.text}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
