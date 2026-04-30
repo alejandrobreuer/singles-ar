@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, ChevronDown, LogOut, User, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
@@ -23,10 +24,7 @@ interface TopbarUser {
   avatarUrl?: string;
 }
 
-export interface TopbarProps {
-  user?:    TopbarUser | null;
-  onLogout?: () => void;
-}
+export interface TopbarProps {}
 
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
@@ -253,11 +251,11 @@ function MobileMenu({ open, user, onClose, onLogout }: MobileMenuProps) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <Button variant="ghost"     size="md" className="w-full" asChild>
+            <Button variant="ghost"   size="md" className="w-full" asChild>
               <Link href="/login" onClick={onClose}>Iniciar sesión</Link>
             </Button>
-            <Button variant="primary"   size="md" className="w-full" asChild>
-              <Link href="/registro" onClick={onClose}>Registrarse</Link>
+            <Button variant="primary" size="md" className="w-full" asChild>
+              <Link href="/register" onClick={onClose}>Registrarse</Link>
             </Button>
           </div>
         )}
@@ -268,8 +266,52 @@ function MobileMenu({ open, user, onClose, onLogout }: MobileMenuProps) {
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-export function Topbar({ user, onLogout }: TopbarProps) {
+export function Topbar(_props: TopbarProps) {
+  const router                    = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [user,       setUser]       = React.useState<TopbarUser | null>(null);
+
+  React.useEffect(() => {
+    const supabase = createClient();
+
+    async function loadUser(userId: string, email: string) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", userId)
+        .single();
+      setUser({
+        id:        userId,
+        name:      profile?.username ?? email.split("@")[0],
+        email,
+        avatarUrl: profile?.avatar_url ?? undefined,
+      });
+    }
+
+    // Fetch current session on mount
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      if (u) loadUser(u.id, u.email ?? "");
+    });
+
+    // Keep in sync on sign-in / sign-out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadUser(session.user.id, session.user.email ?? "");
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full bg-surface/95 backdrop-blur-sm border-b border-border">
@@ -289,14 +331,14 @@ export function Topbar({ user, onLogout }: TopbarProps) {
           {/* Right: Auth */}
           <div className="flex items-center gap-2">
             {user ? (
-              <UserMenu user={user} onLogout={onLogout} />
+              <UserMenu user={user} onLogout={handleLogout} />
             ) : (
               <div className="hidden md:flex items-center gap-2">
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/login">Iniciar sesión</Link>
                 </Button>
                 <Button variant="primary" size="sm" asChild>
-                  <Link href="/registro">Registrarse</Link>
+                  <Link href="/register">Registrarse</Link>
                 </Button>
               </div>
             )}
@@ -319,7 +361,7 @@ export function Topbar({ user, onLogout }: TopbarProps) {
         open={mobileOpen}
         user={user}
         onClose={() => setMobileOpen(false)}
-        onLogout={onLogout}
+        onLogout={handleLogout}
       />
     </header>
   );
