@@ -1,0 +1,326 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, X, ChevronDown, LogOut, User, Package } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Divider } from "@/components/ui/divider";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface NavLink {
+  href:  string;
+  label: string;
+}
+
+interface TopbarUser {
+  id:        string;
+  name:      string;
+  email:     string;
+  avatarUrl?: string;
+}
+
+export interface TopbarProps {
+  user?:    TopbarUser | null;
+  onLogout?: () => void;
+}
+
+// ─── Nav links ────────────────────────────────────────────────────────────────
+
+const NAV_LINKS: NavLink[] = [
+  { href: "/explorar",   label: "Explorar"      },
+  { href: "/vender",     label: "Vender"        },
+  { href: "/listings",   label: "Mis listings"  },
+  { href: "/chat",       label: "Mis chats"     },
+];
+
+// ─── Logo ─────────────────────────────────────────────────────────────────────
+
+function Logo() {
+  return (
+    <Link
+      href="/"
+      className="flex items-center no-underline group"
+      aria-label="Singles.ar — Inicio"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/logo.png"
+        alt="Singles.ar"
+        className="h-8 w-auto object-contain"
+      />
+    </Link>
+  );
+}
+
+// ─── Nav link ─────────────────────────────────────────────────────────────────
+
+function NavItem({ href, label }: NavLink) {
+  const pathname = usePathname();
+  const active   = pathname === href || pathname.startsWith(href + "/");
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "relative text-sm font-medium font-sans transition-colors duration-150 no-underline",
+        "after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:rounded-full after:bg-accent",
+        "after:transition-all after:duration-200",
+        active
+          ? "text-primary after:w-full"
+          : "text-text-secondary hover:text-text-primary after:w-0 hover:after:w-full"
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
+
+// ─── User dropdown ────────────────────────────────────────────────────────────
+
+interface UserMenuProps {
+  user:     TopbarUser;
+  onLogout?: () => void;
+}
+
+function UserMenu({ user, onLogout }: UserMenuProps) {
+  const [open, setOpen] = React.useState(false);
+  const ref             = React.useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  React.useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handler);
+    return ()  => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Close on Escape
+  React.useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) document.addEventListener("keydown", handler);
+    return ()  => document.removeEventListener("keydown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className={cn(
+          "flex items-center gap-2 rounded-lg px-2 py-1.5",
+          "text-text-secondary hover:text-text-primary hover:bg-primary/5",
+          "transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2",
+          "focus-visible:ring-primary/30 focus-visible:ring-offset-1"
+        )}
+      >
+        <Avatar
+          src={user.avatarUrl}
+          name={user.name}
+          size="sm"
+        />
+        <span className="hidden sm:block text-sm font-medium font-sans max-w-[120px] truncate">
+          {user.name.split(" ")[0]}
+        </span>
+        <ChevronDown
+          size={14}
+          className={cn("transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className={cn(
+            "absolute right-0 top-full mt-2 w-56 z-50",
+            "bg-surface rounded-xl border border-border shadow-card-lg",
+            "animate-fade-in py-1.5"
+          )}
+        >
+          {/* User info header */}
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold font-sans text-text-primary truncate">
+              {user.name}
+            </p>
+            <p className="text-xs text-text-muted font-sans truncate">{user.email}</p>
+          </div>
+
+          <Divider className="my-1" />
+
+          <DropdownItem href="/profile"   icon={<User size={14} />}    label="Mi cuenta"    onClick={() => setOpen(false)} />
+          <DropdownItem href="/listings"  icon={<Package size={14} />} label="Mis listings" onClick={() => setOpen(false)} />
+
+          <Divider className="my-1" />
+
+          <button
+            role="menuitem"
+            onClick={() => { setOpen(false); onLogout?.(); }}
+            className={cn(
+              "flex w-full items-center gap-2.5 px-4 py-2 text-sm font-sans",
+              "text-error hover:bg-error-subtle transition-colors duration-100"
+            )}
+          >
+            <LogOut size={14} />
+            Cerrar sesión
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface DropdownItemProps {
+  href:    string;
+  icon:    React.ReactNode;
+  label:   string;
+  onClick?: () => void;
+}
+
+function DropdownItem({ href, icon, label, onClick }: DropdownItemProps) {
+  return (
+    <Link
+      role="menuitem"
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2.5 px-4 py-2 text-sm font-sans no-underline",
+        "text-text-secondary hover:text-text-primary hover:bg-primary/5 transition-colors duration-100"
+      )}
+    >
+      <span className="text-text-muted">{icon}</span>
+      {label}
+    </Link>
+  );
+}
+
+// ─── Mobile menu ─────────────────────────────────────────────────────────────
+
+interface MobileMenuProps {
+  open:      boolean;
+  user?:     TopbarUser | null;
+  onClose:   () => void;
+  onLogout?: () => void;
+}
+
+function MobileMenu({ open, user, onClose, onLogout }: MobileMenuProps) {
+  if (!open) return null;
+
+  return (
+    <div className="md:hidden border-t border-border bg-surface animate-fade-in">
+      <nav className="px-4 py-3 flex flex-col gap-1">
+        {NAV_LINKS.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={onClose}
+            className="block px-3 py-2.5 rounded-lg text-sm font-medium font-sans text-text-secondary hover:text-text-primary hover:bg-primary/5 transition-colors no-underline"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+
+      <Divider className="mx-4" />
+
+      <div className="px-4 py-3">
+        {user ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 px-3 py-2">
+              <Avatar src={user.avatarUrl} name={user.name} size="md" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold font-sans text-text-primary truncate">{user.name}</p>
+                <p className="text-xs text-text-muted font-sans truncate">{user.email}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<LogOut size={14} />}
+              className="w-full justify-start text-error hover:bg-error-subtle hover:text-error"
+              onClick={() => { onClose(); onLogout?.(); }}
+            >
+              Cerrar sesión
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Button variant="ghost"     size="md" className="w-full" asChild>
+              <Link href="/login" onClick={onClose}>Iniciar sesión</Link>
+            </Button>
+            <Button variant="primary"   size="md" className="w-full" asChild>
+              <Link href="/registro" onClick={onClose}>Registrarse</Link>
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+
+export function Topbar({ user, onLogout }: TopbarProps) {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 w-full bg-surface/95 backdrop-blur-sm border-b border-border">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-14 items-center justify-between gap-4">
+
+          {/* Left: Logo */}
+          <Logo />
+
+          {/* Center: Desktop nav */}
+          <nav className="hidden md:flex items-center gap-6">
+            {NAV_LINKS.map((link) => (
+              <NavItem key={link.href} {...link} />
+            ))}
+          </nav>
+
+          {/* Right: Auth */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <UserMenu user={user} onLogout={onLogout} />
+            ) : (
+              <div className="hidden md:flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/login">Iniciar sesión</Link>
+                </Button>
+                <Button variant="primary" size="sm" asChild>
+                  <Link href="/registro">Registrarse</Link>
+                </Button>
+              </div>
+            )}
+
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-primary/5 transition-colors"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      <MobileMenu
+        open={mobileOpen}
+        user={user}
+        onClose={() => setMobileOpen(false)}
+        onLogout={onLogout}
+      />
+    </header>
+  );
+}

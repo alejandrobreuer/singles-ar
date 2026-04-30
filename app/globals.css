@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS custom properties ──────────────────────────────────────── */
+:root {
+  --font-playfair: "Playfair Display", Georgia, serif;
+  --font-dm-sans:  "DM Sans", system-ui, sans-serif;
+
+  --background: #f7f5f0;
+  --foreground: #1a2030;
+  --surface:    #ffffff;
+  --border:     #d8dde8;
+}
+
+/* ─── Base reset ─────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif text-text-primary tracking-tight;
+  }
+
+  a {
+    @apply text-primary transition-colors duration-150 hover:text-accent;
+  }
+
+  ::selection {
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { @apply bg-background; }
+  ::-webkit-scrollbar-thumb  { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-text-muted; }
+}
+
+/* ─── Utility classes ────────────────────────────────────────────── */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  .font-price {
+    @apply font-serif font-semibold text-text-primary tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  .focus-ring {
+    @apply outline-none ring-2 ring-primary/40 ring-offset-2 ring-offset-surface;
+  }
+
+  .surface-raised {
+    @apply bg-surface shadow-card rounded-xl border border-border;
+  }
+}

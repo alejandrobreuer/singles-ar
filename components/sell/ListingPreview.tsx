@@ -1,0 +1,166 @@
+import * as React from "react";
+import Image from "next/image";
+import { Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { CommissionBreakdown } from "./CommissionBreakdown";
+import { formatARS } from "@/lib/formatting";
+import type { CardSearchResult, Condition, ListingType, Game } from "@/types/database";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ListingPreviewProps {
+  card:               CardSearchResult;
+  listingType:        ListingType;
+  price:              number | null;
+  condition:          Condition;
+  quantity:           number;
+  notes:              string;
+  tradeFor:           string;
+  priceDiff:          number | null;
+  sellerUsername:     string;
+  platformFeePercent: number;
+  mpFeePercent:       number;
+  className?:         string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const CONDITION_META: Record<Condition, { label: string; color: string }> = {
+  NM:  { label: "Near Mint (NM)",           color: "text-success bg-success-subtle border-success/20" },
+  LP:  { label: "Lightly Played (LP)",       color: "text-blue-700 bg-blue-50 border-blue-200" },
+  MP:  { label: "Moderately Played (MP)",    color: "text-warning bg-warning-subtle border-warning/20" },
+  HP:  { label: "Heavily Played (HP)",       color: "text-orange-700 bg-orange-50 border-orange-200" },
+  DMG: { label: "Damaged (DMG)",             color: "text-error bg-error-subtle border-error/20" },
+};
+
+const GAME_BADGE: Record<Game, React.ComponentProps<typeof Badge>["variant"]> = {
+  magic: "magic", pokemon: "poke", onepiece: "op",
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function ListingPreview({
+  card,
+  listingType,
+  price,
+  condition,
+  quantity,
+  notes,
+  tradeFor,
+  priceDiff,
+  sellerUsername,
+  platformFeePercent,
+  mpFeePercent,
+  className,
+}: ListingPreviewProps) {
+  const cond = CONDITION_META[condition];
+
+  return (
+    <div className={cn("flex flex-col gap-4", className)}>
+      {/* Card detail section */}
+      <div className="surface-raised p-4">
+        <p className="text-xs text-text-muted font-sans uppercase tracking-wide mb-3">
+          Así verán tu listing los compradores
+        </p>
+
+        <div className="flex gap-4 items-start">
+          {/* Card image */}
+          <div className="shrink-0 w-16 rounded-lg overflow-hidden border border-border shadow-sm aspect-[2.5/3.5] bg-secondary">
+            {card.image_url ? (
+              <Image
+                src={card.image_url}
+                alt={card.name}
+                width={64}
+                height={90}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Tag size={16} className="text-border" />
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="text-base font-serif font-semibold text-text-primary leading-snug">
+                {card.name}
+              </h3>
+              <Badge variant={GAME_BADGE[card.game]} size="sm" className="shrink-0" />
+            </div>
+
+            <p className="text-xs text-text-muted font-sans mb-3">
+              {card.set_name}
+              {card.card_number && <span className="ml-1">#{card.card_number}</span>}
+            </p>
+
+            {/* Meta row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn(
+                "text-2xs font-sans font-medium px-2 py-0.5 rounded border",
+                cond.color
+              )}>
+                {cond.label}
+              </span>
+
+              {quantity > 1 && (
+                <span className="text-xs text-text-muted font-sans">
+                  ×{quantity} disponibles
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Price or trade */}
+        <div className="mt-4 pt-3 border-t border-border/60">
+          {listingType === "sale" && price != null ? (
+            <div className="flex items-baseline gap-2">
+              <span className="font-price text-2xl text-text-primary">{formatARS(price)}</span>
+              <span className="text-xs text-text-muted font-sans">por unidad</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-text-muted font-sans uppercase tracking-wide">
+                Trade / Canje — busco:
+              </span>
+              <span className="text-sm font-sans text-text-primary">
+                {tradeFor || "—"}
+              </span>
+              {priceDiff != null && priceDiff !== 0 && (
+                <span className="text-xs text-text-muted font-sans">
+                  {priceDiff > 0
+                    ? `+ ${formatARS(priceDiff)} a tu favor`
+                    : `${formatARS(Math.abs(priceDiff))} a mi favor`}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        {notes && (
+          <blockquote className="mt-3 border-l-2 border-border pl-3 text-sm text-text-secondary font-sans italic">
+            "{notes}"
+          </blockquote>
+        )}
+
+        {/* Seller */}
+        <p className="mt-3 text-xs text-text-muted font-sans">
+          Vendedor: <span className="font-medium text-text-secondary">{sellerUsername}</span>
+        </p>
+      </div>
+
+      {/* Commission breakdown — only for sales */}
+      {listingType === "sale" && price != null && price > 0 && (
+        <CommissionBreakdown
+          priceARS={price}
+          platformFeePercent={platformFeePercent}
+          mpFeePercent={mpFeePercent}
+        />
+      )}
+    </div>
+  );
+}
