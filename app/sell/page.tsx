@@ -19,7 +19,7 @@ import { Spinner }              from "@/components/ui/spinner";
 import { Badge }                from "@/components/ui/badge";
 import { toast }               from "sonner";
 import { useUser }              from "@/hooks/useUser";
-import { parseARSInput, formatARSNumber } from "@/lib/formatting";
+import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
 import type { CardSearchResult, Condition, ListingType, AdminSettings, Game } from "@/types/database";
 
@@ -91,10 +91,10 @@ export default function SellPage() {
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
   // ── Price reference ───────────────────────────────────────────────────────
-  const [cardPriceUSD,  setCardPriceUSD]  = React.useState<number | null>(null);
-  const [usdToARS,      setUsdToARS]      = React.useState<number>(DEFAULT_SETTINGS.usd_to_ars_rate);
-  const [settings,      setSettings]      = React.useState<AdminSettings>(DEFAULT_SETTINGS);
-  const [priceLoading,  setPriceLoading]  = React.useState(false);
+  const [platformMedianARS,   setPlatformMedianARS]   = React.useState<number | null>(null);
+  const [platformTxCount,     setPlatformTxCount]     = React.useState(0);
+  const [settings,            setSettings]            = React.useState<AdminSettings>(DEFAULT_SETTINGS);
+  const [priceLoading,        setPriceLoading]        = React.useState(false);
 
   // ── Submission ────────────────────────────────────────────────────────────
   const [submitting,   setSubmitting]   = React.useState(false);
@@ -167,17 +167,18 @@ export default function SellPage() {
     }
   }
 
-  // ── When card is selected, fetch its TCGPlayer price ─────────────────────
+  // ── When card is selected, fetch platform median price ───────────────────
   async function handleCardSelect(card: CardSearchResult) {
     setSelectedCard(card);
     setPriceLoading(true);
-    setCardPriceUSD(null);
+    setPlatformMedianARS(null);
+    setPlatformTxCount(0);
 
     try {
       const res  = await fetch(`/api/cards/${card.id}/price`);
-      const data = await res.json() as { price_usd: number | null; usd_to_ars: number };
-      setCardPriceUSD(data.price_usd ?? null);
-      if (data.usd_to_ars) setUsdToARS(data.usd_to_ars);
+      const data = await res.json() as { price_ars: number | null; count: number };
+      setPlatformMedianARS(data.price_ars ?? null);
+      setPlatformTxCount(data.count ?? 0);
     } catch {
       // Non-critical
     } finally {
@@ -343,7 +344,7 @@ export default function SellPage() {
                             label="Set"
                             value={filterSet}
                             onChange={setFilterSet}
-                            options={filterOptions.sets.map((s) => ({ value: s.code, label: s.name }))}
+                            options={filterOptions.sets.map((s) => ({ value: s.code, label: `${s.code} ${s.name}` }))}
                           />
                         )}
 
@@ -548,9 +549,8 @@ export default function SellPage() {
                       priceARS > 0 && (
                         <PriceValidator
                           priceARS={priceARS}
-                          tcgMedianUSD={cardPriceUSD}
-                          usdToARS={usdToARS}
-                          tolerancePercent={settings.price_tolerance_percent}
+                          platformMedianARS={platformMedianARS}
+                          transactionCount={platformTxCount}
                         />
                       )
                     )}
@@ -751,9 +751,14 @@ function CardTile({ card, onClick }: { card: CardSearchResult; onClick: () => vo
       <p className="text-xs font-medium font-sans text-text-primary text-center leading-tight line-clamp-2 w-full">
         {card.name}
       </p>
-      {card.set_name && (
+      {(card.set_code || card.set_name) && (
         <p className="text-2xs text-text-muted font-sans text-center truncate w-full">
-          {card.set_name}
+          {setLabel(card.set_code, card.set_name)}
+        </p>
+      )}
+      {card.external_id && (
+        <p className="text-2xs font-mono text-text-muted/50 font-sans text-center truncate w-full">
+          {card.external_id}
         </p>
       )}
       {card.rarity && (
@@ -840,7 +845,7 @@ function SelectedCardRecap({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold font-sans text-text-primary truncate">{card.name}</p>
         <p className="text-xs text-text-muted font-sans truncate">
-          {card.set_name} · {GAME_LABELS[card.game] ?? card.game}
+          {setLabel(card.set_code, card.set_name)} · {GAME_LABELS[card.game] ?? card.game}
         </p>
       </div>
       <button

@@ -14,79 +14,41 @@ import {
 import { Line } from "react-chartjs-2";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import type { PriceHistory, PriceSource } from "@/types/database";
-
-// ─── Register Chart.js modules ────────────────────────────────────────────────
+import type { PriceHistory } from "@/types/database";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface PriceChartProps {
   history:   PriceHistory[];
-  currency?: "USD" | "ARS";
   className?: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+export function PriceChart({ history, className }: PriceChartProps) {
+  const rows = history.filter((h) => h.price_ars != null);
 
-const SOURCE_COLORS: Record<PriceSource, { line: string; fill: string }> = {
-  tcgplayer: { line: "rgb(26,39,68)",    fill: "rgba(26,39,68,0.07)"    },
-  scryfall:  { line: "rgb(181,134,42)",  fill: "rgba(181,134,42,0.07)"  },
-  listing:   { line: "rgb(26,122,74)",   fill: "rgba(26,122,74,0.07)"   },
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export function PriceChart({ history, currency = "USD", className }: PriceChartProps) {
-  const priceKey: keyof PriceHistory = currency === "ARS" ? "price_ars" : "price_usd";
-
-  // Group by source
-  const bySource = history.reduce<Record<string, PriceHistory[]>>((acc, row) => {
-    (acc[row.source] ??= []).push(row);
-    return acc;
-  }, {});
-
-  // Build a unified label set from all dates, sorted ascending
-  const allDates = [...new Set(history.map((h) => h.recorded_at.split("T")[0]))]
-    .sort();
-
-  if (allDates.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className={`flex items-center justify-center h-36 text-sm text-text-muted font-sans ${className ?? ""}`}>
-        Sin datos de precio disponibles
+        Sin transacciones registradas aún
       </div>
     );
   }
 
-  const labels = allDates.map((d) =>
-    format(new Date(d + "T12:00:00"), "d MMM", { locale: es })
+  const labels = rows.map((h) =>
+    format(new Date(h.recorded_at), "d MMM", { locale: es })
   );
 
-  // One dataset per source
-  const datasets = Object.entries(bySource).map(([source, rows]) => {
-    const colors = SOURCE_COLORS[source as PriceSource] ?? SOURCE_COLORS.listing;
-
-    // Map each label date to a price (null if no data that day)
-    const priceByDate: Record<string, number | null> = {};
-    rows.forEach((r) => {
-      const d = r.recorded_at.split("T")[0];
-      priceByDate[d] = (r[priceKey] as number | null);
-    });
-
-    return {
-      label:           source,
-      data:            allDates.map((d) => priceByDate[d] ?? null),
-      borderColor:     colors.line,
-      backgroundColor: colors.fill,
-      borderWidth:     2,
-      pointRadius:     3,
-      pointHoverRadius: 5,
-      fill:            true,
-      tension:         0.35,
-      spanGaps:        true,
-    };
-  });
+  const dataset = {
+    label:            "Singles.ar",
+    data:             rows.map((h) => h.price_ars as number),
+    borderColor:      "rgb(26,122,74)",
+    backgroundColor:  "rgba(26,122,74,0.08)",
+    borderWidth:      2,
+    pointRadius:      4,
+    pointHoverRadius: 6,
+    fill:             true,
+    tension:          0.35,
+  };
 
   const options: ChartOptions<"line"> = {
     responsive:          true,
@@ -106,10 +68,7 @@ export function PriceChart({ history, currency = "USD", className }: PriceChartP
         callbacks: {
           label: (ctx) => {
             const val = ctx.parsed.y;
-            if (val == null) return "";
-            return currency === "ARS"
-              ? `$ ${val.toLocaleString("es-AR", { maximumFractionDigits: 0 })} ARS`
-              : `USD ${val.toFixed(2)}`;
+            return val == null ? "" : `$ ${val.toLocaleString("es-AR", { maximumFractionDigits: 0 })} ARS`;
           },
         },
       },
@@ -125,10 +84,7 @@ export function PriceChart({ history, currency = "USD", className }: PriceChartP
         ticks:  {
           color: "#8a96b0",
           font:  { size: 11, family: "var(--font-dm-sans)" },
-          callback: (val) =>
-            currency === "ARS"
-              ? `$${Number(val).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
-              : `$${Number(val).toFixed(2)}`,
+          callback: (val) => `$${Number(val).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`,
         },
         border: { dash: [4, 2] },
       },
@@ -137,7 +93,7 @@ export function PriceChart({ history, currency = "USD", className }: PriceChartP
 
   return (
     <div className={`relative h-44 w-full ${className ?? ""}`}>
-      <Line data={{ labels, datasets }} options={options} />
+      <Line data={{ labels, datasets: [dataset] }} options={options} />
     </div>
   );
 }

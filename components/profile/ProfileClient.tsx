@@ -453,7 +453,7 @@ export function ProfileClient({
                 icon={<Heart size={28} />}
                 text="Tu wishlist está vacía."
                 cta={
-                  <Link href="/">
+                  <Link href="/cards">
                     <Button variant="secondary" size="sm">Explorar cartas</Button>
                   </Link>
                 }
@@ -524,7 +524,7 @@ export function ProfileClient({
                 text="Sin transacciones todavía."
                 cta={
                   <div className="flex gap-2">
-                    <Link href="/"><Button variant="secondary" size="sm">Buscar cartas</Button></Link>
+                    <Link href="/cards"><Button variant="secondary" size="sm">Buscar cartas</Button></Link>
                     <Link href="/sell"><Button variant="ghost" size="sm">Vender</Button></Link>
                   </div>
                 }

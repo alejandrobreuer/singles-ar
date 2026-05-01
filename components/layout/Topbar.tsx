@@ -29,7 +29,7 @@ export interface TopbarProps {}
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/",       label: "Explorar"     },
+  { href: "/cards",   label: "Explorar"     },
   { href: "/sell",   label: "Vender"       },
   { href: "/chat",   label: "Mis chats"    },
 ];

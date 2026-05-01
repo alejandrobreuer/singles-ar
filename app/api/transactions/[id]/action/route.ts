@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // Fetch transaction + verify participation
   const { data: tx, error: fetchError } = await admin
     .from("transactions")
-    .select("id, buyer_id, seller_id, status, buy_order_id")
+    .select("id, buyer_id, seller_id, card_id, price, status, buy_order_id, listing_id")
     .eq("id", params.id)
     .single();
 
@@ -71,6 +71,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           .from("buy_orders")
           .update({ status: "active", accepted_by: null, updated_at: now })
           .eq("id", tx.buy_order_id)
+      );
+    }
+
+    // Restore listing stock if applicable
+    if (tx.listing_id) {
+      ops.push(
+        (async () => {
+          const { data: lst } = await admin
+            .from("listings")
+            .select("status, quantity")
+            .eq("id", tx.listing_id!)
+            .maybeSingle();
+          if (!lst) return;
+          if (lst.status === "reserved") {
+            await admin.from("listings").update({ status: "active", updated_at: now }).eq("id", tx.listing_id!);
+          } else if (lst.status === "active") {
+            await admin.from("listings").update({ quantity: lst.quantity + 1, updated_at: now }).eq("id", tx.listing_id!);
+          }
+        })()
       );
     }
 
@@ -112,6 +131,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             .eq("id", tx.buy_order_id)
         : Promise.resolve(),
 
+      // Delete listing if it was reserved (last copy sold)
+      tx.listing_id
+        ? (async () => {
+            const { data: lst } = await admin
+              .from("listings").select("status").eq("id", tx.listing_id!).maybeSingle();
+            if (lst?.status === "reserved") {
+              await admin.from("listings").delete().eq("id", tx.listing_id!);
+            }
+          })()
+        : Promise.resolve(),
+
       // Increment seller's total_sales
       admin.rpc("increment_total_sales", { seller_id: tx.seller_id }),
 
@@ -120,6 +150,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         sender_id:      null,
         body:           "Transacción completada. ¡Gracias por usar Singles.ar!",
         message_type:   "system",
+      }),
+
+      admin.from("price_history").insert({
+        card_id:     tx.card_id,
+        price_ars:   tx.price,
+        price_usd:   null,
+        source:      "listing",
+        recorded_at: now,
       }),
     ]);
 

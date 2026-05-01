@@ -42,3 +42,14 @@ export function formatPercent(value: number, decimals = 1): string {
   const sign = value >= 0 ? "+" : "";
   return `${sign}${value.toFixed(decimals)}%`;
 }
+
+/** "OP-01 Romance Dawn" — shows set code prefix before the set name. */
+export function setLabel(
+  setCode: string | null | undefined,
+  setName: string | null | undefined,
+): string {
+  const code = setCode?.trim() ?? "";
+  const name = setName?.trim() ?? "";
+  if (code && name) return `${code} ${name}`;
+  return code || name || "—";
+}

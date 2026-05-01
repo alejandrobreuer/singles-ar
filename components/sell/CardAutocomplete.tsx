@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Search, Loader2, X, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { setLabel } from "@/lib/formatting";
 import type { CardSearchResult, Game } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -212,9 +213,9 @@ export function CardAutocomplete({ onSelect, disabled, className }: CardAutocomp
                     {card.name}
                   </p>
                   <p className="text-xs text-text-muted font-sans truncate">
-                    {card.set_name}
-                    {card.card_number && (
-                      <span className="ml-1 opacity-60">#{card.card_number}</span>
+                    {setLabel(card.set_code, card.set_name)}
+                    {card.external_id && (
+                      <span className="ml-1.5 font-mono opacity-50">{card.external_id}</span>
                     )}
                   </p>
                 </div>

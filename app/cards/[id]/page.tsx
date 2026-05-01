@@ -6,16 +6,16 @@ import Link from "next/link";
 import { subDays } from "date-fns";
 import {
   Tag, ChevronRight, ShoppingCart, Heart,
-  TrendingUp, AlertCircle, ExternalLink, Info, Plus,
+  TrendingUp, Info, Plus,
 } from "lucide-react";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
-import { getCardPrice }       from "@/lib/tcgplayer";
+import { setLabel }           from "@/lib/formatting";
 import { Badge }              from "@/components/ui/badge";
 import { Button }             from "@/components/ui/button";
 import { Divider }            from "@/components/ui/divider";
 import { Topbar }             from "@/components/layout/Topbar";
-import { ListingRow }         from "@/components/cards/ListingRow";
+import { BuyListingSection }  from "@/components/cards/BuyListingSection";
 import { BuyOrdersSection }   from "@/components/buyorders/BuyOrdersSection";
 
 const PriceChart = dynamic(
@@ -99,12 +99,6 @@ function formatARS(price: number) {
   }).format(price);
 }
 
-function formatUSD(price: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency", currency: "USD", minimumFractionDigits: 2,
-  }).format(price);
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CardDetailPage({ params }: { params: { id: string } }) {
@@ -114,9 +108,10 @@ export default async function CardDetailPage({ params }: { params: { id: string 
   // ── Auth: get current user + MP connection status ──────────────────────────
   const { data: { user } } = await supabase.auth.getUser();
 
+  const admin = createAdminClient();
+
   let currentUserHasMp = false;
   if (user) {
-    const admin = createAdminClient();
     const { data: profile } = await admin
       .from("profiles")
       .select("mercadopago_user_id")
@@ -126,9 +121,11 @@ export default async function CardDetailPage({ params }: { params: { id: string 
   }
 
   // ── Parallel data fetches ──────────────────────────────────────────────────
+
   const [cardResult, listingsResult, buyOrdersResult, priceHistoryResult] =
     await Promise.all([
-      supabase
+      // Cards are public — use admin client to bypass any missing RLS policy
+      admin
         .from("cards")
         .select("*")
         .eq("id", params.id)
@@ -143,7 +140,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
           )
         `)
         .eq("card_id", params.id)
-        .eq("status", "active")
+        .in("status", ["active", "reserved"])
         .order("price", { ascending: true })
         .limit(20),
 
@@ -175,9 +172,13 @@ export default async function CardDetailPage({ params }: { params: { id: string 
   const buyOrders    = (buyOrdersResult.data ?? []) as BuyOrderWithBuyer[];
   const priceHistory = (priceHistoryResult.data ?? []) as PriceHistory[];
 
-  // TCGPlayer price (uses cache, non-blocking on failure)
-  const tcgPrice = card.tcgplayer_id
-    ? await getCardPrice(card.id, card.tcgplayer_id).catch(() => null)
+  // Platform median from completed transactions (last 30 days)
+  const platformPrices = priceHistory
+    .map((h) => h.price_ars)
+    .filter((p): p is number => p != null)
+    .sort((a, b) => a - b);
+  const platformMedian = platformPrices.length > 0
+    ? platformPrices[Math.floor(platformPrices.length / 2)]
     : null;
 
   const lowestListing   = listings[0];
@@ -190,11 +191,11 @@ export default async function CardDetailPage({ params }: { params: { id: string 
       {/* ── Breadcrumb ────────────────────────────────────────────────────── */}
       <div className="border-b border-border bg-surface">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-10 flex items-center gap-1.5 text-xs text-text-muted font-sans">
-          <Link href="/" className="hover:text-text-primary transition-colors no-underline">
-            Inicio
+          <Link href="/cards" className="hover:text-text-primary transition-colors no-underline">
+            Explorar
           </Link>
           <ChevronRight size={12} />
-          <Link href={`/?game=${card.game}`} className="hover:text-text-primary transition-colors no-underline capitalize">
+          <Link href={`/cards?game=${card.game}`} className="hover:text-text-primary transition-colors no-underline capitalize">
             {GAME_LABELS[card.game]}
           </Link>
           <ChevronRight size={12} />
@@ -248,12 +249,12 @@ export default async function CardDetailPage({ params }: { params: { id: string 
 
                 {/* Meta grid */}
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm mb-5">
-                  {[
-                    { label: "Set",      value: card.set_name ?? "—" },
-                    { label: "Código",   value: card.set_code?.toUpperCase() ?? "—" },
-                    { label: "Número",   value: card.card_number ?? "—" },
-                    { label: "Rareza",   value: RARITY_LABELS[card.rarity?.toLowerCase() ?? ""] ?? card.rarity ?? "—" },
-                  ].map(({ label, value }) => (
+                  {([
+                    { label: "Set",    value: setLabel(card.set_code, card.set_name) },
+                    { label: "ID",     value: card.external_id },
+                    { label: "Rareza", value: RARITY_LABELS[card.rarity?.toLowerCase() ?? ""] ?? card.rarity ?? "—" },
+                    ...(card.color ? [{ label: "Color", value: card.color }] : []),
+                  ] as { label: string; value: string }[]).map(({ label, value }) => (
                     <div key={label}>
                       <dt className="text-xs text-text-muted font-sans uppercase tracking-wide mb-0.5">{label}</dt>
                       <dd className="font-sans font-medium text-text-primary truncate">{value}</dd>
@@ -296,27 +297,11 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 </span>
               </div>
 
-              {listings.length === 0 ? (
-                <EmptySection
-                  icon={<ShoppingCart size={22} className="text-text-muted" />}
-                  title="Sin ofertas activas"
-                  description="Nadie está vendiendo esta carta en este momento."
-                  cta={
-                    <Link href="/sell">
-                      <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium font-sans hover:bg-primary/90 transition-colors">
-                        <Plus size={13} />
-                        Sé el primero en vender esta carta
-                      </button>
-                    </Link>
-                  }
-                />
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {listings.map((listing) => (
-                    <ListingRow key={listing.id} listing={listing} />
-                  ))}
-                </div>
-              )}
+              <BuyListingSection
+                listings={listings}
+                card={card}
+                currentUserId={user?.id ?? null}
+              />
             </section>
 
             <Divider />
@@ -387,34 +372,22 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 Referencia de precio
               </h3>
 
-              {/* TCGPlayer price */}
+              {/* Platform median */}
               <div className="flex items-start justify-between gap-2 mb-4">
                 <div>
                   <p className="text-xs text-text-muted font-sans mb-0.5 flex items-center gap-1">
-                    TCGPlayer median
-                    {tcgPrice?.stale && (
-                      <span className="inline-flex items-center gap-0.5 text-warning text-2xs">
-                        <AlertCircle size={10} />
-                        desactualizado
-                      </span>
-                    )}
+                    <TrendingUp size={11} />
+                    Mediana Singles.ar
                   </p>
                   <p className="font-price text-2xl text-text-primary">
-                    {tcgPrice?.price_usd != null
-                      ? formatUSD(tcgPrice.price_usd)
-                      : "—"}
+                    {platformMedian != null ? formatARS(platformMedian) : "—"}
                   </p>
+                  {platformPrices.length > 0 && (
+                    <p className="text-2xs text-text-muted font-sans mt-0.5">
+                      {platformPrices.length} transacciones (30 días)
+                    </p>
+                  )}
                 </div>
-                {card.tcgplayer_id && (
-                  <a
-                    href={`https://www.tcgplayer.com/product/${card.tcgplayer_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-2xs text-text-muted hover:text-primary font-sans flex items-center gap-0.5 no-underline mt-1 transition-colors"
-                  >
-                    Ver en TCGPlayer <ExternalLink size={10} />
-                  </a>
-                )}
               </div>
 
               {/* Local market price */}
@@ -467,21 +440,13 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 <h3 className="text-sm font-semibold font-sans text-text-secondary uppercase tracking-wide">
                   Historial (30 días)
                 </h3>
-                <div className="flex items-center gap-3 text-2xs text-text-muted font-sans">
-                  {[
-                    { color: "bg-primary", label: "TCGPlayer" },
-                    { color: "bg-accent",  label: "Scryfall"  },
-                    { color: "bg-success", label: "Singles.ar" },
-                  ].map(({ color, label }) => (
-                    <span key={label} className="flex items-center gap-1">
-                      <span className={`size-2 rounded-full ${color}`} />
-                      {label}
-                    </span>
-                  ))}
-                </div>
+                <span className="flex items-center gap-1 text-2xs text-text-muted font-sans">
+                  <span className="size-2 rounded-full bg-success" />
+                  Singles.ar
+                </span>
               </div>
 
-              <PriceChart history={priceHistory} currency="USD" />
+              <PriceChart history={priceHistory} />
 
               {priceHistory.length === 0 && (
                 <p className="text-xs text-text-muted font-sans text-center mt-2">

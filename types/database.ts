@@ -19,7 +19,7 @@ export type TransactionStatus =
   | "completed"        // both parties confirmed delivery
   | "disputed"         // dispute opened
   | "cancelled";
-export type PriceSource     = "tcgplayer" | "scryfall" | "listing";
+export type PriceSource     = "listing";
 export type ChatMessageType = "text" | "image" | "system";
 
 
@@ -188,6 +188,10 @@ export interface Transaction {
   // Chat read tracking for unread-message indicators
   buyer_last_read_at:  string | null;
   seller_last_read_at: string | null;
+
+  // Delivery confirmation — both parties must confirm to complete
+  buyer_confirmed_delivery_at:  string | null;
+  seller_confirmed_delivery_at: string | null;
 
   created_at:   string;
   updated_at:   string;
@@ -376,6 +380,7 @@ export interface CreateBuyOrderInput {
  */
 export interface CardSearchResult {
   id:          string;
+  external_id: string;
   name:        string;
   set_name:    string | null;
   set_code:    string | null;

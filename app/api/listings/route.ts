@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCardPrice } from "@/lib/tcgplayer";
-import { validatePrice, DEFAULT_SETTINGS } from "@/lib/priceValidation";
+import { DEFAULT_SETTINGS } from "@/lib/priceValidation";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -69,45 +68,6 @@ export async function POST(req: NextRequest) {
   }
 
   const input = parsed.data;
-
-  // ── Price validation for direct sales ─────────────────────────────────────
-  if (input.listing_type === "sale" && input.price != null) {
-    const admin = createAdminClient();
-
-    // Get card's tcgplayer_id
-    const { data: card } = await admin
-      .from("cards")
-      .select("tcgplayer_id")
-      .eq("id", input.card_id)
-      .single();
-
-    if (card?.tcgplayer_id) {
-      const [priceResult, settings] = await Promise.all([
-        getCardPrice(input.card_id, card.tcgplayer_id).catch(() => null),
-        getSettings(),
-      ]);
-
-      if (priceResult?.price_usd != null) {
-        const validation = validatePrice(
-          input.price,
-          priceResult.price_usd,
-          settings.usd_to_ars_rate,
-          settings.price_tolerance_percent
-        );
-
-        if (!validation.valid) {
-          const { formatARS } = await import("@/lib/formatting");
-          return NextResponse.json(
-            {
-              error: `El precio está fuera del rango permitido. Debe estar entre ${formatARS(validation.min)} y ${formatARS(validation.max)} (±${settings.price_tolerance_percent}% del precio de referencia).`,
-              validation,
-            },
-            { status: 422 }
-          );
-        }
-      }
-    }
-  }
 
   // ── Insert listing ─────────────────────────────────────────────────────────
   const { data: listing, error: insertError } = await supabase

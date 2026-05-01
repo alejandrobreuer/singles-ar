@@ -173,6 +173,10 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   buyer_last_read_at  timestamptz,
   seller_last_read_at timestamptz,
 
+  -- Delivery confirmation (both required to complete)
+  buyer_confirmed_delivery_at  timestamptz,
+  seller_confirmed_delivery_at timestamptz,
+
   created_at          timestamptz DEFAULT now() NOT NULL,
   updated_at          timestamptz DEFAULT now() NOT NULL,
   completed_at        timestamptz
@@ -245,7 +249,7 @@ CREATE TABLE IF NOT EXISTS public.price_history (
   card_id     uuid    NOT NULL REFERENCES public.cards ON DELETE CASCADE,
   price_usd   numeric CHECK (price_usd >= 0),
   price_ars   numeric CHECK (price_ars >= 0),
-  source      text    NOT NULL CHECK (source IN ('tcgplayer', 'scryfall', 'listing')),
+  source      text    NOT NULL DEFAULT 'listing' CHECK (source IN ('listing')),
   recorded_at timestamptz DEFAULT now() NOT NULL
 );
 
@@ -409,6 +413,43 @@ END;
 $$;
 
 
+-- ─── Filter options RPCs ──────────────────────────────────────────────────────
+-- Used by homepage and sell flow to populate filter dropdowns.
+-- RPCs bypass PostgREST db-max-rows cap; color fn splits "Blue/Yellow" → individual values.
+
+CREATE OR REPLACE FUNCTION public.get_filter_sets(p_game text)
+RETURNS TABLE(set_code text, set_name text)
+LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT DISTINCT ON (c.set_code) c.set_code, c.set_name
+  FROM   public.cards c
+  WHERE  c.game     = p_game
+    AND  c.set_code IS NOT NULL
+  ORDER  BY c.set_code;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_filter_rarities(p_game text)
+RETURNS TABLE(rarity text)
+LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT DISTINCT c.rarity
+  FROM   public.cards c
+  WHERE  c.game   = p_game
+    AND  c.rarity IS NOT NULL
+  ORDER  BY c.rarity;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_filter_colors(p_game text)
+RETURNS TABLE(color text)
+LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT DISTINCT trim(part) AS color
+  FROM   public.cards c,
+         unnest(string_to_array(c.color, '/')) AS part
+  WHERE  c.game  = p_game
+    AND  c.color IS NOT NULL
+    AND  trim(part) <> ''
+  ORDER  BY color;
+$$;
+
+
 -- =============================================================================
 -- VIEWS
 -- =============================================================================
@@ -433,6 +474,7 @@ SELECT
   c.lang,
   c.created_at,
   c.updated_at,
+  c.color,
   COALESCE(s.listing_count, 0)                AS listing_count,
   s.lowest_price,
   s.latest_listing

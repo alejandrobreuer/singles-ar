@@ -3,8 +3,7 @@ import { addDays } from "date-fns";
 import { z } from "zod";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
-import { getCardPrice }       from "@/lib/tcgplayer";
-import { validatePrice, DEFAULT_SETTINGS } from "@/lib/priceValidation";
+import { DEFAULT_SETTINGS } from "@/lib/priceValidation";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -57,41 +56,6 @@ export async function POST(req: NextRequest) {
   }
 
   const input = parsed.data;
-
-  // ── Price validation against TCGPlayer ────────────────────────────────────
-  const admin = createAdminClient();
-  const { data: card } = await admin
-    .from("cards")
-    .select("tcgplayer_id")
-    .eq("id", input.card_id)
-    .single();
-
-  if (card?.tcgplayer_id) {
-    const [priceResult, settings] = await Promise.all([
-      getCardPrice(input.card_id, card.tcgplayer_id).catch(() => null),
-      getSettings(),
-    ]);
-
-    if (priceResult?.price_usd != null) {
-      const validation = validatePrice(
-        input.price,
-        priceResult.price_usd,
-        settings.usd_to_ars_rate,
-        settings.price_tolerance_percent
-      );
-
-      if (!validation.valid) {
-        const { formatARS } = await import("@/lib/formatting");
-        return NextResponse.json(
-          {
-            error: `El precio ofrecido está fuera del rango permitido. Debe estar entre ${formatARS(validation.min)} y ${formatARS(validation.max)}.`,
-            validation,
-          },
-          { status: 422 }
-        );
-      }
-    }
-  }
 
   // ── Insert ─────────────────────────────────────────────────────────────────
   const expires_at = addDays(new Date(), input.duration_days).toISOString();

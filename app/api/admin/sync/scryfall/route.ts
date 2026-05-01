@@ -1,28 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { fetchAndSyncScryfall } from "@/lib/sync/scryfall";
-
-// ─── Admin guard ──────────────────────────────────────────────────────────────
-
-function isAuthorized(req: NextRequest): boolean {
-  const authHeader = req.headers.get("authorization");
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) return false;
-  return authHeader === `Bearer ${serviceKey}`;
-}
+import { NextResponse }           from "next/server";
+import { requireAdmin }           from "@/lib/admin/auth";
+import { fetchAndSyncScryfall }   from "@/lib/sync/scryfall";
 
 // ─── POST /api/admin/sync/scryfall ────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
+export async function POST() {
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   try {
     const result = await fetchAndSyncScryfall();
 
     return NextResponse.json({
       ok:      true,
-      message: `Scryfall sync complete: ${result.inserted.toLocaleString()} cards upserted in ${result.duration.toFixed(1)}s.`,
+      message: `MTG sync complete: ${result.inserted.toLocaleString()} cards upserted in ${result.duration.toFixed(1)}s.`,
       ...result,
     });
   } catch (err) {

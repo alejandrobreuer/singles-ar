@@ -1,5 +1,56 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// ─── Streaming JSON array parser ──────────────────────────────────────────────
+// Avoids loading the entire ~700 MB Scryfall bulk file into a single string,
+// which would exceed Node.js's string size limit.
+
+async function* streamJsonArray(body: ReadableStream<Uint8Array>): AsyncGenerator<unknown> {
+  const reader = body.getReader();
+  const dec    = new TextDecoder();
+  let buf      = "";
+  let pos      = 0;
+  let depth    = 0;
+  let inStr    = false;
+  let esc      = false;
+  let start    = -1; // position of current top-level object's opening `{`
+
+  outer: for (;;) {
+    // Read more data when buffer is exhausted
+    while (pos >= buf.length) {
+      const { done, value } = await reader.read();
+      if (done) break outer;
+      buf += dec.decode(value, { stream: true });
+    }
+
+    const c = buf[pos];
+
+    if (esc)   { esc = false; pos++; continue; }
+    if (inStr) {
+      if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+      pos++; continue;
+    }
+
+    if      (c === '"')                { inStr = true; }
+    else if (c === "{" || c === "[")   {
+      if (c === "{" && depth === 1) start = pos;
+      depth++;
+    }
+    else if (c === "}" || c === "]")   {
+      depth--;
+      if (c === "}" && depth === 1 && start !== -1) {
+        try { yield JSON.parse(buf.slice(start, pos + 1)); } catch { /* skip malformed */ }
+        // Trim processed portion so the buffer doesn't grow unboundedly
+        buf   = buf.slice(pos + 1);
+        pos   = -1;
+        start = -1;
+      }
+    }
+
+    pos++;
+  }
+}
+
 // ─── Scryfall types (subset of full API) ─────────────────────────────────────
 
 interface ScryfallBulkEntry {
@@ -13,21 +64,22 @@ interface ScryfallBulkList {
 }
 
 interface ScryfallCard {
-  id:              string;
-  name:            string;
-  set:             string;
-  set_name:        string;
+  id:               string;
+  name:             string;
+  set:              string;
+  set_name:         string;
   collector_number: string;
-  rarity:          string;
-  lang:            string;
-  layout:          string;
-  image_uris?:     { normal?: string };
-  card_faces?:     Array<{ image_uris?: { normal?: string } }>;
-  prices:          { usd?: string | null };
-  tcgplayer_id?:   string | null;
+  rarity:           string;
+  lang:             string;
+  layout:           string;
+  digital:          boolean;
+  colors:           string[];
+  image_uris?:      { normal?: string };
+  card_faces?:      Array<{ image_uris?: { normal?: string } }>;
+  tcgplayer_id?:    string | null;
 }
 
-// ─── Layouts to exclude ───────────────────────────────────────────────────────
+// ─── Layouts that are not physical sellable cards ─────────────────────────────
 
 const EXCLUDED_LAYOUTS = new Set([
   "token",
@@ -35,7 +87,25 @@ const EXCLUDED_LAYOUTS = new Set([
   "emblem",
   "art_series",
   "reversible_card",
+  "planar",
+  "scheme",
+  "vanguard",
 ]);
+
+// ─── WUBRG → full color names for filter UI ───────────────────────────────────
+
+const MTG_COLORS: Record<string, string> = {
+  W: "White",
+  U: "Blue",
+  B: "Black",
+  R: "Red",
+  G: "Green",
+};
+
+function mtgColor(colors: string[] | undefined): string | null {
+  if (!colors?.length) return null;
+  return colors.map((c) => MTG_COLORS[c] ?? c).join("/");
+}
 
 // ─── Upsert batch shape ───────────────────────────────────────────────────────
 
@@ -48,6 +118,7 @@ interface CardRow {
   set_code:     string;
   card_number:  string;
   rarity:       string;
+  color:        string | null;
   image_url:    string | null;
   game:         "magic";
   lang:         string;
@@ -62,14 +133,16 @@ function toCardRow(c: ScryfallCard): CardRow {
     null;
 
   return {
-    external_id:  c.id,
+    // Human-readable ID matching the set+collector_number pattern (like OP01-001 for OPTCG)
+    external_id:  `${c.set}-${c.collector_number}`,
     scryfall_id:  c.id,
     tcgplayer_id: c.tcgplayer_id ?? null,
     name:         c.name,
     set_name:     c.set_name,
-    set_code:     c.set,
+    set_code:     c.set.toUpperCase(),
     card_number:  c.collector_number,
     rarity:       c.rarity,
+    color:        mtgColor(c.colors),
     image_url,
     game:         "magic",
     lang:         c.lang,
@@ -108,9 +181,9 @@ export async function fetchAndSyncScryfall(): Promise<ScryfallSyncResult> {
     throw new Error("Could not find default_cards entry in Scryfall bulk-data manifest.");
   }
 
-  console.log(`[scryfall] Downloading bulk file from ${entry.download_uri} (updated ${entry.updated_at})`);
+  console.log(`[scryfall] Downloading bulk file (updated ${entry.updated_at})…`);
 
-  // ── Step 2: download the JSON file ──────────────────────────────────────────
+  // ── Step 2: download the JSON file (~200 MB uncompressed, ~30 MB gzipped) ──
   const dataRes = await fetch(entry.download_uri, {
     headers: { "User-Agent": "singles-ar/1.0 (marketplace)" },
   });
@@ -119,54 +192,95 @@ export async function fetchAndSyncScryfall(): Promise<ScryfallSyncResult> {
     throw new Error(`Scryfall bulk download failed: ${dataRes.status}`);
   }
 
-  const rawCards = (await dataRes.json()) as ScryfallCard[];
-  console.log(`[scryfall] Downloaded ${rawCards.length.toLocaleString()} raw cards.`);
+  if (!dataRes.body) throw new Error("Scryfall bulk download returned no body.");
 
-  // ── Step 3: filter ──────────────────────────────────────────────────────────
-  const filtered = rawCards.filter(
-    (c) =>
-      c.lang === "en" &&
-      !EXCLUDED_LAYOUTS.has(c.layout) &&
-      c.prices?.usd != null &&
-      c.prices.usd !== ""
-  );
+  // ── Step 3: stream-parse + filter ───────────────────────────────────────────
+  // Avoid loading the full ~700 MB JSON string into memory at once.
+  // Keep: English, physical (non-digital), non-token/emblem/art-series layouts.
+  console.log("[scryfall] Streaming and parsing bulk JSON…");
+  const filtered: ScryfallCard[] = [];
+  let rawCount = 0;
 
-  console.log(`[scryfall] ${filtered.length.toLocaleString()} cards passed filters.`);
+  for await (const item of streamJsonArray(dataRes.body)) {
+    const c = item as ScryfallCard;
+    rawCount++;
+    if (c.lang === "en" && !c.digital && !EXCLUDED_LAYOUTS.has(c.layout)) {
+      filtered.push(c);
+    }
+  }
 
-  // ── Step 4: batch upsert ────────────────────────────────────────────────────
+  console.log(`[scryfall] ${filtered.length.toLocaleString()} cards after filtering (${rawCount - filtered.length} skipped out of ${rawCount.toLocaleString()} total).`);
+
+  // ── Step 4: stable dedup by (set, collector_number) ─────────────────────────
+  // Scryfall bulk data should have no duplicates, but guard anyway.
+  // Sort first so dedup is deterministic across runs.
+  const sorted = [...filtered].sort((a, b) => {
+    const setCmp = a.set.localeCompare(b.set);
+    if (setCmp !== 0) return setCmp;
+    return a.collector_number.localeCompare(b.collector_number);
+  });
+
+  const seenKeys = new Set<string>();
+  const unique: ScryfallCard[] = [];
+  let dedupSkipped = 0;
+
+  for (const card of sorted) {
+    const key = `${card.set}|${card.collector_number}`;
+    if (seenKeys.has(key)) { dedupSkipped++; continue; }
+    seenKeys.add(key);
+    unique.push(card);
+  }
+
+  if (dedupSkipped > 0) {
+    console.log(`[scryfall] ${dedupSkipped} exact duplicates removed in dedup.`);
+  }
+
+  console.log(`[scryfall] ${unique.length.toLocaleString()} unique cards to upsert.`);
+
+  // ── Step 5: batch upsert (with per-batch retry for transient network errors) ─
   const BATCH_SIZE = 500;
   let inserted = 0;
   let errors   = 0;
 
-  for (let i = 0; i < filtered.length; i += BATCH_SIZE) {
-    const batch = filtered.slice(i, i + BATCH_SIZE).map(toCardRow);
+  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    const batch    = unique.slice(i, i + BATCH_SIZE).map(toCardRow);
 
-    const { error } = await supabase
-      .from("cards")
-      .upsert(batch, {
-        onConflict:        "external_id",
-        ignoreDuplicates:  false,       // update existing rows
-      });
+    let ok = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const { error } = await supabase
+          .from("cards")
+          .upsert(batch, { onConflict: "game,external_id", ignoreDuplicates: false });
 
-    if (error) {
-      console.error(`[scryfall] Batch ${i / BATCH_SIZE + 1} error:`, error.message);
-      errors += batch.length;
-    } else {
-      inserted += batch.length;
+        if (!error) { ok = true; break; }
+
+        console.warn(`[scryfall] Batch ${batchNum} attempt ${attempt} error: ${error.message}`);
+      } catch (e) {
+        console.warn(`[scryfall] Batch ${batchNum} attempt ${attempt} threw: ${e instanceof Error ? e.message : e}`);
+      }
+
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 3_000));
     }
 
-    // Log progress every 10 batches (5 000 cards)
-    if ((i / BATCH_SIZE + 1) % 10 === 0) {
-      const pct = ((i + BATCH_SIZE) / filtered.length * 100).toFixed(1);
-      console.log(`[scryfall] Progress: ${pct}% (${i + BATCH_SIZE}/${filtered.length})`);
+    if (ok) {
+      inserted += batch.length;
+    } else {
+      console.error(`[scryfall] Batch ${batchNum} failed after 3 attempts — skipping.`);
+      errors += batch.length;
+    }
+
+    if (batchNum % 10 === 0) {
+      const pct = ((i + BATCH_SIZE) / unique.length * 100).toFixed(1);
+      console.log(`[scryfall] Progress: ${pct}% (${i + BATCH_SIZE}/${unique.length})`);
     }
   }
 
   const duration = (Date.now() - startTime) / 1000;
   const result: ScryfallSyncResult = {
-    total:    filtered.length,
+    total:    unique.length,
     inserted,
-    skipped:  rawCards.length - filtered.length,
+    skipped:  rawCount - unique.length,
     errors,
     duration,
   };

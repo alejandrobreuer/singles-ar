@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, Clock, CreditCard, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TransactionWithDetails } from "@/types/database";
 
@@ -26,123 +26,103 @@ export function TransactionActions({
   const isSeller = transaction.seller_id === currentUserId;
   const { status } = transaction;
 
-  async function handleCheckout() {
+  const myConfirmedAt = isBuyer
+    ? transaction.buyer_confirmed_delivery_at
+    : transaction.seller_confirmed_delivery_at;
+  const otherConfirmedAt = isBuyer
+    ? transaction.seller_confirmed_delivery_at
+    : transaction.buyer_confirmed_delivery_at;
+
+  async function handleConfirmDelivery() {
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch("/api/payments/create-preference", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ transactionId: transaction.id }),
+      const res = await fetch(`/api/transactions/${transaction.id}/confirm-delivery`, {
+        method: "POST",
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Error al crear el pago.");
-      // Redirect to MP checkout
-      window.location.href = json.data.initPoint;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error inesperado.");
-      setBusy(false);
-    }
-  }
-
-  async function doAction(action: "cancel" | "complete") {
-    setError(null);
-    const setLoading = action === "cancel" ? setCancelBusy : setBusy;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/transactions/${transaction.id}/action`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ action }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Error.");
-      onStatusChange?.(action === "cancel" ? "cancelled" : "completed");
+      if (!res.ok) throw new Error(json.error ?? "Error al confirmar.");
+      if (json.bothConfirmed) {
+        onStatusChange?.("completed");
+      }
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
-  // ── in_chat ──────────────────────────────────────────────────────────────
+  async function doCancel() {
+    setError(null);
+    setCancelBusy(true);
+    try {
+      const res = await fetch(`/api/transactions/${transaction.id}/action`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action: "cancel" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error.");
+      onStatusChange?.("cancelled");
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
+  // ── in_chat ───────────────────────────────────────────────────────────────
   if (status === "in_chat") {
     return (
-      <div className="flex flex-col gap-2">
-        {isBuyer && (
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-start gap-3">
+          {/* Buyer confirmation */}
+          <ConfirmPartyBadge
+            label="Comprador"
+            confirmed={!!transaction.buyer_confirmed_delivery_at}
+          />
+          {/* Seller confirmation */}
+          <ConfirmPartyBadge
+            label="Vendedor"
+            confirmed={!!transaction.seller_confirmed_delivery_at}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!myConfirmedAt ? (
             <Button
               variant="primary"
               size="sm"
-              leftIcon={<CreditCard size={14} />}
-              onClick={handleCheckout}
+              leftIcon={<PackageCheck size={14} />}
+              onClick={handleConfirmDelivery}
               loading={busy}
               className="flex-1"
             >
-              Confirmar y pagar
+              Confirmar entrega
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<XCircle size={14} />}
-              loading={cancelBusy}
-              onClick={() => doAction("cancel")}
-              className="text-error hover:bg-error-subtle hover:text-error"
-            >
-              Cancelar
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-1.5 text-success text-xs font-sans flex-1">
+              <CheckCircle size={13} />
+              {otherConfirmedAt
+                ? "Ambos confirmaron — completando…"
+                : "Esperando confirmación del otro"}
+            </div>
+          )}
 
-        {isSeller && (
-          <div className="flex items-center gap-2 text-text-muted">
-            <Clock size={14} className="shrink-0" />
-            <span className="text-xs font-sans">
-              Esperando confirmación del comprador
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<XCircle size={14} />}
-              loading={cancelBusy}
-              onClick={() => doAction("cancel")}
-              className="ml-auto text-error hover:bg-error-subtle hover:text-error shrink-0"
-            >
-              Cancelar
-            </Button>
-          </div>
-        )}
-
-        {error && (
-          <div className="flex items-center gap-1.5 text-xs text-error font-sans">
-            <AlertCircle size={12} />
-            {error}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ── paid ─────────────────────────────────────────────────────────────────
-  if (status === "paid") {
-    return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-success text-xs font-sans flex-1">
-            <CheckCircle size={14} />
-            Pago confirmado
-          </div>
           <Button
-            variant="primary"
+            variant="ghost"
             size="sm"
-            leftIcon={<CheckCircle size={14} />}
-            loading={busy}
-            onClick={() => doAction("complete")}
+            leftIcon={<XCircle size={14} />}
+            loading={cancelBusy}
+            onClick={doCancel}
+            className="text-error hover:bg-error-subtle hover:text-error shrink-0"
           >
-            Marcar como completado
+            Cancelar
           </Button>
         </div>
+
         {error && (
           <div className="flex items-center gap-1.5 text-xs text-error font-sans">
             <AlertCircle size={12} />
@@ -173,5 +153,63 @@ export function TransactionActions({
     );
   }
 
+  // ── paid (legacy MP flow) ─────────────────────────────────────────────────
+  if (status === "paid") {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-success text-xs font-sans flex-1">
+            <CheckCircle size={14} />
+            Pago confirmado
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<CheckCircle size={14} />}
+            loading={busy}
+            onClick={async () => {
+              setBusy(true);
+              const res = await fetch(`/api/transactions/${transaction.id}/action`, {
+                method:  "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ action: "complete" }),
+              });
+              const json = await res.json();
+              if (res.ok) { onStatusChange?.("completed"); router.refresh(); }
+              else setError(json.error ?? "Error.");
+              setBusy(false);
+            }}
+          >
+            Marcar como completado
+          </Button>
+        </div>
+        {error && (
+          <div className="flex items-center gap-1.5 text-xs text-error font-sans">
+            <AlertCircle size={12} /> {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return null;
+}
+
+// ─── Party badge ──────────────────────────────────────────────────────────────
+
+function ConfirmPartyBadge({ label, confirmed }: { label: string; confirmed: boolean }) {
+  return (
+    <div className={[
+      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-sans font-medium border flex-1 justify-center",
+      confirmed
+        ? "bg-success/10 border-success/20 text-success"
+        : "bg-secondary border-border text-text-muted",
+    ].join(" ")}>
+      {confirmed
+        ? <CheckCircle size={11} />
+        : <Clock size={11} />
+      }
+      {label}
+    </div>
+  );
 }

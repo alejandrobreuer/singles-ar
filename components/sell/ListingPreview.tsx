@@ -4,7 +4,7 @@ import { Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { CommissionBreakdown } from "./CommissionBreakdown";
-import { formatARS } from "@/lib/formatting";
+import { formatARS, setLabel } from "@/lib/formatting";
 import type { CardSearchResult, Condition, ListingType, Game } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -92,8 +92,10 @@ export function ListingPreview({
             </div>
 
             <p className="text-xs text-text-muted font-sans mb-3">
-              {card.set_name}
-              {card.card_number && <span className="ml-1">#{card.card_number}</span>}
+              {setLabel(card.set_code, card.set_name)}
+              {card.external_id && (
+                <span className="ml-1.5 font-mono opacity-60">{card.external_id}</span>
+              )}
             </p>
 
             {/* Meta row */}

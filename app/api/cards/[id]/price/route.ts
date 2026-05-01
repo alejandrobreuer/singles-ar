@@ -1,49 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCardPrice } from "@/lib/tcgplayer";
-import { DEFAULT_SETTINGS } from "@/lib/priceValidation";
+import { subDays } from "date-fns";
 
 // ─── GET /api/cards/[id]/price ────────────────────────────────────────────────
-// Returns TCGPlayer price + current USD→ARS rate for the sell form.
+// Returns the platform median price (ARS) derived from completed transactions
+// recorded in price_history for this card over the last 90 days.
+
+function median(values: number[]): number | null {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid    = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+}
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
+  const admin    = createAdminClient();
+  const since    = subDays(new Date(), 90).toISOString();
 
-  // Fetch card to get tcgplayer_id
-  const { data: card, error } = await supabase
-    .from("cards")
-    .select("id, tcgplayer_id")
-    .eq("id", params.id)
-    .single();
+  const { data, error } = await admin
+    .from("price_history")
+    .select("price_ars")
+    .eq("card_id", params.id)
+    .eq("source", "listing")
+    .gte("recorded_at", since)
+    .not("price_ars", "is", null);
 
-  if (error || !card) {
-    return NextResponse.json({ error: "Carta no encontrada." }, { status: 404 });
+  if (error) {
+    return NextResponse.json({ price_ars: null, count: 0 });
   }
 
-  // Fetch current USD→ARS rate from admin_settings
-  const { data: rateRow } = await createAdminClient()
-    .from("admin_settings")
-    .select("value")
-    .eq("key", "usd_to_ars_rate")
-    .maybeSingle();
+  const prices    = (data ?? []).map((r) => r.price_ars as number);
+  const medianARS = median(prices);
 
-  const usdToARS = rateRow ? parseFloat(String(rateRow.value)) : DEFAULT_SETTINGS.usd_to_ars_rate;
-
-  // No TCGPlayer ID — return null price (validation will be skipped)
-  if (!card.tcgplayer_id) {
-    return NextResponse.json({ price_usd: null, usd_to_ars_rate: usdToARS, stale: false });
-  }
-
-  const priceResult = await getCardPrice(card.id, card.tcgplayer_id).catch(() => null);
-
-  return NextResponse.json({
-    price_usd:    priceResult?.price_usd    ?? null,
-    usd_to_ars:   usdToARS,
-    stale:        priceResult?.stale        ?? false,
-    recorded_at:  priceResult?.recorded_at  ?? null,
-  });
+  return NextResponse.json({ price_ars: medianARS, count: prices.length });
 }

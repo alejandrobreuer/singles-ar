@@ -20,6 +20,7 @@ interface CardRow {
   name:        string;
   set_name:    string;
   set_code:    string;
+  card_number: string | null;
   rarity:      string;
   color:       string | null;
   image_url:   string | null;
@@ -28,12 +29,18 @@ interface CardRow {
   updated_at:  string;
 }
 
-function toCardRow(c: OPTCGCard): CardRow {
+function toCardRow(c: OPTCGCard, externalId: string): CardRow {
+  // card_number always comes from the base card_set_id (strip any _v2/_v3 suffix)
+  const base       = c.card_set_id;
+  const hyphenIdx  = base.indexOf("-");
+  const cardNumber = hyphenIdx >= 0 ? base.slice(hyphenIdx + 1) : null;
+
   return {
-    external_id: c.card_set_id,
+    external_id: externalId,
     name:        c.card_name,
     set_name:    c.set_name,
     set_code:    c.set_id,
+    card_number: cardNumber,
     rarity:      c.rarity,
     color:       c.card_color || null,
     image_url:   c.card_image || null,
@@ -50,7 +57,6 @@ async function fetchEndpoint(url: string): Promise<OPTCGCard[]> {
   });
   if (!res.ok) throw new Error(`OPTCG fetch failed for ${url}: ${res.status}`);
   const json = await res.json();
-  // API returns either an array or an object wrapping an array
   return Array.isArray(json) ? json : (json.data ?? json.cards ?? []);
 }
 
@@ -73,35 +79,68 @@ export async function fetchAndSyncOPTCG(): Promise<OPTCGSyncResult> {
   console.log("[optcg] Fetching cards from all endpoints…");
 
   const [setCards, stCards, promoCards] = await Promise.all([
-    fetchEndpoint(`${BASE}/allSetCards/`).catch((e) => { console.error("[optcg] allSetCards error:", e.message); return [] as OPTCGCard[]; }),
-    fetchEndpoint(`${BASE}/allSTCards/`).catch((e)  => { console.error("[optcg] allSTCards error:",  e.message); return [] as OPTCGCard[]; }),
+    fetchEndpoint(`${BASE}/allSetCards/`).catch((e)  => { console.error("[optcg] allSetCards error:",  e.message); return [] as OPTCGCard[]; }),
+    fetchEndpoint(`${BASE}/allSTCards/`).catch((e)   => { console.error("[optcg] allSTCards error:",   e.message); return [] as OPTCGCard[]; }),
     fetchEndpoint(`${BASE}/allPromoCards/`).catch((e) => { console.error("[optcg] allPromoCards error:", e.message); return [] as OPTCGCard[]; }),
   ]);
 
   const allCards = [...setCards, ...stCards, ...promoCards];
   console.log(`[optcg] Fetched ${allCards.length.toLocaleString()} total cards (set: ${setCards.length}, ST: ${stCards.length}, promo: ${promoCards.length}).`);
 
-  // ── Step 2: deduplicate by card_set_id ───────────────────────────────────────
-  const seen    = new Set<string>();
-  const unique: OPTCGCard[] = [];
+  // ── Step 2: deduplicate preserving alternate arts ─────────────────────────────
+  //
+  // Cards sharing a card_set_id but with different images are alternate/parallel
+  // arts and should each get their own row. We sort by (card_set_id, image_url)
+  // before processing so variant suffixes are stable across re-syncs:
+  //   first image  → external_id = "OP01-001"
+  //   second image → external_id = "OP01-001_v2"
+  //   third image  → external_id = "OP01-001_v3"  … etc.
+
+  const sorted = [...allCards].sort((a, b) => {
+    const idCmp = a.card_set_id.localeCompare(b.card_set_id);
+    if (idCmp !== 0) return idCmp;
+    return (a.card_image ?? "").localeCompare(b.card_image ?? "");
+  });
+
+  // Track seen (card_set_id → ordered list of unique image URLs)
+  const imagesBySetId = new Map<string, string[]>();
+  const processed: Array<{ card: OPTCGCard; externalId: string }> = [];
   let skipped = 0;
 
-  for (const card of allCards) {
+  for (const card of sorted) {
     if (!card.card_set_id || !card.card_name) { skipped++; continue; }
-    if (seen.has(card.card_set_id)) { skipped++; continue; }
-    seen.add(card.card_set_id);
-    unique.push(card);
+
+    const imgKey = card.card_image ?? "";
+    const images = imagesBySetId.get(card.card_set_id) ?? [];
+
+    if (images.includes(imgKey)) {
+      // Exact duplicate (same card_set_id + same image) — skip
+      skipped++;
+      continue;
+    }
+
+    images.push(imgKey);
+    imagesBySetId.set(card.card_set_id, images);
+
+    // First art has no suffix; subsequent arts get _v2, _v3, …
+    const variantIdx = images.length;
+    const externalId = variantIdx === 1
+      ? card.card_set_id
+      : `${card.card_set_id}_v${variantIdx}`;
+
+    processed.push({ card, externalId });
   }
 
-  console.log(`[optcg] ${unique.length.toLocaleString()} unique cards after dedup (${skipped} skipped).`);
+  const altCount = processed.filter(({ externalId }) => externalId.includes("_v")).length;
+  console.log(`[optcg] ${processed.length.toLocaleString()} cards after dedup (${skipped} skipped, ${altCount} alternate arts).`);
 
   // ── Step 3: batch upsert ─────────────────────────────────────────────────────
   const BATCH_SIZE = 500;
   let inserted = 0;
   let errors   = 0;
 
-  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
-    const batch = unique.slice(i, i + BATCH_SIZE).map(toCardRow);
+  for (let i = 0; i < processed.length; i += BATCH_SIZE) {
+    const batch = processed.slice(i, i + BATCH_SIZE).map(({ card, externalId }) => toCardRow(card, externalId));
 
     const { error } = await supabase
       .from("cards")
@@ -118,14 +157,14 @@ export async function fetchAndSyncOPTCG(): Promise<OPTCGSyncResult> {
     }
 
     if ((Math.floor(i / BATCH_SIZE) + 1) % 5 === 0) {
-      const pct = ((i + BATCH_SIZE) / unique.length * 100).toFixed(1);
-      console.log(`[optcg] Progress: ${pct}% (${i + BATCH_SIZE}/${unique.length})`);
+      const pct = ((i + BATCH_SIZE) / processed.length * 100).toFixed(1);
+      console.log(`[optcg] Progress: ${pct}% (${i + BATCH_SIZE}/${processed.length})`);
     }
   }
 
   const duration = (Date.now() - startTime) / 1000;
   const result: OPTCGSyncResult = {
-    total:    unique.length,
+    total:    processed.length,
     inserted,
     skipped,
     errors,

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { setLabel } from "@/lib/formatting";
 import type { CardWithListingStats, Game } from "@/types/database";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,12 +86,14 @@ export function CardTile({ card, className }: CardTileProps) {
           {card.name}
         </p>
 
-        <p className="text-xs text-text-muted font-sans truncate mb-2">
-          {card.set_name}
-          {card.card_number && (
-            <span className="ml-1 opacity-60">#{card.card_number}</span>
-          )}
+        <p className="text-xs text-text-muted font-sans truncate mb-1">
+          {setLabel(card.set_code, card.set_name)}
         </p>
+        {card.external_id && (
+          <p className="text-2xs font-mono text-text-muted/60 font-sans truncate mb-1">
+            {card.external_id}
+          </p>
+        )}
 
         {/* Rarity + price row */}
         <div className="flex items-center justify-between gap-2">

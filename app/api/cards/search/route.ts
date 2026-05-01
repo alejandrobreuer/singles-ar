@@ -27,13 +27,13 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("cards")
-    .select("id, name, set_name, set_code, card_number, rarity, color, image_url, game", { count: "exact" })
+    .select("id, external_id, name, set_name, set_code, card_number, rarity, color, image_url, game", { count: "exact" })
     .range(from, to)
     .order("name", { ascending: true });
 
-  // Trigram-based search on name (GIN index: idx_cards_name_trgm)
+  // Search by name or card ID (external_id e.g. "OP01-077")
   if (q) {
-    query = query.ilike("name", `%${q}%`);
+    query = query.or(`name.ilike.%${q}%,external_id.ilike.%${q}%`);
   }
 
   if (game && ["magic", "pokemon", "onepiece"].includes(game)) {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (color) {
-    query = query.ilike("color", color);
+    query = query.ilike("color", `%${color}%`);
   }
 
   const { data, count, error } = await query;

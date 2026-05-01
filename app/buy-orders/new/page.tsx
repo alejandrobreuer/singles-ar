@@ -35,11 +35,11 @@ const DURATIONS: { days: number; label: string }[] = [
   { days: 60, label: "60 días" },
 ];
 
-// ─── TCGPlayer price fetch ────────────────────────────────────────────────────
+// ─── Platform median price fetch ─────────────────────────────────────────────
 
 interface PriceResult {
-  price_usd: number | null;
-  stale:     boolean;
+  price_ars: number | null;
+  count:     number;
 }
 
 async function fetchPrice(cardId: string): Promise<PriceResult | null> {
@@ -78,7 +78,7 @@ export default function NewBuyOrderPage() {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [step,         setStep]       = React.useState(1);
-  const [card,         setCard]       = React.useState<CardSearchResult | null>(null);
+  const [card,         setCard]        = React.useState<CardSearchResult | null>(null);
   const [priceResult,  setPriceResult] = React.useState<PriceResult | null>(null);
   const [priceLoading, setPriceLoading] = React.useState(false);
 
@@ -151,21 +151,7 @@ export default function NewBuyOrderPage() {
     router.push(`/cards/${card.id}`);
   }
 
-  // ── Price validation ────────────────────────────────────────────────────────
-  const [settings, setSettings] = React.useState<{ usd_to_ars_rate: number; price_tolerance_percent: number } | null>(null);
-
-  React.useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((json) => setSettings(json))
-      .catch(() => null);
-  }, []);
-
-  const showValidator =
-    priceNum !== null &&
-    priceNum > 0 &&
-    priceResult?.price_usd != null &&
-    settings != null;
+  const showValidator = priceNum !== null && priceNum > 0 && !priceLoading;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -225,14 +211,13 @@ export default function NewBuyOrderPage() {
                     <span className="text-xs text-text-muted font-sans">Cargando precio de referencia…</span>
                   </div>
                 )}
-                {priceResult?.price_usd != null && !priceLoading && (
+                {priceResult?.price_ars != null && !priceLoading && (
                   <p className="text-xs text-text-muted font-sans mt-0.5">
-                    Referencia TCGPlayer: <span className="text-text-primary font-medium">
-                      {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(priceResult.price_usd)}
+                    Mediana Singles.ar:{" "}
+                    <span className="text-text-primary font-medium font-price">
+                      {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(priceResult.price_ars)}
                     </span>
-                    {priceResult.stale && (
-                      <span className="ml-1 text-warning text-2xs">(datos no actualizados)</span>
-                    )}
+                    <span className="ml-1 text-2xs">({priceResult.count} transacciones)</span>
                   </p>
                 )}
               </div>
@@ -256,14 +241,12 @@ export default function NewBuyOrderPage() {
                 helperText="El vendedor verá este precio como tu oferta."
                 required
               />
-              {showValidator && settings && (
+              {showValidator && (
                 <div className="mt-3">
                   <PriceValidator
                     priceARS={priceNum!}
-                    priceUSD={priceResult!.price_usd!}
-                    usdToArs={settings.usd_to_ars_rate}
-                    tolerancePercent={settings.price_tolerance_percent}
-                    stale={priceResult?.stale}
+                    platformMedianARS={priceResult?.price_ars ?? null}
+                    transactionCount={priceResult?.count ?? 0}
                   />
                 </div>
               )}
