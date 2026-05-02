@@ -7,7 +7,8 @@ import { es } from "date-fns/locale";
 import { Badge }   from "@/components/ui/badge";
 import { Button }  from "@/components/ui/button";
 import { Avatar }  from "@/components/ui/avatar";
-import { formatARS } from "@/lib/formatting";
+import { formatARS }   from "@/lib/formatting";
+import { fantasyName } from "@/lib/fantasy-name";
 import type { BuyOrderWithBuyer } from "@/types/database";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export function BuyOrderCard({
   const [error,     setError]     = React.useState<string | null>(null);
 
   const buyer         = order.profiles;
+  const alias         = fantasyName(order.id);
   const isOwn         = currentUserId === order.buyer_id;
   const canAccept     = !!currentUserId && !isOwn && !!currentUserHasMp;
   const daysLeft      = differenceInDays(new Date(order.expires_at), new Date());
@@ -105,13 +107,13 @@ export function BuyOrderCard({
         {/* Buyer info */}
         <div className="flex items-center gap-2.5 min-w-0">
           <Avatar
-            src={buyer?.avatar_url ?? null}
-            name={buyer?.username ?? "?"}
+            src={null}
+            name={isOwn ? (buyer?.username ?? "?") : alias}
             size="sm"
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold font-sans text-text-primary truncate leading-tight">
-              {buyer?.username ?? "Usuario desconocido"}
+              {isOwn ? (buyer?.username ?? "Usuario desconocido") : alias}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
               <ReputationStars score={buyer?.reputation_score ?? null} />

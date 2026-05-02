@@ -5,9 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, X, Star, Tag, Plus, Clock } from "lucide-react";
-import { cn }    from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Avatar } from "@/components/ui/avatar";
+import { cn }           from "@/lib/utils";
+import { Badge }        from "@/components/ui/badge";
+import { Avatar }       from "@/components/ui/avatar";
+import { fantasyName }  from "@/lib/fantasy-name";
 import type { Card, ListingWithSeller, Condition } from "@/types/database";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -98,7 +99,8 @@ function BuyableListingRow({
   onBuy:      () => void;
 }) {
   const { profiles: seller } = listing;
-  const cond = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
+  const cond   = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
+  const alias  = fantasyName(listing.id);
 
   const isReserved = listing.status === "reserved";
 
@@ -117,23 +119,18 @@ function BuyableListingRow({
         {cond.label}
       </span>
 
-      {/* Seller */}
-      <Link
-        href={`/profile/${seller.username}`}
-        className="flex items-center gap-2 min-w-0 flex-1 no-underline group"
-      >
-        <Avatar name={seller.username} size="sm" className="shrink-0" />
+      {/* Seller — anonymised */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <Avatar name={alias} size="sm" className="shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-medium font-sans text-text-primary truncate group-hover:text-primary transition-colors">
-            {seller.username}
-          </p>
+          <p className="text-sm font-medium font-sans text-text-primary truncate">{alias}</p>
           <div className="flex items-center gap-1">
             <Star size={10} className="text-accent fill-accent" />
             <span className="text-2xs text-text-muted font-sans">{seller.reputation_score.toFixed(1)}</span>
             <span className="text-2xs text-text-muted font-sans">· {seller.total_sales} ventas</span>
           </div>
         </div>
-      </Link>
+      </div>
 
       {/* Qty */}
       {listing.quantity > 1 && (
@@ -197,7 +194,8 @@ function BuyConfirmModal({
   const [error, setError] = React.useState<string | null>(null);
 
   const { profiles: seller } = listing;
-  const cond = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
+  const cond   = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
+  const alias  = fantasyName(listing.id);
   const imgSrc = card.image_override_url ?? card.image_url;
 
   async function handleConfirm() {
@@ -270,9 +268,9 @@ function BuyConfirmModal({
 
         {/* Seller */}
         <div className="mx-5 mb-4 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary border border-border">
-          <Avatar name={seller.username} size="sm" className="shrink-0" />
+          <Avatar name={alias} size="sm" className="shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium font-sans text-text-primary truncate">{seller.username}</p>
+            <p className="text-sm font-medium font-sans text-text-primary truncate">{alias}</p>
             <div className="flex items-center gap-1">
               <Star size={10} className="text-accent fill-accent" />
               <span className="text-2xs text-text-muted font-sans">{seller.reputation_score.toFixed(1)}</span>
