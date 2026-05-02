@@ -7,7 +7,7 @@ import { Eye, EyeOff, Mail, Lock, AtSign, CheckCircle2, XCircle, Loader2, Info }
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/errors";
-import { generateInternalId, validateUsername } from "@/lib/auth/utils";
+import { validateUsername } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StepIndicator } from "@/components/auth/StepIndicator";
@@ -163,22 +163,17 @@ export default function RegisterPage() {
         return;
       }
 
-      // 2. Create profile row
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id:          userId,
-        internal_id: generateInternalId(),
-        username:    username.toLowerCase(),
-        email:       s1.email,
-        avatar_url:  null,
-        mercadopago_access_token:  null,
-        mercadopago_refresh_token: null,
-        mercadopago_user_id:       null,
-        mercadopago_connected_at:  null,
+      // 2. Set the chosen username on the profile the trigger auto-created
+      const usernameRes = await fetch("/api/auth/set-username", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ userId, username: username.toLowerCase() }),
       });
 
-      if (profileError) {
-        console.error("[register] Profile insert error:", profileError);
-        setGlobalError("Cuenta creada, pero no pudimos guardar tu perfil. Contactá soporte.");
+      if (!usernameRes.ok) {
+        const json = await usernameRes.json().catch(() => ({}));
+        console.error("[register] set-username error:", json);
+        setGlobalError(json.error ?? "Cuenta creada, pero no pudimos guardar tu apodo. Contactá soporte.");
         return;
       }
 

@@ -5,8 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { subDays } from "date-fns";
 import {
-  Tag, ChevronRight, ShoppingCart, Heart,
-  TrendingUp, Info, Plus,
+  Tag, ChevronRight, ShoppingCart, Heart, TrendingUp, Info, Plus,
 } from "lucide-react";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
@@ -17,6 +16,7 @@ import { Divider }            from "@/components/ui/divider";
 import { Topbar }             from "@/components/layout/Topbar";
 import { BuyListingSection }  from "@/components/cards/BuyListingSection";
 import { BuyOrdersSection }   from "@/components/buyorders/BuyOrdersSection";
+import { WishlistButton }     from "@/components/cards/WishlistButton";
 
 const PriceChart = dynamic(
   () => import("@/components/cards/PriceChart").then((m) => ({ default: m.PriceChart })),
@@ -122,7 +122,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
 
   // ── Parallel data fetches ──────────────────────────────────────────────────
 
-  const [cardResult, listingsResult, buyOrdersResult, priceHistoryResult] =
+  const [cardResult, listingsResult, buyOrdersResult, priceHistoryResult, wishlistResult] =
     await Promise.all([
       // Cards are public — use admin client to bypass any missing RLS policy
       admin
@@ -163,6 +163,15 @@ export default async function CardDetailPage({ params }: { params: { id: string 
         .eq("card_id", params.id)
         .gte("recorded_at", thirtyAgo)
         .order("recorded_at", { ascending: true }),
+
+      user
+        ? admin
+            .from("wishlist")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("card_id", params.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
   if (cardResult.error || !cardResult.data) notFound();
@@ -171,6 +180,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
   const listings     = (listingsResult.data  ?? []) as ListingWithSeller[];
   const buyOrders    = (buyOrdersResult.data ?? []) as BuyOrderWithBuyer[];
   const priceHistory = (priceHistoryResult.data ?? []) as PriceHistory[];
+  const inWishlist   = !!wishlistResult.data;
 
   // Platform median from completed transactions (last 30 days)
   const platformPrices = priceHistory
@@ -409,9 +419,13 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                   Comprar al mejor precio
                 </Button>
               ) : (
-                <Button variant="secondary" size="lg" className="w-full" leftIcon={<Heart size={16} />}>
-                  Agregar a lista de deseos
-                </Button>
+                <WishlistButton
+                  cardId={card.id}
+                  initialState={inWishlist}
+                  isLoggedIn={!!user}
+                  variant="sidebar"
+                  className="w-full justify-center"
+                />
               )}
             </div>
 
@@ -466,9 +480,11 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                   <p className="text-xs text-text-muted font-sans leading-relaxed mb-3">
                     Agregala a tu lista de deseos y te avisamos cuando haya una oferta a tu precio.
                   </p>
-                  <Button variant="ghost" size="sm" leftIcon={<Heart size={13} />}>
-                    Agregar a wishlist
-                  </Button>
+                  <WishlistButton
+                    cardId={card.id}
+                    initialState={inWishlist}
+                    isLoggedIn={!!user}
+                  />
                 </div>
               </div>
             </div>
