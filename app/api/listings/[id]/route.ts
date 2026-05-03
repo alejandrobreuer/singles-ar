@@ -36,10 +36,11 @@ const patchSchema = z.object({
   price:        z.number().positive().nullable().optional(),
   condition:    z.enum(["NM", "LP", "MP", "HP", "DMG"]).optional(),
   quantity:     z.number().int().min(1).max(99).optional(),
-  notes:        z.string().max(300).nullable().optional(),
-  trade_for:    z.string().max(500).nullable().optional(),
-  price_diff:   z.number().nullable().optional(),
-  status:       z.enum(["active", "reserved"]).optional(),
+  notes:            z.string().max(300).nullable().optional(),
+  trade_for:        z.string().max(500).nullable().optional(),
+  price_diff:       z.number().nullable().optional(),
+  delivery_stores:  z.array(z.string()).max(20).nullable().optional(),
+  status:           z.enum(["active", "reserved"]).optional(),
 }).strict();
 
 // ─── Ownership guard ──────────────────────────────────────────────────────────

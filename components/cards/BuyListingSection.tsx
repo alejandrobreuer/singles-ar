@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, X, Star, Tag, Plus, Clock } from "lucide-react";
+import { ShoppingCart, X, Star, Tag, Plus, Clock, MapPin } from "lucide-react";
 import { cn }           from "@/lib/utils";
 import { Badge }        from "@/components/ui/badge";
 import { Avatar }       from "@/components/ui/avatar";
@@ -106,73 +106,91 @@ function BuyableListingRow({
 
   return (
     <div className={cn(
-      "flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-colors duration-150",
+      "flex flex-col rounded-xl border transition-colors duration-150",
       isReserved
         ? "border-border bg-secondary/40"
         : "border-border bg-surface hover:bg-secondary/60",
     )}>
-      {/* Condition */}
-      <span className={cn(
-        "shrink-0 inline-flex items-center justify-center w-10 h-6 rounded text-2xs font-sans font-bold border",
-        cond.color
-      )}>
-        {cond.label}
-      </span>
+      {/* Main row */}
+      <div className="flex items-center gap-4 px-4 py-3.5">
+        {/* Condition */}
+        <span className={cn(
+          "shrink-0 inline-flex items-center justify-center w-10 h-6 rounded text-2xs font-sans font-bold border",
+          cond.color
+        )}>
+          {cond.label}
+        </span>
 
-      {/* Seller — anonymised */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <Avatar name={alias} size="sm" className="shrink-0" />
-        <div className="min-w-0">
-          <p className="text-sm font-medium font-sans text-text-primary truncate">{alias}</p>
-          <div className="flex items-center gap-1">
-            <Star size={10} className="text-accent fill-accent" />
-            <span className="text-2xs text-text-muted font-sans">{seller.reputation_score.toFixed(1)}</span>
-            <span className="text-2xs text-text-muted font-sans">· {seller.total_sales} ventas</span>
+        {/* Seller — anonymised */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Avatar name={alias} size="sm" className="shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium font-sans text-text-primary truncate">{alias}</p>
+            <div className="flex items-center gap-1">
+              <Star size={10} className="text-accent fill-accent" />
+              <span className="text-2xs text-text-muted font-sans">{seller.reputation_score.toFixed(1)}</span>
+              <span className="text-2xs text-text-muted font-sans">· {seller.total_sales} ventas</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Qty */}
-      {listing.quantity > 1 && (
-        <span className="shrink-0 text-xs text-text-muted font-sans">×{listing.quantity}</span>
-      )}
+        {/* Qty */}
+        {listing.quantity > 1 && (
+          <span className="shrink-0 text-xs text-text-muted font-sans">×{listing.quantity}</span>
+        )}
 
-      {/* Price */}
-      <span className="shrink-0 font-price text-base text-text-primary">
-        {listing.price != null ? formatARS(listing.price) : "—"}
-      </span>
+        {/* Price */}
+        <span className="shrink-0 font-price text-base text-text-primary">
+          {listing.price != null ? formatARS(listing.price) : "—"}
+        </span>
 
-      {/* Buy button / reserved */}
-      {isReserved ? (
-        <button
-          type="button"
-          disabled
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs font-medium font-sans text-text-muted cursor-not-allowed"
-        >
-          <Clock size={12} />
-          Reservado
-        </button>
-      ) : !isOwn && listing.listing_type === "sale" && listing.price != null && (
-        isLoggedIn ? (
+        {/* Buy button / reserved */}
+        {isReserved ? (
           <button
             type="button"
-            onClick={onBuy}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium font-sans hover:bg-primary/90 transition-colors"
+            disabled
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs font-medium font-sans text-text-muted cursor-not-allowed"
           >
-            <ShoppingCart size={12} />
-            Comprar
+            <Clock size={12} />
+            Reservado
           </button>
-        ) : (
-          <Link href="/login" className="shrink-0">
+        ) : !isOwn && listing.listing_type === "sale" && listing.price != null && (
+          isLoggedIn ? (
             <button
               type="button"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs font-medium font-sans text-text-secondary hover:bg-primary hover:text-white hover:border-primary transition-colors"
+              onClick={onBuy}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium font-sans hover:bg-primary/90 transition-colors"
             >
               <ShoppingCart size={12} />
               Comprar
             </button>
-          </Link>
-        )
+          ) : (
+            <Link href="/login" className="shrink-0">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-xs font-medium font-sans text-text-secondary hover:bg-primary hover:text-white hover:border-primary transition-colors"
+              >
+                <ShoppingCart size={12} />
+                Comprar
+              </button>
+            </Link>
+          )
+        )}
+      </div>
+
+      {/* Delivery stores row */}
+      {listing.delivery_stores && listing.delivery_stores.length > 0 && (
+        <div className="flex items-start gap-1.5 px-4 pb-3 flex-wrap">
+          <MapPin size={11} className="text-text-muted shrink-0 mt-0.5" />
+          {listing.delivery_stores.map((store) => (
+            <span
+              key={store}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-2xs font-sans bg-secondary border border-border text-text-secondary"
+            >
+              {store}
+            </span>
+          ))}
+        </div>
       )}
     </div>
   );

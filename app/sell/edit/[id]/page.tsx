@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
-import { MessageSquare, Camera, ShoppingBag, Repeat2, Tag } from "lucide-react";
+import { MessageSquare, Camera, ShoppingBag, Repeat2, Tag, MapPin } from "lucide-react";
 import { cn }                    from "@/lib/utils";
 import { Topbar }                from "@/components/layout/Topbar";
 import { Button }                from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { toast }                 from "sonner";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
 import type { Condition, ListingType, AdminSettings } from "@/types/database";
+import { DELIVERY_STORES } from "@/lib/delivery-stores";
 
 // ─── Constants (same as sell page) ───────────────────────────────────────────
 
@@ -44,8 +45,9 @@ export default function EditListingPage() {
   const [condition,   setCondition]   = React.useState<Condition>("NM");
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
-  const [notes,       setNotes]       = React.useState("");
-  const [tradeFor,    setTradeFor]    = React.useState("");
+  const [notes,           setNotes]           = React.useState("");
+  const [deliveryStores,  setDeliveryStores]  = React.useState<string[]>([]);
+  const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
   // ── Settings & price ref ──────────────────────────────────────────────────
@@ -77,6 +79,7 @@ export default function EditListingPage() {
         setPriceRaw(listing.price != null ? String(listing.price) : "");
         setQuantity(String(listing.quantity ?? 1));
         setNotes(listing.notes ?? "");
+        setDeliveryStores(listing.delivery_stores ?? []);
         setTradeFor(listing.trade_for ?? "");
         setPriceDiff(listing.price_diff != null ? String(listing.price_diff) : "");
 
@@ -121,9 +124,10 @@ export default function EditListingPage() {
           condition,
           price:      listingType === "sale" ? priceARS : null,
           quantity:   parseInt(quantity, 10) || 1,
-          notes:      notes.trim() || null,
-          trade_for:  listingType === "trade" ? tradeFor.trim() : null,
-          price_diff: listingType === "trade" ? priceDiffNum : null,
+          notes:            notes.trim() || null,
+          trade_for:        listingType === "trade" ? tradeFor.trim() : null,
+          price_diff:       listingType === "trade" ? priceDiffNum : null,
+          delivery_stores:  deliveryStores.length > 0 ? deliveryStores : null,
         }),
       });
 
@@ -359,6 +363,41 @@ export default function EditListingPage() {
                 <span className={cn("text-xs font-sans", notes.length >= 280 ? "text-warning" : "text-text-muted")}>
                   {notes.length}/300
                 </span>
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Delivery stores */}
+            <div className="flex flex-col gap-3">
+              <label className="text-sm font-medium text-text-primary font-sans flex items-center gap-1.5">
+                <MapPin size={14} className="text-text-muted" />
+                Lugar de entrega — Tiendas
+              </label>
+              <p className="text-xs text-text-muted font-sans -mt-1">
+                Seleccioná las tiendas donde podés encontrarte con el comprador.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                {DELIVERY_STORES.map((store) => {
+                  const checked = deliveryStores.includes(store);
+                  return (
+                    <label key={store} className="flex items-center gap-2.5 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() =>
+                          setDeliveryStores((prev) =>
+                            checked ? prev.filter((s) => s !== store) : [...prev, store]
+                          )
+                        }
+                        className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                      />
+                      <span className="text-sm font-sans text-text-secondary group-hover:text-text-primary transition-colors">
+                        {store}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </div>

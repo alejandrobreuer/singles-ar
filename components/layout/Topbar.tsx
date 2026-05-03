@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, ChevronDown, LogOut, User, Package } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Package, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
@@ -29,7 +29,8 @@ export interface TopbarProps {}
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/cards",   label: "Explorar"     },
+  { href: "/",       label: "Inicio"       },
+  { href: "/cards",  label: "Explorar"     },
   { href: "/sell",   label: "Vender"       },
   { href: "/chat",   label: "Mis chats"    },
 ];
@@ -57,7 +58,7 @@ function Logo() {
 
 function NavItem({ href, label }: NavLink) {
   const pathname = usePathname();
-  const active   = pathname === href || pathname.startsWith(href + "/");
+  const active   = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <Link
@@ -79,11 +80,12 @@ function NavItem({ href, label }: NavLink) {
 // ─── User dropdown ────────────────────────────────────────────────────────────
 
 interface UserMenuProps {
-  user:     TopbarUser;
+  user:      TopbarUser;
+  isAdmin?:  boolean;
   onLogout?: () => void;
 }
 
-function UserMenu({ user, onLogout }: UserMenuProps) {
+function UserMenu({ user, isAdmin, onLogout }: UserMenuProps) {
   const [open, setOpen] = React.useState(false);
   const ref             = React.useRef<HTMLDivElement>(null);
 
@@ -155,6 +157,9 @@ function UserMenu({ user, onLogout }: UserMenuProps) {
 
           <DropdownItem href="/profile"  icon={<User size={14} />}    label="Mi cuenta"    onClick={() => setOpen(false)} />
           <DropdownItem href="/sell"     icon={<Package size={14} />} label="Vender carta" onClick={() => setOpen(false)} />
+          {isAdmin && (
+            <DropdownItem href="/admin" icon={<ShieldCheck size={14} />} label="Panel de Admin" onClick={() => setOpen(false)} />
+          )}
 
           <Divider className="my-1" />
 
@@ -266,9 +271,10 @@ function MobileMenu({ open, user, onClose, onLogout }: MobileMenuProps) {
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
 export function Topbar(_props: TopbarProps) {
-  const router                    = useRouter();
+  const router                      = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [user,       setUser]       = React.useState<TopbarUser | null>(null);
+  const [isAdmin,    setIsAdmin]    = React.useState(false);
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -285,6 +291,10 @@ export function Topbar(_props: TopbarProps) {
         email,
         avatarUrl: profile?.avatar_url ?? undefined,
       });
+      fetch("/api/auth/is-admin")
+        .then((r) => r.json())
+        .then(({ isAdmin: admin }) => setIsAdmin(!!admin))
+        .catch(() => setIsAdmin(false));
     }
 
     // Fetch current session on mount
@@ -298,6 +308,7 @@ export function Topbar(_props: TopbarProps) {
         loadUser(session.user.id, session.user.email ?? "");
       } else {
         setUser(null);
+        setIsAdmin(false);
       }
     });
 
@@ -315,22 +326,22 @@ export function Topbar(_props: TopbarProps) {
   return (
     <header className="sticky top-0 z-40 w-full bg-surface/95 backdrop-blur-sm border-b border-border">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 items-center justify-between gap-4">
+        <div className="relative flex h-20 items-center">
 
-          {/* Left: Logo */}
+          {/* Left: Logo — pinned far left */}
           <Logo />
 
-          {/* Center: Desktop nav */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* Center: Desktop nav — truly centered in the full bar */}
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
             {NAV_LINKS.map((link) => (
               <NavItem key={link.href} {...link} />
             ))}
           </nav>
 
-          {/* Right: Auth */}
-          <div className="flex items-center gap-2">
+          {/* Right: Auth — pushed to far right */}
+          <div className="ml-auto flex items-center gap-2">
             {user ? (
-              <UserMenu user={user} onLogout={handleLogout} />
+              <UserMenu user={user} isAdmin={isAdmin} onLogout={handleLogout} />
             ) : (
               <div className="hidden md:flex items-center gap-2">
                 <Button variant="ghost" size="sm" asChild>

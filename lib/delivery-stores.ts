@@ -1,0 +1,15 @@
+export const DELIVERY_STORES = [
+  "Misato Comics",
+  "Mou Ikkai",
+  "5 a la Cara",
+  "Rancho Store",
+  "Magic Game Store",
+  "La Batikueva",
+  "La Forja",
+  "Sekai Games",
+  "Abismo de Helm",
+  "Dima Game",
+  "Polybius",
+  "Space Gaming Las Lomas",
+  "Card Citadel",
+] as const;

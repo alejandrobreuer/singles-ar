@@ -148,7 +148,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
         .from("buy_orders")
         .select(`
           *,
-          profiles (
+          profiles!buyer_id (
             id, username, avatar_url, reputation_score, total_sales, is_reliable_buyer
           )
         `)
@@ -336,31 +336,6 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 )}
               </div>
 
-              {buyOrders.length === 0 && (
-                <div className="mb-4">
-                  <EmptySection
-                    icon={<TrendingUp size={22} className="text-text-muted" />}
-                    title="Sin órdenes de compra"
-                    description="Publicá tu precio y los vendedores te contactarán."
-                    cta={
-                      user ? (
-                        <Link href={`/buy-orders/new?card_id=${card.id}`}>
-                          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface border border-border text-sm font-medium font-sans text-text-secondary hover:bg-secondary transition-colors">
-                            <Plus size={13} />
-                            Publicar un buy order
-                          </button>
-                        </Link>
-                      ) : (
-                        <Link href="/login">
-                          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface border border-border text-sm font-medium font-sans text-text-secondary hover:bg-secondary transition-colors">
-                            Iniciá sesión para comprar
-                          </button>
-                        </Link>
-                      )
-                    }
-                  />
-                </div>
-              )}
               <BuyOrdersSection
                 initialOrders={buyOrders}
                 currentUserId={user?.id ?? null}

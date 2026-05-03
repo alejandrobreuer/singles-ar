@@ -4,12 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, CreditCard, Layers, Users, Settings, ArrowLeft, Zap,
+  LayoutDashboard, CreditCard, Layers, Users, Settings, House, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/admin",              label: "Dashboard",       icon: <LayoutDashboard size={16} />, exact: true  },
+  { href: "/admin",              label: "Panel de Control", icon: <LayoutDashboard size={16} />, exact: true  },
   { href: "/admin/cards",        label: "Cartas",          icon: <Layers          size={16} />, exact: false },
   { href: "/admin/transactions", label: "Transacciones",   icon: <CreditCard      size={16} />, exact: false },
   { href: "/admin/users",        label: "Usuarios",        icon: <Users           size={16} />, exact: false },
@@ -42,6 +42,13 @@ export function AdminSidebar({ username }: AdminSidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-0.5">
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-3 py-2 mb-2 rounded-lg text-sm font-medium font-sans text-black border border-border bg-background hover:bg-secondary hover:border-primary/30 transition-colors no-underline shadow-sm"
+        >
+          <House size={14} strokeWidth={1.5} />
+          Principal
+        </Link>
         {NAV.map((item) => (
           <Link
             key={item.href}
@@ -61,16 +68,6 @@ export function AdminSidebar({ username }: AdminSidebarProps) {
         ))}
       </nav>
 
-      {/* Back to app */}
-      <div className="px-3 py-3 border-t border-border">
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-sans text-text-muted hover:text-text-primary hover:bg-secondary transition-colors no-underline"
-        >
-          <ArrowLeft size={14} />
-          Volver al app
-        </Link>
-      </div>
     </aside>
   );
 }

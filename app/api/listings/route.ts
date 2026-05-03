@@ -12,9 +12,10 @@ const createListingSchema = z.object({
   price:        z.number().positive("El precio debe ser mayor a 0.").nullable(),
   condition:    z.enum(["NM", "LP", "MP", "HP", "DMG"]),
   quantity:     z.number().int().min(1).max(99).default(1),
-  notes:        z.string().max(300).nullable().optional(),
-  trade_for:    z.string().max(500).nullable().optional(),
-  price_diff:   z.number().nullable().optional(),
+  notes:            z.string().max(300).nullable().optional(),
+  trade_for:        z.string().max(500).nullable().optional(),
+  price_diff:       z.number().nullable().optional(),
+  delivery_stores:  z.array(z.string()).max(20).nullable().optional(),
 }).refine(
   (d) => d.listing_type === "trade" || (d.price != null && d.price > 0),
   { message: "Las ventas directas requieren un precio.", path: ["price"] }
@@ -81,16 +82,17 @@ export async function POST(req: NextRequest) {
       condition:    input.condition,
       quantity:     input.quantity,
       status:       "active",
-      notes:        input.notes    ?? null,
-      trade_for:    input.trade_for ?? null,
-      price_diff:   input.price_diff ?? null,
+      notes:           input.notes           ?? null,
+      trade_for:       input.trade_for       ?? null,
+      price_diff:      input.price_diff      ?? null,
+      delivery_stores: input.delivery_stores ?? null,
     })
     .select("id, card_id")
     .single();
 
   if (insertError) {
-    console.error("[POST /api/listings]", insertError);
-    return NextResponse.json({ error: "No se pudo crear el listing." }, { status: 500 });
+    console.error("[POST /api/listings]", insertError.message, insertError.details);
+    return NextResponse.json({ error: "No se pudo crear el listing.", detail: insertError.message }, { status: 500 });
   }
 
   // ── Wishlist notification targets (non-blocking) ──────────��───────────────

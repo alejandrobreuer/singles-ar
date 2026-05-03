@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   ShoppingBag, Repeat2, ChevronRight, ChevronDown,
-  MessageSquare, Camera, Check, Search, Loader2, Tag, X,
+  MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Topbar }               from "@/components/layout/Topbar";
@@ -22,6 +22,7 @@ import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
 import type { CardSearchResult, Condition, ListingType, AdminSettings, Game } from "@/types/database";
+import { DELIVERY_STORES } from "@/lib/delivery-stores";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -86,8 +87,9 @@ export default function SellPage() {
   const [condition,   setCondition]   = React.useState<Condition>("NM");
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
-  const [notes,       setNotes]       = React.useState("");
-  const [tradeFor,    setTradeFor]    = React.useState("");
+  const [notes,           setNotes]           = React.useState("");
+  const [deliveryStores,  setDeliveryStores]  = React.useState<string[]>([]);
+  const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
   // ── Price reference ───────────────────────────────────────────────────────
@@ -208,9 +210,10 @@ export default function SellPage() {
           price:        listingType === "sale" ? priceARS : null,
           condition,
           quantity:     parseInt(quantity, 10) || 1,
-          notes:        notes.trim() || null,
-          trade_for:    listingType === "trade" ? tradeFor.trim() : null,
-          price_diff:   listingType === "trade" ? priceDiffNum : null,
+          notes:            notes.trim() || null,
+          trade_for:        listingType === "trade" ? tradeFor.trim() : null,
+          price_diff:       listingType === "trade" ? priceDiffNum : null,
+          delivery_stores:  deliveryStores.length > 0 ? deliveryStores : null,
         }),
       });
 
@@ -638,6 +641,41 @@ export default function SellPage() {
                     )}>
                       {notes.length}/300
                     </span>
+                  </div>
+                </div>
+
+                <Divider />
+
+                {/* Delivery stores */}
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm font-medium text-text-primary font-sans flex items-center gap-1.5">
+                    <MapPin size={14} className="text-text-muted" />
+                    Lugar de entrega — Tiendas
+                  </label>
+                  <p className="text-xs text-text-muted font-sans -mt-1">
+                    Seleccioná las tiendas donde podés encontrarte con el comprador.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                    {DELIVERY_STORES.map((store) => {
+                      const checked = deliveryStores.includes(store);
+                      return (
+                        <label key={store} className="flex items-center gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setDeliveryStores((prev) =>
+                                checked ? prev.filter((s) => s !== store) : [...prev, store]
+                              )
+                            }
+                            className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                          />
+                          <span className="text-sm font-sans text-text-secondary group-hover:text-text-primary transition-colors">
+                            {store}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

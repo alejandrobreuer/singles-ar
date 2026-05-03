@@ -97,8 +97,9 @@ CREATE TABLE IF NOT EXISTS public.listings (
   status       text        NOT NULL DEFAULT 'active'
                            CHECK (status IN ('active', 'reserved', 'sold', 'cancelled')),
   notes        text,                                          -- visible to buyers
-  trade_for    text,                                          -- what seller wants in a trade
-  price_diff   numeric,                                       -- trade + cash: cash difference
+  trade_for        text,                                      -- what seller wants in a trade
+  price_diff       numeric,                                   -- trade + cash: cash difference
+  delivery_stores  text[],                                    -- store meetup points selected by the seller
   created_at   timestamptz DEFAULT now() NOT NULL,
   updated_at   timestamptz DEFAULT now() NOT NULL,
 

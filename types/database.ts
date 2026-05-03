@@ -113,11 +113,12 @@ export interface Listing {
   condition:    Condition;
   quantity:     number;
   status:       ListingStatus;
-  notes:        string | null;
-  trade_for:    string | null;   // what seller wants in a trade
-  price_diff:   number | null;   // optional cash component in a trade
-  created_at:   string;
-  updated_at:   string;
+  notes:            string | null;
+  trade_for:        string | null;   // what seller wants in a trade
+  price_diff:       number | null;   // optional cash component in a trade
+  delivery_stores:  string[] | null; // store meetup points selected by the seller
+  created_at:       string;
+  updated_at:       string;
 }
 
 export interface ListingWithCard extends Listing {

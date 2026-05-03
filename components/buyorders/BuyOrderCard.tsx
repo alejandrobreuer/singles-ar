@@ -176,7 +176,7 @@ export function BuyOrderCard({
             loading={accepting}
             onClick={handleAccept}
           >
-            Aceptar orden de compra
+            Vender
           </Button>
           {error && (
             <p className="text-xs text-error font-sans text-center">{error}</p>
