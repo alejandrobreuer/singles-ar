@@ -4,16 +4,17 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, CreditCard, Layers, Users, Settings, House, Zap,
+  LayoutDashboard, CreditCard, Layers, Users, Settings, House, Zap, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/admin",              label: "Panel de Control", icon: <LayoutDashboard size={16} />, exact: true  },
-  { href: "/admin/cards",        label: "Cartas",          icon: <Layers          size={16} />, exact: false },
-  { href: "/admin/transactions", label: "Transacciones",   icon: <CreditCard      size={16} />, exact: false },
-  { href: "/admin/users",        label: "Usuarios",        icon: <Users           size={16} />, exact: false },
-  { href: "/admin/settings",     label: "Configuración",   icon: <Settings        size={16} />, exact: false },
+  { href: "/admin/cards",        label: "Cartas",           icon: <Layers          size={16} />, exact: false },
+  { href: "/admin/transactions", label: "Transacciones",    icon: <CreditCard      size={16} />, exact: false },
+  { href: "/admin/users",        label: "Usuarios",         icon: <Users           size={16} />, exact: false },
+  { href: "/admin/stores",       label: "Lugar de entrega", icon: <MapPin          size={16} />, exact: false },
+  { href: "/admin/settings",     label: "Configuración",    icon: <Settings        size={16} />, exact: false },
 ];
 
 interface AdminSidebarProps {

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, Clock, AlertCircle, PackageCheck } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle, PackageCheck, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TransactionWithDetails } from "@/types/database";
 
@@ -32,6 +32,26 @@ export function TransactionActions({
   const otherConfirmedAt = isBuyer
     ? transaction.seller_confirmed_delivery_at
     : transaction.buyer_confirmed_delivery_at;
+
+  async function handlePay() {
+    setError(null);
+    setBusy(true);
+    try {
+      const res  = await fetch("/api/payments/create-preference", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ transactionId: transaction.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "No se pudo iniciar el pago.");
+      const url = json.data?.sandboxUrl ?? json.data?.initPoint;
+      if (url) window.location.href = url;
+      else throw new Error("No se recibió URL de pago.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+      setBusy(false);
+    }
+  }
 
   async function handleConfirmDelivery() {
     setError(null);
@@ -77,56 +97,83 @@ export function TransactionActions({
   if (status === "in_chat") {
     return (
       <div className="flex flex-col gap-2.5">
-        <div className="flex items-start gap-3">
-          {/* Buyer confirmation */}
-          <ConfirmPartyBadge
-            label="Comprador"
-            confirmed={!!transaction.buyer_confirmed_delivery_at}
-          />
-          {/* Seller confirmation */}
-          <ConfirmPartyBadge
-            label="Vendedor"
-            confirmed={!!transaction.seller_confirmed_delivery_at}
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          {!myConfirmedAt ? (
+        {isBuyer ? (
+          <div className="flex items-center gap-2">
             <Button
               variant="primary"
               size="sm"
-              leftIcon={<PackageCheck size={14} />}
-              onClick={handleConfirmDelivery}
-              loading={busy}
+              leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+              onClick={handlePay}
+              disabled={busy}
               className="flex-1"
             >
-              Confirmar entrega
+              {busy ? "Iniciando pago…" : "Pagar con MercadoPago"}
             </Button>
-          ) : (
-            <div className="flex items-center gap-1.5 text-success text-xs font-sans flex-1">
-              <CheckCircle size={13} />
-              {otherConfirmedAt
-                ? "Ambos confirmaron — completando…"
-                : "Esperando confirmación del otro"}
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<XCircle size={14} />}
+              loading={cancelBusy}
+              onClick={doCancel}
+              className="text-error hover:bg-error-subtle hover:text-error shrink-0"
+            >
+              Cancelar
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-text-muted text-xs font-sans flex-1">
+              <Clock size={13} />
+              Esperando que el comprador realice el pago…
             </div>
-          )}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            leftIcon={<XCircle size={14} />}
-            loading={cancelBusy}
-            onClick={doCancel}
-            className="text-error hover:bg-error-subtle hover:text-error shrink-0"
-          >
-            Cancelar
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<XCircle size={14} />}
+              loading={cancelBusy}
+              onClick={doCancel}
+              className="text-error hover:bg-error-subtle hover:text-error shrink-0"
+            >
+              Cancelar
+            </Button>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-center gap-1.5 text-xs text-error font-sans">
             <AlertCircle size={12} />
             {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── payment_pending ───────────────────────────────────────────────────────
+  if (status === "payment_pending") {
+    return (
+      <div className="flex items-center gap-2">
+        {isBuyer ? (
+          <div className="flex flex-col gap-2 flex-1">
+            <div className="flex items-center gap-1.5 text-warning text-xs font-sans">
+              <Loader2 size={13} className="animate-spin" />
+              Pago en proceso — completá el pago en MercadoPago.
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<CreditCard size={14} />}
+              onClick={handlePay}
+              disabled={busy}
+              className="w-fit"
+            >
+              Reintentar / volver al checkout
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-warning text-xs font-sans flex-1">
+            <Loader2 size={13} className="animate-spin" />
+            Esperando confirmación del pago de MercadoPago…
           </div>
         )}
       </div>

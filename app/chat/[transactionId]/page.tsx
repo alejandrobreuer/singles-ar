@@ -165,6 +165,7 @@ export default async function ChatPage({
             transactionId={transaction.id}
             reviewee={counterpart}
             alreadyReviewed={alreadyReviewed}
+            completedAt={transaction.completed_at ?? null}
           />
         </div>
       )}

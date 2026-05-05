@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -341,7 +342,10 @@ export function Topbar(_props: TopbarProps) {
           {/* Right: Auth — pushed to far right */}
           <div className="ml-auto flex items-center gap-2">
             {user ? (
-              <UserMenu user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+              <>
+                <NotificationBell userId={user.id} />
+                <UserMenu user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+              </>
             ) : (
               <div className="hidden md:flex items-center gap-2">
                 <Button variant="ghost" size="sm" asChild>

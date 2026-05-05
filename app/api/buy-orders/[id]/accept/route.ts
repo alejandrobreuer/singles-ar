@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notify }            from "@/lib/notifications";
 
 // ─── POST /api/buy-orders/[id]/accept ────────────────────────────────────────
 // Seller accepts a buy order:
@@ -131,6 +132,22 @@ export async function POST(
       message_type:   "system",
     },
   ]);
+
+  // Non-blocking: notify buyer that their order was accepted
+  const _buyerId = order.buyer_id;
+  const _cardId  = order.card_id;
+  const _txId    = transactionId;
+  admin
+    .from("cards").select("name").eq("id", _cardId).single()
+    .then(({ data: card }) =>
+      notify({
+        user_id: _buyerId,
+        type:    "card_bought",
+        title:   `Tu orden fue aceptada: ${card?.name ?? "tu carta"}`,
+        link:    `/chat/${_txId}`,
+      })
+    )
+    .catch(() => null);
 
   return NextResponse.json({
     data: {

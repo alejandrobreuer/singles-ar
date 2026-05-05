@@ -13,6 +13,7 @@ import {
   ChevronRight, ExternalLink,
 } from "lucide-react";
 import { toast }     from "sonner";
+import { cn }        from "@/lib/utils";
 import { Avatar }    from "@/components/ui/avatar";
 import { Badge }     from "@/components/ui/badge";
 import { Button }    from "@/components/ui/button";
@@ -127,6 +128,26 @@ export function ProfileClient({
 }: ProfileClientProps) {
   const router = useRouter();
   const [tab,       setTab]       = React.useState<TabKey>("listings");
+
+  // Handle OAuth return params (?mp_success / ?mp_error)
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mp_success")) {
+      toast.success("MercadoPago conectado correctamente.");
+      window.history.replaceState({}, "", "/profile");
+      setTab("configuracion");
+    } else if (params.get("mp_error")) {
+      const code = params.get("mp_error");
+      toast.error(
+        code === "access_denied"   ? "Conexión con MercadoPago cancelada." :
+        code === "db_error"        ? "No se pudo guardar la conexión." :
+        code === "token_exchange"  ? "Error al obtener el token de MercadoPago." :
+        "Error al conectar MercadoPago."
+      );
+      window.history.replaceState({}, "", "/profile");
+    }
+  }, []);
   const [listings,  setListings]  = React.useState(initialListings);
   const [buyOrders, setBuyOrders] = React.useState(initialBuyOrders);
   const [wishlist,  setWishlist]  = React.useState(initialWishlist);
@@ -609,20 +630,10 @@ export function ProfileClient({
             <div>
               <h3 className="text-sm font-semibold text-text-primary font-sans mb-3">MercadoPago</h3>
               {profile.mercadopago_user_id ? (
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-success/30 bg-success/5">
-                  <CheckCircle2 size={16} className="shrink-0 text-success" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium font-sans text-text-primary">Cuenta conectada</p>
-                    {profile.mercadopago_connected_at && (
-                      <p className="text-xs text-text-muted font-sans">
-                        Conectado {formatDistanceToNow(new Date(profile.mercadopago_connected_at), { locale: es, addSuffix: true })}
-                      </p>
-                    )}
-                  </div>
-                  <Link href="/onboarding/mercadopago">
-                    <Button variant="ghost" size="sm">Reconectar</Button>
-                  </Link>
-                </div>
+                <MpConnected
+                  connectedAt={profile.mercadopago_connected_at}
+                  onDisconnect={() => router.refresh()}
+                />
               ) : (
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-warning/30 bg-warning/5">
                   <XCircle size={16} className="shrink-0 text-warning" />
@@ -630,9 +641,9 @@ export function ProfileClient({
                     <p className="text-sm font-medium font-sans text-text-primary">Sin cuenta conectada</p>
                     <p className="text-xs text-text-muted font-sans">Necesitás conectar MercadoPago para aceptar pagos.</p>
                   </div>
-                  <Link href="/onboarding/mercadopago">
-                    <Button variant="primary" size="sm">Conectar</Button>
-                  </Link>
+                  <a href="/api/auth/mercadopago">
+                    <Button variant="primary" size="sm">Conectar MercadoPago</Button>
+                  </a>
                 </div>
               )}
             </div>
@@ -651,6 +662,105 @@ export function ProfileClient({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── MercadoPago connected section ───────────────────────────────────────────
+
+function MpConnected({
+  connectedAt,
+  onDisconnect,
+}: {
+  connectedAt:   string | null;
+  onDisconnect:  () => void;
+}) {
+  const [disconnecting, setDisconnecting] = React.useState(false);
+  const [confirm,       setConfirm]       = React.useState(false);
+
+  const expiryDate = connectedAt
+    ? new Date(new Date(connectedAt).getTime() + 180 * 24 * 60 * 60 * 1000)
+    : null;
+  const daysLeft      = expiryDate ? differenceInDays(expiryDate, new Date()) : null;
+  const isExpired     = daysLeft !== null && daysLeft <= 0;
+  const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 14;
+
+  async function disconnect() {
+    setDisconnecting(true);
+    try {
+      const res = await fetch("/api/auth/mercadopago", { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("MercadoPago desconectado.");
+      onDisconnect();
+    } catch {
+      toast.error("No se pudo desconectar.");
+      setDisconnecting(false);
+      setConfirm(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5 p-3 rounded-xl border border-success/30 bg-success/5">
+
+      {/* Status row */}
+      <div className="flex items-center gap-3">
+        <CheckCircle2 size={16} className="shrink-0 text-success" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold font-sans text-text-primary">MercadoPago conectado ✓</p>
+          {connectedAt && (
+            <p className="text-xs text-text-muted font-sans">
+              Conectado {formatDistanceToNow(new Date(connectedAt), { locale: es, addSuffix: true })}
+            </p>
+          )}
+        </div>
+        <a href="/api/auth/mercadopago">
+          <Button variant="ghost" size="sm">Reconectar</Button>
+        </a>
+      </div>
+
+      {/* Token expiry */}
+      {expiryDate && (
+        <p className={cn(
+          "text-xs font-sans px-1",
+          isExpired      ? "text-error font-medium" :
+          isExpiringSoon ? "text-warning font-medium" :
+          "text-text-muted"
+        )}>
+          {isExpired
+            ? `⚠ Token expirado el ${format(expiryDate, "d 'de' MMMM yyyy", { locale: es })} — reconectá tu cuenta.`
+            : isExpiringSoon
+            ? `⚠ Token vence en ${daysLeft} días (${format(expiryDate, "d MMM yyyy", { locale: es })})`
+            : `Token válido hasta el ${format(expiryDate, "d 'de' MMMM yyyy", { locale: es })}`
+          }
+        </p>
+      )}
+
+      {/* Disconnect */}
+      {!confirm ? (
+        <button
+          onClick={() => setConfirm(true)}
+          className="text-xs text-text-muted hover:text-error font-sans transition-colors text-left px-1 w-fit"
+        >
+          Desconectar cuenta
+        </button>
+      ) : (
+        <div className="flex items-center gap-3 px-1">
+          <span className="text-xs text-text-muted font-sans">¿Desconectar MercadoPago?</span>
+          <button
+            onClick={disconnect}
+            disabled={disconnecting}
+            className="text-xs text-error font-semibold font-sans hover:underline disabled:opacity-50"
+          >
+            {disconnecting ? "Desconectando…" : "Sí, desconectar"}
+          </button>
+          <button
+            onClick={() => setConfirm(false)}
+            className="text-xs text-text-muted font-sans hover:underline"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

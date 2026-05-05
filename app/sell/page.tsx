@@ -22,7 +22,6 @@ import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
 import type { CardSearchResult, Condition, ListingType, AdminSettings, Game } from "@/types/database";
-import { DELIVERY_STORES } from "@/lib/delivery-stores";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -88,7 +87,8 @@ export default function SellPage() {
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
-  const [deliveryStores,  setDeliveryStores]  = React.useState<string[]>([]);
+  const [deliveryStores,    setDeliveryStores]    = React.useState<string[]>([]);
+  const [storeOptions,      setStoreOptions]      = React.useState<string[]>([]);
   const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
@@ -102,11 +102,16 @@ export default function SellPage() {
   const [submitting,   setSubmitting]   = React.useState(false);
   const [submitError,  setSubmitError]  = React.useState<string | null>(null);
 
-  // ── Fetch settings once ───────────────────────────────────────────────────
+  // ── Fetch settings + store options once ──────────────────────────────────
   React.useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
       .then((data: AdminSettings) => setSettings(data))
+      .catch(() => {});
+
+    fetch("/api/delivery-stores")
+      .then((r) => r.json())
+      .then((json) => setStoreOptions((json.data ?? []).map((s: { name: string }) => s.name)))
       .catch(() => {});
   }, []);
 
@@ -217,10 +222,24 @@ export default function SellPage() {
         }),
       });
 
-      const data = await res.json() as { data?: { card_id: string }; error?: string };
+      const data = await res.json() as {
+        data?:   { card_id: string };
+        error?:  string;
+        code?:   string;
+        detail?: string;
+        hint?:   string;
+        pg?:     string;
+        field?:  string;
+      };
 
       if (!res.ok) {
-        setSubmitError(data.error ?? "Error al publicar.");
+        const parts = [data.error ?? "Error al publicar."];
+        if (data.code)   parts.push(`[${data.code}]`);
+        if (data.field)  parts.push(`Campo: ${data.field}`);
+        if (data.detail) parts.push(data.detail);
+        if (data.hint)   parts.push(data.hint);
+        if (data.pg)     parts.push(`PG: ${data.pg}`);
+        setSubmitError(parts.join(" — "));
         return;
       }
 
@@ -656,7 +675,7 @@ export default function SellPage() {
                     Seleccioná las tiendas donde podés encontrarte con el comprador.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                    {DELIVERY_STORES.map((store) => {
+                    {storeOptions.map((store) => {
                       const checked = deliveryStores.includes(store);
                       return (
                         <label key={store} className="flex items-center gap-2.5 cursor-pointer group">

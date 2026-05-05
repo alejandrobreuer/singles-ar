@@ -1,12 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Star, CheckCircle2, Loader2 } from "lucide-react";
+import { Star, CheckCircle2, Loader2, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
+
+const REVIEW_WINDOW_DAYS = 15;
+
+function reviewDeadline(completedAt: string | null): Date | null {
+  if (!completedAt) return null;
+  const d = new Date(completedAt);
+  d.setDate(d.getDate() + REVIEW_WINDOW_DAYS);
+  return d;
+}
 
 interface ReviewFormProps {
   transactionId: string;
@@ -17,6 +26,8 @@ interface ReviewFormProps {
   };
   /** Pre-populated from server if user already reviewed */
   alreadyReviewed?: boolean;
+  /** ISO string of when the transaction was completed */
+  completedAt?: string | null;
 }
 
 // ─── Star Picker ──────────────────────────────────────────────────────────────
@@ -68,7 +79,7 @@ function StarPicker({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ReviewForm({ transactionId, reviewee, alreadyReviewed }: ReviewFormProps) {
+export function ReviewForm({ transactionId, reviewee, alreadyReviewed, completedAt }: ReviewFormProps) {
   const [rating,    setRating]    = React.useState(0);
   const [comment,   setComment]   = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -102,6 +113,26 @@ export function ReviewForm({ transactionId, reviewee, alreadyReviewed }: ReviewF
     }
   }
 
+  // ── Deadline calculation ─────────────────────────────────────────────────────
+  const deadline    = reviewDeadline(completedAt ?? null);
+  const now         = new Date();
+  const windowOpen  = !deadline || now <= deadline;
+  const daysLeft    = deadline
+    ? Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    : REVIEW_WINDOW_DAYS;
+
+  // ── Window expired ───────────────────────────────────────────────────────────
+  if (!windowOpen && !done) {
+    return (
+      <div className="flex items-center gap-2.5 px-4 py-3 bg-warning/5 border border-warning/20 rounded-xl">
+        <AlertCircle size={16} className="shrink-0 text-warning" />
+        <p className="text-sm font-sans text-text-secondary">
+          El período de 15 días para dejar una reseña ya expiró.
+        </p>
+      </div>
+    );
+  }
+
   // ── Already reviewed ────────────────────────────────────────────────────────
   if (done) {
     return (
@@ -125,7 +156,7 @@ export function ReviewForm({ transactionId, reviewee, alreadyReviewed }: ReviewF
           name={reviewee.username}
           size="sm"
         />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold font-sans text-text-primary leading-tight">
             Calificá a {reviewee.username}
           </p>
@@ -133,6 +164,12 @@ export function ReviewForm({ transactionId, reviewee, alreadyReviewed }: ReviewF
             Tu experiencia ayuda a la comunidad
           </p>
         </div>
+        {deadline && daysLeft <= 5 && (
+          <div className="shrink-0 flex items-center gap-1 text-warning text-xs font-sans">
+            <Clock size={12} />
+            {daysLeft === 1 ? "1 día" : `${daysLeft} días`}
+          </div>
+        )}
       </div>
 
       {/* Stars */}

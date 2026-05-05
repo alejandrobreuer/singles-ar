@@ -21,7 +21,7 @@ async function exchangeCodeForToken(code: string): Promise<MPTokenResponse> {
       client_secret: process.env.MP_CLIENT_SECRET,
       code,
       grant_type:    "authorization_code",
-      redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/mercadopago-callback`,
+      redirect_uri:  process.env.MP_REDIRECT_URI,
     }),
   });
 

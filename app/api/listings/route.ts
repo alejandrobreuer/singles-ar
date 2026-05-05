@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_SETTINGS } from "@/lib/priceValidation";
+import { DEFAULT_SETTINGS }  from "@/lib/priceValidation";
+import { notifyMany }        from "@/lib/notifications";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -49,7 +50,10 @@ export async function POST(req: NextRequest) {
   // Auth check
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Necesitás iniciar sesión para publicar." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Necesitás iniciar sesión para publicar.", code: "AUTH_REQUIRED" },
+      { status: 401 }
+    );
   }
 
   // Parse body
@@ -57,13 +61,20 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Body inválido." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Body inválido.", code: "INVALID_BODY" },
+      { status: 400 }
+    );
   }
 
   const parsed = createListingSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Datos inválidos." },
+      {
+        error: parsed.error.issues[0]?.message ?? "Datos inválidos.",
+        code:  "VALIDATION_ERROR",
+        field: parsed.error.issues[0]?.path?.join("."),
+      },
       { status: 422 }
     );
   }
@@ -71,47 +82,65 @@ export async function POST(req: NextRequest) {
   const input = parsed.data;
 
   // ── Insert listing ─────────────────────────────────────────────────────────
+  const insertPayload: Record<string, unknown> = {
+    card_id:      input.card_id,
+    seller_id:    user.id,
+    listing_type: input.listing_type,
+    price:        input.price,
+    currency:     "ARS",
+    condition:    input.condition,
+    quantity:     input.quantity,
+    status:       "active",
+    notes:        input.notes      ?? null,
+    trade_for:    input.trade_for  ?? null,
+    price_diff:   input.price_diff ?? null,
+  };
+
+  // Only include delivery_stores when there is actual data — omitting the key
+  // entirely avoids PGRST204 if the column hasn't been migrated yet.
+  if (input.delivery_stores && input.delivery_stores.length > 0) {
+    insertPayload.delivery_stores = input.delivery_stores;
+  }
+
   const { data: listing, error: insertError } = await supabase
     .from("listings")
-    .insert({
-      card_id:      input.card_id,
-      seller_id:    user.id,
-      listing_type: input.listing_type,
-      price:        input.price,
-      currency:     "ARS",
-      condition:    input.condition,
-      quantity:     input.quantity,
-      status:       "active",
-      notes:           input.notes           ?? null,
-      trade_for:       input.trade_for       ?? null,
-      price_diff:      input.price_diff      ?? null,
-      delivery_stores: input.delivery_stores ?? null,
-    })
+    .insert(insertPayload)
     .select("id, card_id")
     .single();
 
   if (insertError) {
-    console.error("[POST /api/listings]", insertError.message, insertError.details);
-    return NextResponse.json({ error: "No se pudo crear el listing.", detail: insertError.message }, { status: 500 });
+    console.error("[POST /api/listings] DB error:", insertError);
+    return NextResponse.json(
+      {
+        error:  "No se pudo crear el listing.",
+        code:   "DB_INSERT_ERROR",
+        detail: insertError.message,
+        hint:   insertError.hint   ?? undefined,
+        pg:     insertError.code   ?? undefined,
+      },
+      { status: 500 }
+    );
   }
 
-  // ── Wishlist notification targets (non-blocking) ──────────��───────────────
-  // Find users who have this card in their wishlist, excluding the seller.
-  // TODO: trigger push/email notifications once notification system is built.
-  const admin = createAdminClient();
-  admin
+  // ── Wishlist stock notifications (non-blocking) ───────────────────────────
+  const notifAdmin = createAdminClient();
+  notifAdmin
     .from("wishlist")
     .select("user_id")
     .eq("card_id", input.card_id)
     .neq("user_id", user.id)
-    .then(({ data: targets }) => {
-      if (targets && targets.length > 0) {
-        const userIds = targets.map((t) => t.user_id);
-        console.log(
-          `[listings] New listing ${listing.id} for card ${input.card_id}. ` +
-          `Notify wishlist users: ${userIds.join(", ")}`
-        );
-      }
+    .then(async ({ data: targets }) => {
+      if (!targets || targets.length === 0) return;
+      const { data: card } = await notifAdmin
+        .from("cards").select("name").eq("id", input.card_id).single();
+      const cardName = card?.name ?? "una carta";
+      await notifyMany(targets.map((t) => ({
+        user_id: t.user_id as string,
+        type:    "wishlist_stock" as const,
+        title:   `Nuevo stock: ${cardName}`,
+        body:    "Un vendedor publicó una carta en tu wishlist.",
+        link:    `/cards/${input.card_id}`,
+      })));
     })
     .catch(() => null);
 

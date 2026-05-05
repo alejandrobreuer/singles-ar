@@ -56,6 +56,7 @@ const GAME_VARIANT: Record<Game, React.ComponentProps<typeof Badge>["variant"]> 
 // Declared "use client" at the component level only.
 
 import { PublicProfileTabs } from "@/components/profile/PublicProfileTabs";
+import type { HistoryItem } from "@/components/profile/PublicProfileTabs";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -75,8 +76,8 @@ export default async function PublicProfilePage({
 
   if (!profile) notFound();
 
-  // ── Parallel: active listings + received reviews ──────────────────────────
-  const [listingsResult, reviewsResult] = await Promise.all([
+  // ── Parallel: active listings + received reviews + completed history ─────────
+  const [listingsResult, reviewsResult, historyResult] = await Promise.all([
     admin
       .from("listings")
       .select(`
@@ -91,16 +92,28 @@ export default async function PublicProfilePage({
     admin
       .from("reviews")
       .select(`
-        id, rating, comment, created_at,
+        id, transaction_id, rating, comment, created_at,
         reviewer:profiles!reviewer_id ( id, username, avatar_url )
       `)
       .eq("reviewee_id", profile.id)
       .order("created_at", { ascending: false })
-      .limit(30),
+      .limit(50),
+
+    admin
+      .from("transactions")
+      .select(`
+        id, price, completed_at,
+        card:cards!card_id ( id, name, set_name, image_url, game )
+      `)
+      .eq("seller_id", profile.id)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(50),
   ]);
 
   const listings = (listingsResult.data ?? []) as unknown as ListingWithCard[];
   const reviews  = (reviewsResult.data  ?? []) as unknown as ReviewWithReviewer[];
+  const history  = (historyResult.data  ?? []) as unknown as HistoryItem[];
 
   const isTopSeller     = profile.reputation_score >= 90 && profile.total_sales >= 20;
   const isUnreliable    = profile.is_reliable_buyer === false;
@@ -171,6 +184,7 @@ export default async function PublicProfilePage({
         <PublicProfileTabs
           listings={listings}
           reviews={reviews}
+          history={history}
           gameVariant={GAME_VARIANT}
         />
       </div>

@@ -15,7 +15,6 @@ import { toast }                 from "sonner";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
 import type { Condition, ListingType, AdminSettings } from "@/types/database";
-import { DELIVERY_STORES } from "@/lib/delivery-stores";
 
 // ─── Constants (same as sell page) ───────────────────────────────────────────
 
@@ -47,6 +46,7 @@ export default function EditListingPage() {
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
   const [deliveryStores,  setDeliveryStores]  = React.useState<string[]>([]);
+  const [storeOptions,    setStoreOptions]    = React.useState<string[]>([]);
   const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
@@ -63,15 +63,18 @@ export default function EditListingPage() {
   React.useEffect(() => {
     async function load() {
       try {
-        const [listingRes, settingsRes] = await Promise.all([
+        const [listingRes, settingsRes, storesRes] = await Promise.all([
           fetch(`/api/listings/${id}`),
           fetch("/api/settings"),
+          fetch("/api/delivery-stores"),
         ]);
 
         if (!listingRes.ok) { setNotFound(true); return; }
 
         const { data: listing } = await listingRes.json();
         const settingsData      = await settingsRes.json().catch(() => DEFAULT_SETTINGS);
+        const storesData        = await storesRes.json().catch(() => ({ data: [] }));
+        setStoreOptions((storesData.data ?? []).map((s: { name: string }) => s.name));
 
         // Pre-fill form
         setListingType(listing.listing_type ?? "sale");
@@ -378,7 +381,7 @@ export default function EditListingPage() {
                 Seleccioná las tiendas donde podés encontrarte con el comprador.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                {DELIVERY_STORES.map((store) => {
+                {storeOptions.map((store) => {
                   const checked = deliveryStores.includes(store);
                   return (
                     <label key={store} className="flex items-center gap-2.5 cursor-pointer group">

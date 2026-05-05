@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notify }            from "@/lib/notifications";
 
 // ─── POST /api/listings/[id]/buy ──────────────────────────────────────────────
 // Creates an in_chat transaction for a direct listing purchase (no buy-order).
@@ -83,6 +84,22 @@ export async function POST(
     body:           "Compra iniciada. Coordiná la entrega con el vendedor y confirmá cuando se realice.",
     message_type:   "system",
   });
+
+  // Non-blocking: notify seller of new purchase intent
+  const _sellerId = listing.seller_id;
+  const _cardId   = listing.card_id;
+  const _txId     = tx.id;
+  admin
+    .from("cards").select("name").eq("id", _cardId).single()
+    .then(({ data: card }) =>
+      notify({
+        user_id: _sellerId,
+        type:    "card_sold",
+        title:   `Quieren comprar: ${card?.name ?? "tu carta"}`,
+        link:    `/chat/${_txId}`,
+      })
+    )
+    .catch(() => null);
 
   return NextResponse.json({ data: { transactionId: tx.id } });
 }

@@ -114,6 +114,23 @@ CREATE INDEX IF NOT EXISTS idx_listings_seller        ON public.listings (seller
 CREATE INDEX IF NOT EXISTS idx_listings_status        ON public.listings (status);
 
 
+-- ─── Delivery Store Options ───────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.delivery_store_options (
+  id         uuid    PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text    NOT NULL UNIQUE,
+  is_active  boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+ALTER TABLE public.delivery_store_options ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "delivery_stores_public_read"
+  ON public.delivery_store_options FOR SELECT
+  USING (true);
+
+
 -- ─── Buy Orders ───────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.buy_orders (
