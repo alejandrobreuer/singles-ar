@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient }        from "@/lib/supabase/server";
-import { createAdminClient }   from "@/lib/supabase/admin";
+import { createClient }           from "@/lib/supabase/server";
+import { createAdminClient }      from "@/lib/supabase/admin";
 import { createSellerPreference } from "@/lib/mercadopago/client";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -23,18 +23,16 @@ async function getCommissionPercent(): Promise<number> {
 }
 
 // ─── POST /api/payments/create-preference ─────────────────────────────────────
-//
-// Creates a MercadoPago payment preference using the seller's access token
-// (marketplace split-payment flow). The platform_fee (marketplace_fee) is
-// automatically routed to our MP account.
 
 export async function POST(req: NextRequest) {
-  // ── Auth ────────────────────────────────────────────────────────────────────
+  try {
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
 
-  // ── Body ────────────────────────────────────────────────────────────────────
+  // ── Body ──────────────────────────────────────────────────────────────────
   let body: unknown;
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Body inválido." }, { status: 400 }); }
@@ -48,9 +46,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { transactionId } = parsed.data;
+  console.log("[create-preference] 1. Request arrived — transactionId:", transactionId, "| buyerId:", user.id);
+
   const admin = createAdminClient();
 
-  // ── Fetch transaction ────────────────────────────────────────────────────────
+  // ── Fetch transaction ──────────────────────────────────────────────────────
   const { data: tx, error: txError } = await admin
     .from("transactions")
     .select(`
@@ -60,90 +60,126 @@ export async function POST(req: NextRequest) {
     .eq("id", transactionId)
     .single();
 
+  console.log("[create-preference] 2. Transaction fetch result:", JSON.stringify(tx, null, 2));
+  if (txError) console.error("[create-preference] 2. Transaction fetch error:", txError);
+
   if (txError || !tx) {
-    return NextResponse.json({ error: "Transacción no encontrada." }, { status: 404 });
+    const resp = { error: "Transacción no encontrada." };
+    console.log("[create-preference] RETURNING 404:", resp);
+    return NextResponse.json(resp, { status: 404 });
   }
 
-  // Buyer must be the caller
   if (tx.buyer_id !== user.id) {
-    return NextResponse.json({ error: "Solo el comprador puede iniciar el pago." }, { status: 403 });
+    const resp = { error: "Solo el comprador puede iniciar el pago." };
+    console.log("[create-preference] RETURNING 403:", resp);
+    return NextResponse.json(resp, { status: 403 });
   }
 
-  if (tx.status !== "in_chat") {
-    return NextResponse.json(
-      { error: "La transacción no está en estado de pago." },
-      { status: 422 }
-    );
+  if (tx.status !== "in_chat" && tx.status !== "payment_pending") {
+    const resp = { error: "La transacción no puede procesarse en su estado actual.", status: tx.status };
+    console.log("[create-preference] RETURNING 422 (bad status):", resp);
+    return NextResponse.json(resp, { status: 422 });
   }
 
-  // ── Fetch seller's MP access token ───────────────────────────────────────────
+  // ── Fetch seller profile ───────────────────────────────────────────────────
   const { data: sellerProfile, error: sellerError } = await admin
     .from("profiles")
     .select("mercadopago_access_token, mercadopago_user_id, username")
     .eq("id", tx.seller_id)
     .single();
 
+  console.log("[create-preference] 3. Seller profile — username:", sellerProfile?.username,
+    "| mp_user_id:", sellerProfile?.mercadopago_user_id,
+    "| access_token (first 20):", sellerProfile?.mercadopago_access_token?.slice(0, 20) ?? "NULL");
+  if (sellerError) console.error("[create-preference] 3. Seller fetch error:", sellerError);
+
   if (sellerError || !sellerProfile?.mercadopago_access_token) {
-    return NextResponse.json(
-      { error: "El vendedor no tiene MercadoPago conectado." },
-      { status: 422 }
-    );
+    const resp = { error: "El vendedor no tiene MercadoPago conectado." };
+    console.log("[create-preference] RETURNING 422 (no MP token):", resp);
+    return NextResponse.json(resp, { status: 422 });
   }
 
-  // ── Calculate fees ───────────────────────────────────────────────────────────
-  const commissionPct  = await getCommissionPercent();
-  const price          = Number(tx.price);
-  const platformFee    = Math.round(price * (commissionPct / 100) * 100) / 100;
+  // ── Calculate fees ─────────────────────────────────────────────────────────
+  const commissionPct = await getCommissionPercent();
+  const price         = Number(tx.price);
+  const platformFee   = Math.round(price * (commissionPct / 100) * 100) / 100;
+  console.log("[create-preference] Commission:", commissionPct, "% | price:", price, "| platformFee:", platformFee);
 
-  // ── Card details for item title ──────────────────────────────────────────────
-  const card = tx.card as { name: string; set_name: string | null } | null;
+  // ── Build preference payload ───────────────────────────────────────────────
+  const card      = tx.card as { name: string; set_name: string | null } | null;
   const itemTitle = card
     ? `${card.name}${card.set_name ? ` — ${card.set_name}` : ""} · Singles.ar`
     : "Carta TCG — Singles.ar";
-
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://singles.ar";
 
-  // ── Create MP Preference with seller's token ─────────────────────────────────
+  const preferenceBody = {
+    ...(platformFee > 0 && { marketplace_fee: platformFee }),
+    items: [
+      {
+        id:          transactionId,
+        title:       itemTitle,
+        unit_price:  price,
+        quantity:    1,
+        currency_id: tx.currency ?? "ARS",
+      },
+    ],
+    back_urls: {
+      success: `${appUrl}/payment/success`,
+      failure: `${appUrl}/payment/failure`,
+      pending: `${appUrl}/payment/pending`,
+    },
+    ...(appUrl.startsWith("https://") && { auto_return: "approved" }),
+    external_reference: transactionId,
+    notification_url:   `${appUrl}/api/payments/webhook`,
+    metadata:           { transaction_id: transactionId },
+  };
+
+  console.log("[create-preference] 4. Preference payload:", JSON.stringify(preferenceBody, null, 2));
+
+  // ── Call MP ────────────────────────────────────────────────────────────────
   const sellerPreference = createSellerPreference(sellerProfile.mercadopago_access_token);
 
   let preference: Awaited<ReturnType<typeof sellerPreference.create>>;
   try {
-    preference = await sellerPreference.create({
-      body: {
-        items: [
-          {
-            id:         transactionId,
-            title:      itemTitle,
-            unit_price: price,
-            quantity:   1,
-            currency_id: tx.currency ?? "ARS",
-          },
-        ],
-        marketplace_fee: platformFee,
-        back_urls: {
-          success: `${appUrl}/payment/success`,
-          failure: `${appUrl}/payment/failure`,
-          pending: `${appUrl}/payment/pending`,
-        },
-        auto_return:        "approved",
-        external_reference: transactionId,   // used to look up tx on the success page
-        notification_url:   `${appUrl}/api/payments/webhook`,
-        metadata:           { transaction_id: transactionId },
-      },
-    });
-  } catch (err) {
-    console.error("[create-preference] MP error:", err);
-    return NextResponse.json(
-      { error: "No se pudo crear el pago. Intentá de nuevo." },
-      { status: 502 }
-    );
+    preference = await sellerPreference.create({ body: preferenceBody });
+
+    console.log("[create-preference] 5. MP response:", JSON.stringify({
+      status:             (preference as Record<string, unknown>).status,
+      id:                 preference.id,
+      init_point:         preference.init_point,
+      sandbox_init_point: preference.sandbox_init_point,
+      error:              (preference as Record<string, unknown>).error,
+      message:            (preference as Record<string, unknown>).message,
+      cause:              (preference as Record<string, unknown>).cause,
+    }, null, 2));
+
+  } catch (err: unknown) {
+    console.error("[create-preference] 5. MP SDK threw:", err);
+    if (err && typeof err === "object") {
+      const e = err as Record<string, unknown>;
+      console.error("[create-preference] 5. err.message:", e.message);
+      console.error("[create-preference] 5. err.cause:",   e.cause);
+      console.error("[create-preference] 5. err.stack:",   e.stack);
+      console.error("[create-preference] 5. full JSON:",   JSON.stringify(e, null, 2));
+    }
+    const cause = (err as Record<string, unknown>)?.cause as Record<string, unknown> | undefined;
+    const mpMessage =
+      (cause?.message as string | undefined) ??
+      (cause?.error   as string | undefined) ??
+      ((err as Record<string, unknown>)?.message as string | undefined) ??
+      JSON.stringify(err, null, 2).slice(0, 300);
+    const resp = { error: mpMessage ?? "No se pudo crear el pago en MercadoPago." };
+    console.log("[create-preference] RETURNING 502:", resp);
+    return NextResponse.json(resp, { status: 502 });
   }
 
   if (!preference.id) {
-    return NextResponse.json({ error: "Respuesta inválida de MercadoPago." }, { status: 502 });
+    const resp = { error: "Respuesta inválida de MercadoPago." };
+    console.log("[create-preference] RETURNING 502 (no preference.id):", resp);
+    return NextResponse.json(resp, { status: 502 });
   }
 
-  // ── Persist preference ID + move to payment_pending ──────────────────────────
+  // ── Persist + status update ────────────────────────────────────────────────
   const { error: updateError } = await admin
     .from("transactions")
     .update({
@@ -151,11 +187,10 @@ export async function POST(req: NextRequest) {
       status:           "payment_pending",
       updated_at:       new Date().toISOString(),
     })
-    .eq("id", transactionId);
+    .eq("id", transactionId)
+    .in("status", ["in_chat", "payment_pending"]);
 
-  if (updateError) {
-    console.error("[create-preference] DB update error:", updateError);
-  }
+  if (updateError) console.error("[create-preference] DB update error:", updateError);
 
   // System message in chat
   await admin.from("chat_messages").insert({
@@ -165,11 +200,21 @@ export async function POST(req: NextRequest) {
     message_type:   "system",
   });
 
-  return NextResponse.json({
+  const responsePayload = {
     data: {
       preferenceId: preference.id,
-      initPoint:    preference.init_point,      // full MP checkout URL
+      initPoint:    preference.init_point,
       sandboxUrl:   preference.sandbox_init_point,
     },
-  });
+  };
+  console.log("[create-preference] 6. Returning to frontend:", JSON.stringify(responsePayload, null, 2));
+  return NextResponse.json(responsePayload);
+
+  } catch (outerErr: unknown) {
+    console.error("[create-preference] UNHANDLED ERROR:", outerErr);
+    if (outerErr && typeof outerErr === "object") {
+      console.error("[create-preference] stack:", (outerErr as Record<string, unknown>).stack);
+    }
+    return NextResponse.json({ error: "Error interno del servidor." }, { status: 500 });
+  }
 }

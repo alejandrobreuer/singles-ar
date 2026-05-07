@@ -44,6 +44,7 @@ export interface Profile {
   mercadopago_refresh_token: string | null;
   mercadopago_user_id:       string | null;
   mercadopago_connected_at:  string | null;
+  mercadopago_nickname:      string | null;
 
   // Reputation & counters
   reputation_score:         number;         // 0–100; recalculated by recalculate_reputation()

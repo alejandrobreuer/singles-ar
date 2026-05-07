@@ -44,7 +44,7 @@ export function TransactionActions({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "No se pudo iniciar el pago.");
-      const url = json.data?.sandboxUrl ?? json.data?.initPoint;
+      const url = json.data?.initPoint ?? json.data?.sandboxUrl;
       if (url) window.location.href = url;
       else throw new Error("No se recibió URL de pago.");
     } catch (err: unknown) {
@@ -98,27 +98,32 @@ export function TransactionActions({
     return (
       <div className="flex flex-col gap-2.5">
         {isBuyer ? (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-              onClick={handlePay}
-              disabled={busy}
-              className="flex-1"
-            >
-              {busy ? "Iniciando pago…" : "Pagar con MercadoPago"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<XCircle size={14} />}
-              loading={cancelBusy}
-              onClick={doCancel}
-              className="text-error hover:bg-error-subtle hover:text-error shrink-0"
-            >
-              Cancelar
-            </Button>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-warning font-sans">
+              El pago no se pudo iniciar automáticamente. Podés reintentarlo:
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                onClick={handlePay}
+                disabled={busy}
+                className="flex-1"
+              >
+                {busy ? "Iniciando pago…" : "Pagar con MercadoPago"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={<XCircle size={14} />}
+                loading={cancelBusy}
+                onClick={doCancel}
+                className="text-error hover:bg-error-subtle hover:text-error shrink-0"
+              >
+                Cancelar
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-2">

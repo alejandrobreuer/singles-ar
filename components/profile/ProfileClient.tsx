@@ -632,6 +632,8 @@ export function ProfileClient({
               {profile.mercadopago_user_id ? (
                 <MpConnected
                   connectedAt={profile.mercadopago_connected_at}
+                  userId={profile.mercadopago_user_id}
+                  nickname={profile.mercadopago_nickname ?? null}
                   onDisconnect={() => router.refresh()}
                 />
               ) : (
@@ -670,10 +672,14 @@ export function ProfileClient({
 
 function MpConnected({
   connectedAt,
+  userId,
+  nickname,
   onDisconnect,
 }: {
-  connectedAt:   string | null;
-  onDisconnect:  () => void;
+  connectedAt:  string | null;
+  userId:       string | null;
+  nickname:     string | null;
+  onDisconnect: () => void;
 }) {
   const [disconnecting, setDisconnecting] = React.useState(false);
   const [confirm,       setConfirm]       = React.useState(false);
@@ -716,6 +722,22 @@ function MpConnected({
         <a href="/api/auth/mercadopago">
           <Button variant="ghost" size="sm">Reconectar</Button>
         </a>
+      </div>
+
+      {/* Account info */}
+      <div className="flex flex-col gap-1 px-1 py-1.5 rounded-lg bg-success/5 border border-success/10">
+        {nickname && (
+          <div className="flex items-center gap-2 text-xs font-sans">
+            <span className="text-text-muted w-16 shrink-0">Cuenta</span>
+            <span className="font-medium text-text-primary">{nickname}</span>
+          </div>
+        )}
+        {userId && (
+          <div className="flex items-center gap-2 text-xs font-sans">
+            <span className="text-text-muted w-16 shrink-0">ID de usuario</span>
+            <span className="font-mono text-text-secondary">{userId}</span>
+          </div>
+        )}
       </div>
 
       {/* Token expiry */}

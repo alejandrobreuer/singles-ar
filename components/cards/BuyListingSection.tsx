@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { ShoppingCart, X, Star, Tag, Plus, Clock, MapPin } from "lucide-react";
 import { cn }           from "@/lib/utils";
 import { Badge }        from "@/components/ui/badge";
@@ -207,7 +206,7 @@ function BuyConfirmModal({
   card:    Card;
   onClose: () => void;
 }) {
-  const router  = useRouter();
+  const [step,  setStep]  = React.useState<"confirm" | "paying">("confirm");
   const [busy,  setBusy]  = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -219,14 +218,46 @@ function BuyConfirmModal({
   async function handleConfirm() {
     setError(null);
     setBusy(true);
+
+    // Step 1 — reserve the listing and create the transaction
+    setStep("paying");
+    let transactionId: string;
     try {
       const res  = await fetch(`/api/listings/${listing.id}/buy`, { method: "POST" });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Error al iniciar la compra.");
-      router.push(`/chat/${json.data.transactionId}`);
+      if (!res.ok) throw new Error(json.error ?? "Error al reservar la carta.");
+      transactionId = json.data.transactionId;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
       setBusy(false);
+      setStep("confirm");
+      return;
+    }
+
+    // Step 2 — create the MercadoPago preference
+    try {
+      const res  = await fetch("/api/payments/create-preference", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ transactionId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        // Attempt to release the reservation we just made
+        fetch(`/api/transactions/${transactionId}/action`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ action: "cancel" }),
+        }).catch(() => null);
+        throw new Error(json.error ?? "No se pudo iniciar el pago.");
+      }
+      const url = json.data?.initPoint ?? json.data?.sandboxUrl; // TODO: revert to sandboxUrl for sandbox testing
+      if (!url) throw new Error("No se recibió URL de pago de MercadoPago.");
+      window.location.href = url;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+      setBusy(false);
+      setStep("confirm");
     }
   }
 
@@ -302,11 +333,16 @@ function BuyConfirmModal({
 
         {/* Note */}
         <p className="mx-5 mb-4 text-xs text-text-muted font-sans leading-relaxed">
-          Se abrirá un chat con el vendedor para coordinar la entrega. Ambas partes deben confirmar antes de que la transacción se complete.
+          {step === "paying"
+            ? "Reservando la carta y preparando el checkout de MercadoPago…"
+            : "Serás redirigido a MercadoPago para completar el pago. Una vez confirmado, podrás coordinar la entrega con el vendedor."}
         </p>
 
         {error && (
-          <p className="mx-5 mb-3 text-xs text-error font-sans">{error}</p>
+          <div className="mx-5 mb-3 rounded-lg bg-error-subtle border border-error/20 px-3 py-2.5">
+            <p className="text-xs font-semibold text-error font-sans mb-0.5">No se pudo procesar la compra</p>
+            <p className="text-xs text-error/80 font-sans">{error}</p>
+          </div>
         )}
 
         {/* Actions */}
@@ -322,7 +358,9 @@ function BuyConfirmModal({
             ) : (
               <ShoppingCart size={15} />
             )}
-            {busy ? "Iniciando…" : "Confirmar compra"}
+            {busy
+              ? (step === "paying" ? "Redirigiendo a MercadoPago…" : "Reservando…")
+              : "Pagar con MercadoPago"}
           </button>
           <button
             type="button"

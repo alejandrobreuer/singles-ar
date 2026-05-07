@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   // ── Fetch transaction ────────────────────────────────────────────────────────
   const { data: tx } = await admin
     .from("transactions")
-    .select("id, buyer_id, seller_id, status")
+    .select("id, buyer_id, seller_id, status, completed_at")
     .eq("id", transactionId)
     .single();
 
@@ -55,6 +55,23 @@ export async function POST(req: NextRequest) {
   if (tx.status !== "completed") {
     return NextResponse.json(
       { error: "Solo se pueden reseñar transacciones completadas." },
+      { status: 422 }
+    );
+  }
+
+  // Must be within 15-day review window
+  const REVIEW_WINDOW_DAYS = 15;
+  if (!tx.completed_at) {
+    return NextResponse.json(
+      { error: "La transacción no tiene fecha de finalización registrada." },
+      { status: 422 }
+    );
+  }
+  const completedAt  = new Date(tx.completed_at);
+  const deadlineMs   = completedAt.getTime() + REVIEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  if (Date.now() > deadlineMs) {
+    return NextResponse.json(
+      { error: "El período para dejar una reseña (15 días) ya expiró." },
       { status: 422 }
     );
   }

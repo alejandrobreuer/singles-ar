@@ -1,7 +1,8 @@
 import * as React from "react";
 import Link from "next/link";
-import { XCircle, MessageCircle, RefreshCw } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RetryPaymentButton } from "@/components/payment/RetryPaymentButton";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -13,21 +14,24 @@ export default function PaymentFailurePage({
   const transactionId = searchParams.external_reference;
   const statusDetail  = searchParams.status_detail;
 
-  // Map MP status_detail codes to human-readable messages
-  const errorMessages: Record<string, string> = {
-    cc_rejected_insufficient_amount: "Fondos insuficientes en tu tarjeta.",
-    cc_rejected_bad_filled_card_number: "El número de tarjeta es incorrecto.",
-    cc_rejected_bad_filled_date: "La fecha de vencimiento es incorrecta.",
-    cc_rejected_bad_filled_security_code: "El código de seguridad es incorrecto.",
-    cc_rejected_blacklist: "No pudimos procesar tu pago con esta tarjeta.",
-    cc_rejected_call_for_authorize: "Tu banco requiere autorización. Llamá a tu banco.",
-    cc_rejected_card_disabled: "Tu tarjeta está deshabilitada.",
-    cc_rejected_high_risk: "Tu pago fue rechazado por seguridad.",
-    cc_rejected_max_attempts: "Superaste el límite de intentos. Usá otro medio de pago.",
+  const errorMessages: Record<string, { title: string; detail: string }> = {
+    cc_rejected_insufficient_amount:    { title: "Fondos insuficientes",           detail: "Tu tarjeta no tiene saldo suficiente para completar el pago." },
+    cc_rejected_bad_filled_card_number: { title: "Número de tarjeta incorrecto",   detail: "Verificá que el número ingresado sea correcto." },
+    cc_rejected_bad_filled_date:        { title: "Fecha de vencimiento incorrecta", detail: "Revisá la fecha de vencimiento de tu tarjeta." },
+    cc_rejected_bad_filled_security_code: { title: "Código de seguridad incorrecto", detail: "El CVV ingresado no coincide con tu tarjeta." },
+    cc_rejected_blacklist:              { title: "Tarjeta no aceptada",             detail: "No pudimos procesar tu pago con esta tarjeta." },
+    cc_rejected_call_for_authorize:     { title: "Requiere autorización del banco", detail: "Tu banco bloqueó el pago. Comunicate con ellos para habilitarlo." },
+    cc_rejected_card_disabled:          { title: "Tarjeta deshabilitada",           detail: "Tu tarjeta está deshabilitada. Contactá a tu banco." },
+    cc_rejected_high_risk:              { title: "Rechazado por seguridad",         detail: "MercadoPago rechazó el pago por prevención de fraude." },
+    cc_rejected_max_attempts:           { title: "Demasiados intentos",             detail: "Superaste el límite de intentos. Esperá unos minutos o usá otro medio de pago." },
+    pending_contingency:                { title: "Pago en revisión",                detail: "Tu pago está siendo revisado. Te avisaremos cuando se confirme." },
+    pending_review_manual:              { title: "Pago en revisión manual",         detail: "El pago está siendo revisado por MercadoPago. Puede demorar hasta 48 h." },
   };
 
-  const errorMsg = (statusDetail && errorMessages[statusDetail])
-    ?? "Tu pago no pudo ser procesado. Podés intentarlo de nuevo o usar otro medio de pago.";
+  const err = (statusDetail && errorMessages[statusDetail]) ?? {
+    title:  "Pago no aprobado",
+    detail: "Tu pago no pudo ser procesado. Podés intentarlo de nuevo o usar otro medio de pago.",
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -39,14 +43,19 @@ export default function PaymentFailurePage({
             <XCircle size={32} className="text-error" />
           </div>
 
-          {/* Title */}
+          {/* Title + error detail */}
           <div>
             <h1 className="text-2xl font-serif font-semibold text-text-primary mb-1">
-              El pago no fue aprobado
+              {err.title}
             </h1>
             <p className="text-sm text-text-muted font-sans leading-relaxed max-w-xs">
-              {errorMsg}
+              {err.detail}
             </p>
+            {statusDetail && (
+              <p className="mt-2 text-2xs text-text-muted font-sans font-mono">
+                Código: {statusDetail}
+              </p>
+            )}
           </div>
 
           {/* Tips */}
@@ -55,31 +64,15 @@ export default function PaymentFailurePage({
             <ul className="text-xs text-text-muted font-sans space-y-1 list-disc list-inside">
               <li>Usar otra tarjeta o medio de pago</li>
               <li>Verificar los datos ingresados</li>
-              <li>Contactar a tu banco</li>
+              <li>Contactar a tu banco si el problema persiste</li>
             </ul>
           </div>
 
           {/* CTAs */}
           <div className="flex flex-col gap-2.5 w-full">
             {transactionId && (
-              <Button
-                variant="primary"
-                size="lg"
-                className="w-full"
-                leftIcon={<RefreshCw size={15} />}
-                asChild
-              >
-                <Link href={`/chat/${transactionId}`}>
-                  Volver al chat e intentar de nuevo
-                </Link>
-              </Button>
+              <RetryPaymentButton transactionId={transactionId} />
             )}
-            <Button variant="secondary" size="md" className="w-full" asChild>
-              <Link href={transactionId ? `/chat/${transactionId}` : "/chat"} >
-                <MessageCircle size={15} className="mr-1.5" />
-                Hablar con el vendedor
-              </Link>
-            </Button>
             <Button variant="ghost" size="md" className="w-full" asChild>
               <Link href="/">Volver al inicio</Link>
             </Button>
