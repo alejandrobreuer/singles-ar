@@ -15,14 +15,14 @@ export interface FilterOptions {
 }
 
 interface ExploreFiltersProps {
-  currentGame:    string;
-  currentSet:     string;
-  currentRarity:  string;
-  currentColor:   string;
-  currentQ:       string;
-  currentSort:    string;
-  currentInStock: boolean;
-  filterOptions:  FilterOptions | null;
+  currentGame:     string;
+  currentSet:      string;
+  currentRarities: string[];
+  currentColors:   string[];
+  currentQ:        string;
+  currentSort:     string;
+  currentInStock:  boolean;
+  filterOptions:   FilterOptions | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -33,6 +33,26 @@ const GAME_OPTIONS = [
   { value: "magic",    label: "Magic",             badge: "magic" as const },
   { value: "pokemon",  label: "Pokémon",           badge: "poke"  as const },
 ];
+
+const RARITY_LABELS: Record<string, string> = {
+  C:   "Common",
+  UC:  "Uncommon",
+  R:   "Rare",
+  M:   "Mythic Rare",
+  TR:  "Trainer Rare",
+  PR:  "Promo",
+  SR:  "Super Rare",
+  SEC: "Secret Rare",
+  L:   "Leader",
+};
+
+const RARITY_ORDER = ["C", "UC", "R", "M", "TR", "PR", "SR", "SEC", "L"];
+
+function sortAndLabelRarities(rarities: string[]): { value: string; label: string }[] {
+  const known   = RARITY_ORDER.filter((r) => rarities.includes(r));
+  const unknown = rarities.filter((r) => !RARITY_ORDER.includes(r)).sort();
+  return [...known, ...unknown].map((r) => ({ value: r, label: RARITY_LABELS[r] ?? r }));
+}
 
 const SORT_OPTIONS = [
   { value: "recent",     label: "Más recientes"         },
@@ -45,35 +65,35 @@ const SORT_OPTIONS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ExploreFilters({
-  currentGame, currentSet, currentRarity, currentColor, currentQ,
+  currentGame, currentSet, currentRarities, currentColors, currentQ,
   currentSort, currentInStock, filterOptions,
 }: ExploreFiltersProps) {
   const router = useRouter();
 
   function buildUrl(overrides: {
-    game?:    string;
-    set?:     string;
-    rarity?:  string;
-    color?:   string;
-    q?:       string;
-    sort?:    string;
-    instock?: boolean;
+    game?:     string;
+    set?:      string;
+    rarities?: string[];
+    colors?:   string[];
+    q?:        string;
+    sort?:     string;
+    instock?:  boolean;
   }) {
     const merged = {
-      q:       overrides.q       ?? currentQ,
-      game:    overrides.game    ?? currentGame,
-      set:     overrides.set     !== undefined ? overrides.set    : currentSet,
-      rarity:  overrides.rarity  !== undefined ? overrides.rarity : currentRarity,
-      color:   overrides.color   !== undefined ? overrides.color  : currentColor,
-      sort:    overrides.sort    !== undefined ? overrides.sort   : currentSort,
-      instock: overrides.instock !== undefined ? overrides.instock : currentInStock,
+      q:        overrides.q        ?? currentQ,
+      game:     overrides.game     ?? currentGame,
+      set:      overrides.set      !== undefined ? overrides.set      : currentSet,
+      rarities: overrides.rarities !== undefined ? overrides.rarities : currentRarities,
+      colors:   overrides.colors   !== undefined ? overrides.colors   : currentColors,
+      sort:     overrides.sort     !== undefined ? overrides.sort     : currentSort,
+      instock:  overrides.instock  !== undefined ? overrides.instock  : currentInStock,
     };
     const params = new URLSearchParams();
     if (merged.q)                                params.set("q",       merged.q);
     if (merged.game)                             params.set("game",    merged.game);
     if (merged.set)                              params.set("set",     merged.set);
-    if (merged.rarity)                           params.set("rarity",  merged.rarity);
-    if (merged.color)                            params.set("color",   merged.color);
+    if (merged.rarities.length)                  params.set("rarity",  merged.rarities.join(","));
+    if (merged.colors.length)                    params.set("color",   merged.colors.join(","));
     if (merged.sort && merged.sort !== "recent") params.set("sort",    merged.sort);
     if (merged.instock)                          params.set("instock", "1");
     return `/cards?${params.toString()}`;
@@ -90,7 +110,7 @@ export function ExploreFilters({
 
   const activeSort    = currentSort || "recent";
   const hasAnyFilter  = Boolean(
-    currentGame || currentSet || currentRarity || currentColor || currentQ ||
+    currentGame || currentSet || currentRarities.length || currentColors.length || currentQ ||
     (activeSort !== "recent") || currentInStock
   );
 
@@ -176,7 +196,7 @@ export function ExploreFilters({
       {currentGame && filterOptions && (
         <>
           {filterOptions.sets.length > 0 && (
-            <FilterGroup label="Set">
+            <FilterGroup label="Set" collapsible defaultOpen={Boolean(currentSet)}>
               <OptionList
                 options={filterOptions.sets.map((s) => ({ value: s.code, label: `${s.code} ${s.name}` }))}
                 selected={currentSet}
@@ -188,30 +208,30 @@ export function ExploreFilters({
 
           {filterOptions.rarities.length > 0 && (
             <FilterGroup label="Rareza">
-              <OptionList
-                options={filterOptions.rarities.map((r) => ({ value: r, label: r }))}
-                selected={currentRarity}
-                onSelect={(v) => router.push(buildUrl({ rarity: v === currentRarity ? "" : v }))}
+              <PillList
+                options={sortAndLabelRarities(filterOptions.rarities)}
+                selected={currentRarities}
+                onSelect={(v) => {
+                  const next = currentRarities.includes(v)
+                    ? currentRarities.filter((r) => r !== v)
+                    : [...currentRarities, v];
+                  router.push(buildUrl({ rarities: next }));
+                }}
               />
             </FilterGroup>
           )}
 
-          {filterOptions.colors.length > 0 && currentGame !== "pokemon" && (
-            <FilterGroup label="Color">
-              <OptionList
-                options={filterOptions.colors.map((c) => ({ value: c, label: c }))}
-                selected={currentColor}
-                onSelect={(v) => router.push(buildUrl({ color: v === currentColor ? "" : v }))}
-              />
-            </FilterGroup>
-          )}
-
-          {filterOptions.colors.length > 0 && currentGame === "pokemon" && (
-            <FilterGroup label="Tipos">
-              <OptionList
-                options={filterOptions.colors.map((c) => ({ value: c, label: c }))}
-                selected={currentColor}
-                onSelect={(v) => router.push(buildUrl({ color: v === currentColor ? "" : v }))}
+          {filterOptions.colors.length > 0 && (
+            <FilterGroup label={currentGame === "pokemon" ? "Tipos" : "Color"}>
+              <PillList
+                options={filterOptions.colors.filter((c) => c !== "Character").map((c) => ({ value: c, label: c }))}
+                selected={currentColors}
+                onSelect={(v) => {
+                  const next = currentColors.includes(v)
+                    ? currentColors.filter((c) => c !== v)
+                    : [...currentColors, v];
+                  router.push(buildUrl({ colors: next }));
+                }}
               />
             </FilterGroup>
           )}
@@ -235,13 +255,68 @@ export function ExploreFilters({
 
 // ─── FilterGroup ──────────────────────────────────────────────────────────────
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterGroup({
+  label, children, collapsible = false, defaultOpen = true,
+}: {
+  label: string;
+  children: React.ReactNode;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = React.useState(defaultOpen);
+
   return (
     <div>
-      <p className="text-2xs font-semibold font-sans text-white uppercase tracking-widest mb-2 px-2.5 py-1 rounded-md bg-primary">
-        {label}
-      </p>
-      {children}
+      <div
+        role={collapsible ? "button" : undefined}
+        tabIndex={collapsible ? 0 : undefined}
+        onClick={collapsible ? () => setOpen((v) => !v) : undefined}
+        onKeyDown={collapsible ? (e) => { if (e.key === "Enter" || e.key === " ") setOpen((v) => !v); } : undefined}
+        className={cn(
+          "flex items-center justify-between text-2xs font-semibold font-sans text-white uppercase tracking-widest mb-2 px-2.5 py-1 rounded-md bg-primary",
+          collapsible && "cursor-pointer select-none"
+        )}
+      >
+        <span>{label}</span>
+        {collapsible && (open
+          ? <ChevronUp size={11} className="shrink-0" />
+          : <ChevronDown size={11} className="shrink-0" />
+        )}
+      </div>
+      {(!collapsible || open) && children}
+    </div>
+  );
+}
+
+// ─── PillList ─────────────────────────────────────────────────────────────────
+
+function PillList({
+  options, selected, onSelect,
+}: {
+  options:  { value: string; label: string }[];
+  selected: string[];
+  onSelect: (v: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-1.5 px-0.5">
+      {options.map((opt) => {
+        const active = selected.includes(opt.value);
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onSelect(opt.value)}
+            className={cn(
+              "px-2.5 py-1 rounded-full text-2xs font-sans font-medium transition-all",
+              active
+                ? "bg-primary text-white"
+                : "bg-background border border-border text-text-secondary hover:border-primary/40 hover:text-text-primary"
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -303,29 +378,34 @@ function OptionList({
         </div>
       )}
 
-      {visible.length === 0 ? (
-        <p className="text-xs text-text-muted font-sans px-3 py-2">Sin resultados.</p>
-      ) : (
-        visible.map((opt) => {
-          const active = selected === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onSelect(opt.value)}
-              className={cn(
-                "flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-sans transition-all text-left",
-                active
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-text-secondary hover:bg-secondary"
-              )}
-            >
-              <span className="truncate">{opt.label}</span>
-              {active && <X size={10} className="shrink-0 ml-1.5 opacity-60" />}
-            </button>
-          );
-        })
-      )}
+      <div className={cn(
+        "flex flex-col gap-0.5",
+        searchable && "max-h-[200px] overflow-y-auto pr-0.5"
+      )}>
+        {visible.length === 0 ? (
+          <p className="text-xs text-text-muted font-sans px-3 py-2">Sin resultados.</p>
+        ) : (
+          visible.map((opt) => {
+            const active = selected === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onSelect(opt.value)}
+                className={cn(
+                  "flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-sans transition-all text-left",
+                  active
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-text-secondary hover:bg-secondary"
+                )}
+              >
+                <span className="truncate">{opt.label}</span>
+                {active && <X size={10} className="shrink-0 ml-1.5 opacity-60" />}
+              </button>
+            );
+          })
+        )}
+      </div>
 
       {hasMore && (
         <button

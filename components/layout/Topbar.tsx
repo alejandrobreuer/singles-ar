@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, ChevronDown, LogOut, User, Package, ShieldCheck } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Package, ShieldCheck, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Session } from "@supabase/supabase-js";
@@ -74,6 +74,86 @@ function NavItem({ href, label }: NavLink) {
     >
       {label}
     </Link>
+  );
+}
+
+// ─── Nav search ───────────────────────────────────────────────────────────────
+
+function NavSearch() {
+  const router             = useRouter();
+  const [open, setOpen]    = React.useState(false);
+  const [query, setQuery]  = React.useState("");
+  const wrapperRef         = React.useRef<HTMLDivElement>(null);
+  const inputRef           = React.useRef<HTMLInputElement>(null);
+
+  // Auto-focus when opening
+  React.useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  // Close on outside click
+  React.useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Close on Escape
+  React.useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === "Escape") { setOpen(false); setQuery(""); }
+    }
+    if (open) document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
+
+  function handleSubmit(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && query.trim()) {
+      router.push(`/cards?q=${encodeURIComponent(query.trim())}`);
+      setOpen(false);
+      setQuery("");
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} className="hidden md:flex items-center">
+      <div
+        className={cn(
+          "flex items-center overflow-hidden transition-all duration-200 ease-in-out",
+          open
+            ? "w-52 border border-border rounded-lg bg-surface px-2"
+            : "w-8"
+        )}
+      >
+        {open ? (
+          <>
+            <Search size={14} className="shrink-0 text-text-muted" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleSubmit}
+              placeholder="Buscar cartas..."
+              className="flex-1 min-w-0 bg-transparent px-2 py-1.5 text-sm font-sans text-text-primary placeholder:text-text-muted focus:outline-none"
+            />
+          </>
+        ) : (
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Buscar"
+            className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-primary/5 transition-colors duration-150"
+          >
+            <Search size={18} />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -343,8 +423,9 @@ export function Topbar() {
             ))}
           </nav>
 
-          {/* Right: Auth — pushed to far right */}
+          {/* Right: Search + Auth — pushed to far right */}
           <div className="ml-auto flex items-center gap-2">
+            <NavSearch />
             {!authReady ? (
               <div className="hidden md:flex items-center gap-2">
                 <div className="w-20 h-8 rounded-lg bg-secondary animate-pulse" />

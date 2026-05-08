@@ -24,7 +24,7 @@ const PAGE_SIZE = 24;
 // ─── Server data helpers ──────────────────────────────────────────────────────
 
 async function fetchCards(
-  q: string, game: string, set: string, rarity: string, color: string,
+  q: string, game: string, set: string, rarities: string[], colors: string[],
   sort: string, instock: boolean, page: number
 ) {
   if (!(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").startsWith("http")) {
@@ -49,10 +49,10 @@ async function fetchCards(
   if (q)       query = query.or(`name.ilike.%${q}%,external_id.ilike.%${q}%`);
   if (game && (["magic", "pokemon", "onepiece"] as string[]).includes(game))
                query = query.eq("game", game as Game);
-  if (set)     query = query.ilike("set_code", set);
-  if (rarity)  query = query.ilike("rarity",   rarity);
-  if (color)   query = query.ilike("color",    `%${color}%`);
-  if (instock) query = query.gt("listing_count", 0);
+  if (set)          query = query.ilike("set_code", set);
+  if (rarities.length) query = query.or(rarities.map((r) => `rarity.ilike.${r}`).join(","));
+  if (colors.length)   query = query.or(colors.map((c) => `color.ilike.%${c}%`).join(","));
+  if (instock)      query = query.gt("listing_count", 0);
 
   const { data, count, error } = await query;
   if (error) {
@@ -97,19 +97,19 @@ export default async function ExplorePage({
   const q       = searchParams.q       ?? "";
   const game    = searchParams.game    ?? "";
   const set     = searchParams.set     ?? "";
-  const rarity  = searchParams.rarity  ?? "";
-  const color   = searchParams.color   ?? "";
+  const rarities = (searchParams.rarity ?? "").split(",").filter(Boolean);
+  const colors   = (searchParams.color  ?? "").split(",").filter(Boolean);
   const sort    = searchParams.sort    ?? "recent";
   const instock = searchParams.instock === "1";
   const page    = Math.max(1, parseInt(searchParams.page ?? "1", 10));
 
   const [{ cards, total }, filterOptions] = await Promise.all([
-    fetchCards(q, game, set, rarity, color, sort, instock, page),
+    fetchCards(q, game, set, rarities, colors, sort, instock, page),
     fetchFilterOptions(game),
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const hasFilter  = Boolean(q || game || set || rarity || color || (sort && sort !== "recent") || instock);
+  const hasFilter  = Boolean(q || game || set || rarities.length || colors.length || (sort && sort !== "recent") || instock);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -140,7 +140,7 @@ export default async function ExplorePage({
           <div className="flex flex-col lg:flex-row gap-8 items-start">
 
             {/* ── Left sidebar ──────────────────────────────────────────── */}
-            <aside className="w-full lg:w-52 lg:shrink-0 lg:sticky lg:top-6">
+            <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-6">
               <div className="surface-raised p-4">
                 <p className="text-sm font-semibold font-serif text-text-primary mb-4">
                   Filtros
@@ -148,8 +148,8 @@ export default async function ExplorePage({
                 <ExploreFilters
                   currentGame={game}
                   currentSet={set}
-                  currentRarity={rarity}
-                  currentColor={color}
+                  currentRarities={rarities}
+                  currentColors={colors}
                   currentQ={q}
                   currentSort={sort}
                   currentInStock={instock}
@@ -166,7 +166,7 @@ export default async function ExplorePage({
                 <div>
                   <h2 className="text-lg font-serif font-semibold text-text-primary flex items-center gap-2">
                     {hasFilter ? (
-                      q ? `Resultados para "${q}"` : activeLabel(game, set, rarity, color)
+                      q ? `Resultados para "${q}"` : activeLabel(game, set, rarities, colors)
                     ) : (
                       <>
                         <Sparkles size={18} className="text-accent" />
@@ -205,7 +205,7 @@ export default async function ExplorePage({
                   {totalPages > 1 && (
                     <Pagination
                       page={page} totalPages={totalPages}
-                      q={q} game={game} set={set} rarity={rarity} color={color}
+                      q={q} game={game} set={set} rarities={rarities} colors={colors}
                       sort={sort} instock={instock}
                     />
                   )}
@@ -242,12 +242,12 @@ const GAME_LABELS: Record<string, string> = {
   onepiece: "One Piece TCG",
 };
 
-function activeLabel(game: string, set: string, rarity: string, color: string) {
+function activeLabel(game: string, set: string, rarities: string[], colors: string[]) {
   const parts: string[] = [];
-  if (game)   parts.push(GAME_LABELS[game] ?? game);
-  if (set)    parts.push(set.toUpperCase());
-  if (rarity) parts.push(rarity);
-  if (color)  parts.push(color);
+  if (game)            parts.push(GAME_LABELS[game] ?? game);
+  if (set)             parts.push(set.toUpperCase());
+  if (rarities.length) parts.push(rarities.join(", "));
+  if (colors.length)   parts.push(colors.join(", "));
   return parts.join(" · ") || "Explorar";
 }
 
@@ -289,10 +289,10 @@ function buildPageNumbers(current: number, total: number): Array<number | "…">
 }
 
 function Pagination({
-  page, totalPages, q, game, set, rarity, color, sort, instock,
+  page, totalPages, q, game, set, rarities, colors, sort, instock,
 }: {
   page: number; totalPages: number;
-  q: string; game: string; set: string; rarity: string; color: string;
+  q: string; game: string; set: string; rarities: string[]; colors: string[];
   sort: string; instock: boolean;
 }) {
   function href(p: number) {
@@ -300,8 +300,8 @@ function Pagination({
     if (q)                         ps.set("q",       q);
     if (game)                      ps.set("game",    game);
     if (set)                       ps.set("set",     set);
-    if (rarity)                    ps.set("rarity",  rarity);
-    if (color)                     ps.set("color",   color);
+    if (rarities.length)           ps.set("rarity",  rarities.join(","));
+    if (colors.length)             ps.set("color",   colors.join(","));
     if (sort && sort !== "recent") ps.set("sort",    sort);
     if (instock)                   ps.set("instock", "1");
     ps.set("page", String(p));
