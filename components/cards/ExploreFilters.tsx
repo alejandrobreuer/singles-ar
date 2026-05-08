@@ -48,6 +48,20 @@ const RARITY_LABELS: Record<string, string> = {
 
 const RARITY_ORDER = ["C", "UC", "R", "M", "TR", "PR", "SR", "SEC", "L"];
 
+const POKEMON_RARITIES: { value: string; label: string }[] = [
+  { value: "Common",                    label: "Common"                    },
+  { value: "Uncommon",                  label: "Uncommon"                  },
+  { value: "Rare",                      label: "Rare"                      },
+  { value: "Rare Holo",                 label: "Rare Holo"                 },
+  { value: "Double Rare",               label: "Double Rare"               },
+  { value: "Ultra Rare",                label: "Ultra Rare"                },
+  { value: "Illustration Rare",         label: "Illustration Rare"         },
+  { value: "Special Illustration Rare", label: "Special Illustration Rare" },
+  { value: "Hyper Rare",                label: "Hyper Rare"                },
+  { value: "Shiny Rare",                label: "Shiny Rare"                },
+  { value: "Promo",                     label: "Promo"                     },
+];
+
 function sortAndLabelRarities(rarities: string[]): { value: string; label: string }[] {
   const known   = RARITY_ORDER.filter((r) => rarities.includes(r));
   const unknown = rarities.filter((r) => !RARITY_ORDER.includes(r)).sort();
@@ -206,10 +220,10 @@ export function ExploreFilters({
             </FilterGroup>
           )}
 
-          {filterOptions.rarities.length > 0 && (
+          {(filterOptions.rarities.length > 0 || currentGame === "pokemon") && (
             <FilterGroup label="Rareza">
               <PillList
-                options={sortAndLabelRarities(filterOptions.rarities)}
+                options={currentGame === "pokemon" ? POKEMON_RARITIES : sortAndLabelRarities(filterOptions.rarities)}
                 selected={currentRarities}
                 onSelect={(v) => {
                   const next = currentRarities.includes(v)
