@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
-import { MessageSquare, Camera, ShoppingBag, Repeat2, Tag, MapPin } from "lucide-react";
+import { MessageSquare, Camera, ShoppingBag, Repeat2, Tag, MapPin, Info } from "lucide-react";
 import { cn }                    from "@/lib/utils";
 import { Topbar }                from "@/components/layout/Topbar";
 import { Button }                from "@/components/ui/button";
@@ -11,20 +11,12 @@ import { Divider }               from "@/components/ui/divider";
 import { Spinner }               from "@/components/ui/spinner";
 import { PriceValidator }        from "@/components/sell/PriceValidator";
 import { CommissionBreakdown }   from "@/components/sell/CommissionBreakdown";
+import { CONDITIONS, CONDITION_DETAILS, ConditionGuideModal, ConditionConfirmModal } from "@/components/sell/ConditionModals";
+import { HoverTooltip }          from "@/components/ui/HoverTooltip";
 import { toast }                 from "sonner";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
 import type { Condition, ListingType, AdminSettings } from "@/types/database";
-
-// ─── Constants (same as sell page) ───────────────────────────────────────────
-
-const CONDITIONS: Array<{ value: Condition; label: string; desc: string; color: string }> = [
-  { value: "NM",  label: "NM",  desc: "Near Mint",         color: "border-success/40 data-[selected]:bg-success-subtle data-[selected]:border-success data-[selected]:text-success" },
-  { value: "LP",  label: "LP",  desc: "Lightly Played",    color: "border-blue-200 data-[selected]:bg-blue-50 data-[selected]:border-blue-500 data-[selected]:text-blue-700" },
-  { value: "MP",  label: "MP",  desc: "Moderately Played", color: "border-warning/30 data-[selected]:bg-warning-subtle data-[selected]:border-warning data-[selected]:text-warning" },
-  { value: "HP",  label: "HP",  desc: "Heavily Played",    color: "border-orange-200 data-[selected]:bg-orange-50 data-[selected]:border-orange-500 data-[selected]:text-orange-700" },
-  { value: "DMG", label: "DMG", desc: "Damaged",           color: "border-error/30 data-[selected]:bg-error-subtle data-[selected]:border-error data-[selected]:text-error" },
-];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -51,9 +43,13 @@ export default function EditListingPage() {
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
   // ── Settings & price ref ──────────────────────────────────────────────────
-  const [settings,    setSettings]    = React.useState<AdminSettings>(DEFAULT_SETTINGS);
+  const [settings,    setSettings]    = React.useState<AdminSettings>(DEFAULT_SETTINGS as unknown as AdminSettings);
   const [cardPriceUSD, setCardPriceUSD] = React.useState<number | null>(null);
   const [usdToARS,    setUsdToARS]    = React.useState(DEFAULT_SETTINGS.usd_to_ars_rate);
+
+  // ── Condition modals
+  const [conditionGuideOpen, setConditionGuideOpen] = React.useState(false);
+  const [pendingCondition,   setPendingCondition]   = React.useState<Condition | null>(null);
 
   // ── Submission ────────────────────────────────────────────────────────────
   const [saving,    setSaving]    = React.useState(false);
@@ -219,26 +215,27 @@ export default function EditListingPage() {
             <div>
               <p className="text-sm font-medium text-text-primary font-sans mb-3">Tipo de publicación</p>
               <div className="grid grid-cols-2 gap-2">
-                {([
-                  { value: "sale"  as ListingType, icon: <ShoppingBag size={16} />, label: "Venta directa", desc: "Precio fijo en ARS" },
-                  { value: "trade" as ListingType, icon: <Repeat2     size={16} />, label: "Trade / Canje",  desc: "Intercambio de cartas" },
-                ]).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setListingType(opt.value)}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all duration-150 text-center",
-                      listingType === opt.value
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border bg-surface text-text-secondary hover:border-primary/30 hover:bg-secondary/50"
-                    )}
-                  >
-                    {opt.icon}
-                    <span className="text-sm font-semibold font-sans">{opt.label}</span>
-                    <span className="text-xs font-sans opacity-70">{opt.desc}</span>
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setListingType("sale")}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all duration-150 text-center",
+                    listingType === "sale"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border bg-surface text-text-secondary hover:border-primary/30 hover:bg-secondary/50"
+                  )}
+                >
+                  <ShoppingBag size={16} />
+                  <span className="text-sm font-semibold font-sans">Venta directa</span>
+                  <span className="text-xs font-sans opacity-70">Precio fijo en ARS</span>
+                </button>
+
+                <div className="flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 text-center border-border bg-surface opacity-50 cursor-not-allowed select-none">
+                  <Repeat2 size={16} className="text-text-muted" />
+                  <span className="text-sm font-semibold font-sans text-text-muted">Trade / Canje</span>
+                  <span className="text-xs font-sans text-text-muted">Intercambio de cartas</span>
+                  <span className="text-2xs font-sans text-text-muted italic">Próximamente</span>
+                </div>
               </div>
             </div>
 
@@ -246,24 +243,38 @@ export default function EditListingPage() {
 
             {/* Condition */}
             <div>
-              <p className="text-sm font-medium text-text-primary font-sans mb-3">Estado de la carta</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-text-primary font-sans">Estado de la carta</p>
+                <button
+                  type="button"
+                  onClick={() => setConditionGuideOpen(true)}
+                  className="flex items-center gap-1 text-xs text-text-muted hover:text-primary font-sans transition-colors"
+                >
+                  <Info size={13} />
+                  Ver guía
+                </button>
+              </div>
               <div className="grid grid-cols-5 gap-1.5">
-                {CONDITIONS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    data-selected={condition === c.value || undefined}
-                    onClick={() => setCondition(c.value)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border-2 py-2.5 px-1 transition-all duration-100",
-                      "text-text-secondary bg-surface hover:bg-secondary/60",
-                      c.color
-                    )}
-                  >
-                    <span className="text-xs font-bold font-sans">{c.label}</span>
-                    <span className="text-2xs font-sans leading-none text-center opacity-70 hidden sm:block">{c.desc}</span>
-                  </button>
-                ))}
+                {CONDITIONS.map((c) => {
+                  const detail = CONDITION_DETAILS[c.value];
+                  return (
+                    <HoverTooltip key={c.value} label={detail.fullName} detail={detail.subtitle} className="contents">
+                      <button
+                        type="button"
+                        data-selected={condition === c.value || undefined}
+                        onClick={() => setPendingCondition(c.value)}
+                        className={cn(
+                          "flex flex-col items-center gap-1 rounded-lg border-2 py-2.5 px-1 transition-all duration-100",
+                          "text-text-secondary bg-surface hover:bg-secondary/60",
+                          c.color
+                        )}
+                      >
+                        <span className="text-xs font-bold font-sans">{c.label}</span>
+                        <span className="text-2xs font-sans leading-none text-center opacity-70 hidden sm:block">{c.desc}</span>
+                      </button>
+                    </HoverTooltip>
+                  );
+                })}
               </div>
             </div>
 
@@ -290,13 +301,12 @@ export default function EditListingPage() {
                   <>
                     <PriceValidator
                       priceARS={priceARS}
-                      tcgMedianUSD={cardPriceUSD}
-                      usdToARS={usdToARS}
-                      tolerancePercent={settings.price_tolerance_percent}
+                      platformMedianARS={cardPriceUSD != null ? cardPriceUSD * usdToARS : null}
+                      transactionCount={0}
                     />
                     <CommissionBreakdown
                       priceARS={priceARS}
-                      platformFeePercent={settings.platform_fee_percent}
+                      platformFeePercent={settings.platform_commission_percent}
                       mpFeePercent={settings.mp_fee_percent}
                     />
                   </>
@@ -431,6 +441,17 @@ export default function EditListingPage() {
           </div>
         </div>
       </main>
+
+      {conditionGuideOpen && (
+        <ConditionGuideModal onClose={() => setConditionGuideOpen(false)} />
+      )}
+      {pendingCondition && (
+        <ConditionConfirmModal
+          condition={pendingCondition}
+          onConfirm={(c) => { setCondition(c); setPendingCondition(null); }}
+          onCancel={() => setPendingCondition(null)}
+        />
+      )}
     </div>
   );
 }

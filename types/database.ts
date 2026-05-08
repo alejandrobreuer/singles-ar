@@ -13,11 +13,12 @@ export type ListingType     = "sale" | "trade";
 export type ListingStatus   = "active" | "reserved" | "sold" | "cancelled";
 export type BuyOrderStatus  = "active" | "reserved" | "filled" | "cancelled" | "expired";
 export type TransactionStatus =
-  | "in_chat"          // chat opened, no payment yet
+  | "in_chat"          // chat opened (pre-payment OR post-payment with mp_payment_id set)
   | "payment_pending"  // MP preference created, awaiting payment
-  | "paid"             // MercadoPago confirmed payment
-  | "completed"        // both parties confirmed delivery
-  | "disputed"         // dispute opened
+  | "paid"             // legacy — kept for existing rows only
+  | "delivered"        // seller confirmed delivery, 72h dispute window open
+  | "completed"        // buyer confirmed receipt (or dispute resolved in seller's favour)
+  | "disputed"         // buyer opened a dispute within 72h of delivery
   | "cancelled";
 export type PriceSource     = "listing";
 export type ChatMessageType = "text" | "image" | "system";
@@ -191,9 +192,15 @@ export interface Transaction {
   buyer_last_read_at:  string | null;
   seller_last_read_at: string | null;
 
-  // Delivery confirmation — both parties must confirm to complete
+  // Delivery confirmation
   buyer_confirmed_delivery_at:  string | null;
   seller_confirmed_delivery_at: string | null;
+
+  // Virtual-hold delivery / dispute window
+  delivered_at:        string | null;  // seller confirmed delivery
+  release_at:          string | null;  // delivered_at + 72h — UI countdown only
+  dispute_resolved_at: string | null;
+  dispute_resolution:  "buyer" | "seller" | null;
 
   created_at:   string;
   updated_at:   string;

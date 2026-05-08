@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_SETTINGS }  from "@/lib/priceValidation";
 import { notifyMany }        from "@/lib/notifications";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -24,23 +23,6 @@ const createListingSchema = z.object({
   (d) => d.listing_type === "sale" || (d.trade_for && d.trade_for.trim().length > 0),
   { message: "Los canjes requieren indicar qué pedís a cambio.", path: ["trade_for"] }
 );
-
-// ─── Fetch admin settings helper ─────────────────────────────────────────────
-
-async function getSettings() {
-  const admin = createAdminClient();
-  const { data } = await admin.from("admin_settings").select("key, value");
-  if (!data) return DEFAULT_SETTINGS;
-
-  const settings = { ...DEFAULT_SETTINGS };
-  for (const row of data) {
-    const val = parseFloat(String(row.value));
-    if (!isNaN(val) && row.key in DEFAULT_SETTINGS) {
-      (settings as Record<string, number>)[row.key] = val;
-    }
-  }
-  return settings;
-}
 
 // ─── POST /api/listings ───────────────────────────────────────────────────────
 
@@ -129,20 +111,22 @@ export async function POST(req: NextRequest) {
     .select("user_id")
     .eq("card_id", input.card_id)
     .neq("user_id", user.id)
-    .then(async ({ data: targets }) => {
-      if (!targets || targets.length === 0) return;
-      const { data: card } = await notifAdmin
-        .from("cards").select("name").eq("id", input.card_id).single();
-      const cardName = card?.name ?? "una carta";
-      await notifyMany(targets.map((t) => ({
-        user_id: t.user_id as string,
-        type:    "wishlist_stock" as const,
-        title:   `Nuevo stock: ${cardName}`,
-        body:    "Un vendedor publicó una carta en tu wishlist.",
-        link:    `/cards/${input.card_id}`,
-      })));
-    })
-    .catch(() => null);
+    .then(
+      async ({ data: targets }) => {
+        if (!targets || targets.length === 0) return;
+        const { data: card } = await notifAdmin
+          .from("cards").select("name").eq("id", input.card_id).single();
+        const cardName = card?.name ?? "una carta";
+        await notifyMany(targets.map((t) => ({
+          user_id: t.user_id as string,
+          type:    "wishlist_stock" as const,
+          title:   `Nuevo stock: ${cardName}`,
+          body:    "Un vendedor publicó una carta en tu wishlist.",
+          link:    `/cards/${input.card_id}`,
+        })));
+      },
+      () => null
+    );
 
   return NextResponse.json({ data: listing }, { status: 201 });
 }

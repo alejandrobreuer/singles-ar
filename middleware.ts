@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // ─── Protected route prefixes ─────────────────────────────────────────────────
 
 // Exact paths that require auth
-const PROTECTED_EXACT = ["/profile", "/orders"];
+const PROTECTED_EXACT = ["/profile", "/orders", "/accept-terms"];
 
 // Prefix paths that require auth (all sub-paths protected)
 const PROTECTED_PREFIX = ["/sell", "/chat", "/listings", "/buy-orders"];
@@ -67,6 +67,16 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (user && (pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Redirect authenticated users who haven't accepted terms
+  if (user && isProtected(pathname) && pathname !== "/accept-terms") {
+    if (!user.user_metadata?.terms_accepted) {
+      const acceptUrl = request.nextUrl.clone();
+      acceptUrl.pathname = "/accept-terms";
+      acceptUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(acceptUrl);
+    }
   }
 
   return response;

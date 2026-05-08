@@ -18,12 +18,12 @@ export async function GET() {
     }
 
     // Fold rows into a typed settings object, falling back to defaults
-    const settings: AdminSettings = { ...DEFAULT_SETTINGS };
+    const settings = { ...DEFAULT_SETTINGS } as unknown as AdminSettings;
 
     for (const row of data) {
       const val = parseFloat(String(row.value));
       if (!isNaN(val) && row.key in DEFAULT_SETTINGS) {
-        (settings as Record<string, number>)[row.key] = val;
+        (settings as unknown as Record<string, number>)[row.key] = val;
       }
     }
 

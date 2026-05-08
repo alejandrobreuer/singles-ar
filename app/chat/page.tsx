@@ -81,7 +81,7 @@ function ChatRow({
       {/* Counterpart + info */}
       <div className="flex items-center gap-2.5 flex-1 min-w-0">
         <Avatar
-          src={counterpart.avatar_url ?? null}
+          src={counterpart.avatar_url ?? undefined}
           name={counterpart.username}
           size="sm"
         />
@@ -148,7 +148,7 @@ export default async function ChatListPage() {
   const transactions = (rawTxs ?? []) as unknown as TransactionWithDetails[];
 
   // ── Fetch last messages for all transactions ──────────────────────────────
-  let lastMessageMap = new Map<string, ChatMessage>();
+  const lastMessageMap = new Map<string, ChatMessage>();
 
   if (transactions.length > 0) {
     const txIds = transactions.map((t) => t.id);

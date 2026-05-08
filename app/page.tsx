@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Topbar } from "@/components/layout/Topbar";
 
 export const metadata: Metadata = {
-  title: "Singles.ar — Marketplace de cartas TCG en Argentina",
+  title: "Card Stash — Marketplace de cartas TCG en Argentina",
   description:
     "El primer marketplace P2P de singles TCG en Argentina. Comprá, vendé e intercambiá cartas de Magic, Pokémon y One Piece con pagos seguros vía MercadoPago.",
   openGraph: {
-    title:       "Singles.ar — Marketplace de cartas TCG en Argentina",
+    title:       "Card Stash — Marketplace de cartas TCG en Argentina",
     description: "Comprá, vendé e intercambiá cartas de Magic, Pokémon y One Piece en Argentina.",
     type:        "website",
   },
@@ -34,10 +34,10 @@ export default function LandingPage() {
       <footer className="bg-[#111827] py-5 px-6 sm:px-12 flex flex-wrap items-center justify-between gap-3">
         <Link href="/" className="no-underline">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.png" alt="Singles.ar" className="h-6 w-auto object-contain opacity-60" />
+          <img src="/images/CardStashWhiteText.png" alt="Card Stash" className="h-6 w-auto object-contain opacity-60" />
         </Link>
         <p className="text-xs font-sans" style={{ color: "rgba(255,255,255,0.3)" }}>
-          © {new Date().getFullYear()} Singles.ar · Marketplace TCG Argentina
+          © {new Date().getFullYear()} Card Stash · Marketplace TCG Argentina
         </p>
       </footer>
     </div>
@@ -60,6 +60,12 @@ function HeroSection() {
       />
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 sm:px-12 py-20 sm:py-24">
+        {/* Hero logo */}
+        <div className="flex justify-center mb-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/CardStashLogo.png" alt="Card Stash" className="h-24 sm:h-32 w-auto object-contain" />
+        </div>
+
         {/* Eyebrow */}
         <div className="flex items-center gap-2 mb-5">
           <div className="w-6 h-px bg-accent/70" />
@@ -169,16 +175,16 @@ function HowItWorksSection() {
                 Encontrá cualquier carta por nombre, set o número. Cada carta tiene su propia página con todos los listings disponibles ordenados por precio.
               </Step>
               <Step n={2} title="Comparé precios y vendedores" tag={{ label: "Gratis consultar", style: "free" }}>
-                Ves el precio median de TCGPlayer como referencia, el historial de precios, y la reputación de cada vendedor — todo en un solo lugar.
+                Ves el historial de precios de la plataforma y la reputación de cada vendedor — todo en un solo lugar.
               </Step>
               <Step n={3} title="Pagá con MercadoPago" tag={{ label: "Pago seguro", style: "mp" }}>
-                Seleccionás el listing y pagás de forma segura vía MercadoPago. El dinero queda retenido en la plataforma — el vendedor aún no lo recibe.
+                Seleccionás el listing y pagás de forma segura vía MercadoPago. El pago se procesa en el momento y el dinero se acredita al vendedor en hasta 72 horas.
               </Step>
               <Step n={4} title="Coordiná la entrega por chat" tag={{ label: "Chat habilitado post-pago", style: "chat" }}>
                 Una vez confirmado el pago, se habilita el chat con el vendedor. Coordinan el encuentro, pedís fotos si querés, y acordán cómo y dónde entregar la carta.
               </Step>
-              <Step n={5} title="Confirmás la entrega → vendedor cobra" last tag={{ label: "Tu dinero protegido", style: "free" }}>
-                Cuando recibís la carta y estás conforme, confirmás la entrega en la plataforma. Recién ahí el dinero se acredita en la cuenta del vendedor.
+              <Step n={5} title="Tenés 72 hs para reportar un problema" last tag={{ label: "Compra protegida", style: "free" }}>
+                Si no recibís la carta o hay algún problema, tenés 72 horas desde el pago para abrir una disputa. Pasado ese plazo, la transacción se da por completada automáticamente.
               </Step>
             </div>
           </div>
@@ -199,8 +205,8 @@ function HowItWorksSection() {
               <Step n={3} title="Coordiná la entrega por chat" tag={{ label: "Chat post-pago", style: "chat" }}>
                 Cuando el comprador paga, se habilita el chat. Coordinan el encuentro, podés enviar fotos del estado real de la carta.
               </Step>
-              <Step n={4} title="El comprador confirma → recibís el dinero" last tag={{ label: "Acreditación garantizada", style: "mp" }}>
-                El dinero queda retenido hasta que el comprador confirma la entrega. Una vez confirmada, el monto se acredita en tu MercadoPago en 1–2 días hábiles.
+              <Step n={4} title="El pago se acredita en 72 horas" last tag={{ label: "Acreditación automática", style: "mp" }}>
+                Una vez coordinada la entrega, el monto se acredita automáticamente en tu MercadoPago dentro de las 72 horas del pago. Sin necesidad de confirmación del comprador.
               </Step>
             </div>
           </div>
@@ -251,11 +257,11 @@ const FEATURES = [
   {
     icon: "📊", bg: "rgba(26,39,68,0.08)",
     title: "Precios de referencia reales",
-    desc:  "Cada carta muestra el precio median de TCGPlayer y el historial de precios de nuestra plataforma. Nunca más pagués de más sin saberlo.",
+    desc:  "Cada carta muestra el historial de precios de nuestra plataforma. Nunca más pagués de más sin saberlo.",
   },
   {
     icon: "🔄", bg: "#f5e6c0",
-    title: "Sección de trades",
+    title: "Sección de trades (próximamente)",
     desc:  "¿Preferís intercambiar cartas? Publicá tu carta como trade y acordá el canje con otros jugadores directamente en el chat, con o sin diferencia en plata.",
   },
   {
@@ -284,7 +290,7 @@ function FeaturesSection() {
   return (
     <section className="bg-surface px-6 sm:px-12 py-20">
       <div className="mx-auto max-w-5xl">
-        <SectionEyebrow>Por qué Singles.ar</SectionEyebrow>
+        <SectionEyebrow>Por qué Card Stash</SectionEyebrow>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-snug">
           Todo lo que necesitás<br />en un solo lugar.
         </h2>
@@ -409,7 +415,7 @@ function CommissionSection() {
           Sin costos escondidos.
         </h2>
         <p className="text-sm sm:text-base font-sans text-text-secondary max-w-lg leading-relaxed">
-          La comisión de Singles.ar se descuenta automáticamente del precio de venta. El comprador siempre paga el precio publicado, nada más.
+          La comisión de Card Stash se descuenta automáticamente del precio de venta. El comprador siempre paga el precio publicado, nada más.
         </p>
 
         <div className="bg-surface border border-border rounded-2xl p-9 mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -436,7 +442,7 @@ function CommissionSection() {
             <div className="bg-background border border-border rounded-xl p-5">
               {[
                 { label: "Precio de venta publicado", val: "$2.000",  style: "neutral" },
-                { label: "Comisión Singles.ar (~5%)",  val: "− $100", style: "red"     },
+                { label: "Comisión Card Stash (~5%)",  val: "− $100", style: "red"     },
                 { label: "Comisión MercadoPago (~4%)", val: "− $80",  style: "red"     },
               ].map(({ label, val, style }) => (
                 <div key={label} className="flex justify-between items-center py-2 border-b border-border text-sm font-sans">

@@ -103,12 +103,12 @@ export function PublicProfileTabs({ listings, reviews, history, gameVariant }: P
   );
 
   // ── Distinct games present ────────────────────────────────────────────────────
-  const listingGames = [...new Set(
+  const listingGames = Array.from(new Set(
     listings.map((l) => (l.cards as { game: Game } | null)?.game).filter(Boolean) as Game[]
-  )];
-  const historyGames = [...new Set(
+  ));
+  const historyGames = Array.from(new Set(
     history.map((h) => h.card?.game).filter(Boolean) as Game[]
-  )];
+  ));
 
   // ── Filtered lists ────────────────────────────────────────────────────────────
   const filteredListings = listings.filter((l) => {

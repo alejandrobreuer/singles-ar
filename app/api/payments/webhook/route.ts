@@ -38,10 +38,9 @@ export async function POST(req: NextRequest) {
   try { rawBody = await req.json(); }
   catch { return NextResponse.json({ ok: true }); } // malformed — ack anyway
 
-  const { type, data, action } = rawBody as {
-    type?:   string;
-    data?:   { id?: string };
-    action?: string;
+  const { type, data } = rawBody as {
+    type?: string;
+    data?: { id?: string };
   };
 
   // We only care about approved payment events
@@ -101,34 +100,21 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString();
 
   // ── Run all side-effects in parallel ────────────────────────────────────────
-  const ops: Promise<unknown>[] = [
+  // NOTE: MP already transferred funds to the seller's account at this point.
+  // We open the chat so both parties can coordinate delivery.
+  const ops: PromiseLike<unknown>[] = [
 
-    // 1. Update transaction status → paid + store payment ID
+    // 1. Update transaction → in_chat (chat opens), save MP payment ID
     admin
       .from("transactions")
-      .update({ status: "paid", mp_payment_id: paymentId, updated_at: now })
+      .update({ status: "in_chat", mp_payment_id: paymentId, updated_at: now })
       .eq("id", transactionId),
 
-    // 4. Increment seller total_sales
-    admin.rpc("increment_total_sales",     { seller_id: tx.seller_id }),
-
-    // 4. Increment buyer total_purchases
-    admin.rpc("increment_total_purchases", { buyer_id:  tx.buyer_id  }),
-
-    // 5. Record price in price_history
-    admin.from("price_history").insert({
-      card_id:     tx.card_id,
-      price_ars:   tx.price,
-      price_usd:   null,
-      source:      "listing",
-      recorded_at: now,
-    }),
-
-    // System message in chat
+    // 2. System message — chat is now open
     admin.from("chat_messages").insert({
       transaction_id: transactionId,
       sender_id:      null,
-      body:           "Pago confirmado por MercadoPago.",
+      body:           "✅ Pago confirmado por MercadoPago. El chat está habilitado — coordiná la entrega con el vendedor.",
       message_type:   "system",
     }),
   ];

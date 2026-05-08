@@ -107,7 +107,7 @@ export function BuyOrderCard({
         {/* Buyer info */}
         <div className="flex items-center gap-2.5 min-w-0">
           <Avatar
-            src={null}
+            src={undefined}
             name={isOwn ? (buyer?.username ?? "?") : alias}
             size="sm"
           />

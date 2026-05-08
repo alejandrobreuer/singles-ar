@@ -18,7 +18,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Singles.ar — Marketplace de cartas TCG",
+  title: "Card Stash — Marketplace de cartas TCG",
   description:
     "Comprá y vendé singles de Pokémon, Magic: The Gathering y One Piece TCG en Argentina.",
 };

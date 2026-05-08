@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 type AvatarSize = "sm" | "md" | "lg";
 
 export interface AvatarProps {
-  src?:      string;
+  src?:      string | null;
   alt?:      string;
   name?:     string;     // used to generate initials fallback
   size?:     AvatarSize;
@@ -36,7 +36,7 @@ const PALETTE = [
   "bg-rose-600  text-white",
 ];
 function colorFromName(name: string): string {
-  const hash = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const hash = Array.from(name).reduce((acc, c) => acc + c.charCodeAt(0), 0);
   return PALETTE[hash % PALETTE.length];
 }
 
@@ -76,7 +76,7 @@ export function Avatar({
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={src}
+          src={src!}
           alt={alt ?? name}
           className="size-full object-cover"
           onError={() => setImgError(true)}

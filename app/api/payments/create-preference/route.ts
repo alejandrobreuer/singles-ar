@@ -106,10 +106,10 @@ export async function POST(req: NextRequest) {
   console.log("[create-preference] Commission:", commissionPct, "% | price:", price, "| platformFee:", platformFee);
 
   // ── Build preference payload ───────────────────────────────────────────────
-  const card      = tx.card as { name: string; set_name: string | null } | null;
+  const card      = tx.card as unknown as { name: string; set_name: string | null } | null;
   const itemTitle = card
-    ? `${card.name}${card.set_name ? ` — ${card.set_name}` : ""} · Singles.ar`
-    : "Carta TCG — Singles.ar";
+    ? `${card.name}${card.set_name ? ` — ${card.set_name}` : ""} · Card Stash`
+    : "Carta TCG — Card Stash";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://singles.ar";
 
   const preferenceBody = {
@@ -143,14 +143,15 @@ export async function POST(req: NextRequest) {
   try {
     preference = await sellerPreference.create({ body: preferenceBody });
 
+    const _pref = preference as unknown as Record<string, unknown>;
     console.log("[create-preference] 5. MP response:", JSON.stringify({
-      status:             (preference as Record<string, unknown>).status,
-      id:                 preference.id,
-      init_point:         preference.init_point,
-      sandbox_init_point: preference.sandbox_init_point,
-      error:              (preference as Record<string, unknown>).error,
-      message:            (preference as Record<string, unknown>).message,
-      cause:              (preference as Record<string, unknown>).cause,
+      status:             _pref.status,
+      id:                 _pref.id,
+      init_point:         _pref.init_point,
+      sandbox_init_point: _pref.sandbox_init_point,
+      error:              _pref.error,
+      message:            _pref.message,
+      cause:              _pref.cause,
     }, null, 2));
 
   } catch (err: unknown) {

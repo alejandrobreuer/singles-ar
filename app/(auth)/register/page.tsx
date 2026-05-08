@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock, AtSign, CheckCircle2, XCircle, Loader2, Info } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AtSign, CheckCircle2, XCircle, Loader2, Info, Check } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/errors";
@@ -11,12 +11,15 @@ import { validateUsername } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StepIndicator } from "@/components/auth/StepIndicator";
+import { cn } from "@/lib/utils";
+import { TERMS } from "@/lib/terms";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEPS = [
-  { label: "Cuenta",  sublabel: "Email y contraseña" },
-  { label: "Apodo",   sublabel: "Tu nombre público"  },
+  { label: "Cuenta",   sublabel: "Email y contraseña" },
+  { label: "Apodo",    sublabel: "Tu nombre público"  },
+  { label: "Términos", sublabel: "Condiciones de uso" },
 ];
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -65,9 +68,17 @@ export default function RegisterPage() {
   const [usernameMessage, setUsernameMessage] = React.useState<string | null>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Step 3 state
+  const [checkedTerms, setCheckedTerms] = React.useState([false, false, false, false]);
+  const allChecked = checkedTerms.every(Boolean);
+
   // ── Global
   const [globalError, setGlobalError] = React.useState<string | null>(null);
   const [loading,     setLoading]     = React.useState(false);
+
+  function toggleTerm(i: number) {
+    setCheckedTerms((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
+  }
 
   // ─── Step 1: handle fields
   function handleS1Change(e: React.ChangeEvent<HTMLInputElement>) {
@@ -96,7 +107,7 @@ export default function RegisterPage() {
 
   // ─── Step 2: username availability check (debounced 300ms)
   function handleUsernameChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value.replace(/\s/g, "");  // strip spaces
+    const value = e.target.value.replace(/\s/g, "");
     setUsername(value);
     setUsernameStatus("idle");
     setUsernameMessage(null);
@@ -104,7 +115,6 @@ export default function RegisterPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!value) return;
 
-    // Validate format locally first
     const formatError = validateUsername(value);
     if (formatError) {
       setUsernameStatus("invalid");
@@ -112,7 +122,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Debounce the API call
     debounceRef.current = setTimeout(async () => {
       setUsernameStatus("checking");
       try {
@@ -132,12 +141,16 @@ export default function RegisterPage() {
     }, 300);
   }
 
-  // ─── Final submit: create Supabase user + profile
+  function handleS2Submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (usernameStatus !== "available") return;
+    setStep(2);
+  }
+
+  // ─── Final submit: create Supabase user + profile + terms
   async function handleFinalSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    // Guard: username must be available
-    if (usernameStatus !== "available") return;
+    if (!allChecked) return;
 
     setLoading(true);
     setGlobalError(null);
@@ -145,7 +158,6 @@ export default function RegisterPage() {
     try {
       const supabase = createClient();
 
-      // 1. Create auth user
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email:    s1.email,
         password: s1.password,
@@ -163,7 +175,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // 2. Set the chosen username on the profile the trigger auto-created
       const usernameRes = await fetch("/api/auth/set-username", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,7 +188,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // 3. Go to onboarding
       router.push("/onboarding/mercadopago");
     } catch (err) {
       setGlobalError(mapAuthError(err));
@@ -315,7 +325,7 @@ export default function RegisterPage() {
 
         {/* ── Step 2: choose username ────────────────────────────── */}
         {step === 1 && (
-          <form onSubmit={handleFinalSubmit} noValidate className="flex flex-col gap-5">
+          <form onSubmit={handleS2Submit} noValidate className="flex flex-col gap-5">
             {/* Info callout */}
             <div className="flex gap-3 rounded-lg bg-primary/5 border border-primary/10 px-4 py-3">
               <Info size={16} className="shrink-0 mt-0.5 text-primary/60" />
@@ -370,7 +380,6 @@ export default function RegisterPage() {
                 size="lg"
                 className="flex-1"
                 onClick={() => setStep(0)}
-                disabled={loading}
               >
                 Volver
               </Button>
@@ -379,11 +388,122 @@ export default function RegisterPage() {
                 variant="primary"
                 size="lg"
                 className="flex-1"
-                loading={loading}
-                disabled={usernameStatus !== "available" || loading}
+                disabled={usernameStatus !== "available"}
               >
-                Crear cuenta
+                Continuar
               </Button>
+            </div>
+          </form>
+        )}
+
+        {/* ── Step 3: terms acceptance ───────────────────────────── */}
+        {step === 2 && (
+          <form onSubmit={handleFinalSubmit} noValidate className="flex flex-col gap-5">
+            <div className="flex gap-3 rounded-lg bg-primary/5 border border-primary/10 px-4 py-3">
+              <Info size={16} className="shrink-0 mt-0.5 text-primary/60" />
+              <p className="text-xs font-sans text-text-secondary">
+                Leé y aceptá todos los puntos para crear tu cuenta. Estos términos aplican a todos los usuarios de Singles.ar.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCheckedTerms([true, true, true, true])}
+                  className="text-xs font-sans text-primary hover:text-accent transition-colors underline"
+                >
+                  Seleccionar todo
+                </button>
+              </div>
+
+              {TERMS.map((term, i) => (
+                <label
+                  key={term.id}
+                  className={cn(
+                    "flex items-start gap-3 cursor-pointer p-3 rounded-lg border transition-all select-none",
+                    term.highlight
+                      ? checkedTerms[i]
+                        ? "border-primary bg-primary/5"
+                        : "border-primary/40 hover:bg-primary/5"
+                      : checkedTerms[i]
+                      ? "border-border bg-secondary/20"
+                      : "border-border hover:bg-secondary/30",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checkedTerms[i]}
+                    onChange={() => toggleTerm(i)}
+                  />
+                  <div
+                    className={cn(
+                      "mt-0.5 w-4 h-4 rounded shrink-0 border-2 flex items-center justify-center transition-all",
+                      checkedTerms[i] ? "bg-primary border-primary" : "bg-transparent border-border"
+                    )}
+                  >
+                    {checkedTerms[i] && <Check size={10} strokeWidth={3} className="text-white" />}
+                  </div>
+                  <span
+                    className={cn(
+                      "text-xs font-sans leading-relaxed",
+                      term.highlight ? "text-text-primary font-medium" : "text-text-secondary"
+                    )}
+                  >
+                    {term.linkHref ? (
+                      <>
+                        {term.text}
+                        <a
+                          href={term.linkHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-primary font-semibold underline decoration-primary/40 hover:text-accent transition-colors"
+                        >
+                          {term.linkText}
+                        </a>
+                      </>
+                    ) : (
+                      term.text
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3 mt-1">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="flex-1"
+                onClick={() => setStep(1)}
+                disabled={loading}
+              >
+                Volver
+              </Button>
+
+              <div className="flex-1 relative group">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                  loading={loading}
+                  disabled={!allChecked || loading}
+                >
+                  Crear cuenta
+                </Button>
+                {!allChecked && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    <div className="bg-[#1a2744] text-white text-xs font-sans px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                      Debés aceptar todos los puntos para continuar
+                    </div>
+                    <div className="w-2 h-2 bg-[#1a2744] rotate-45 mx-auto -mt-1" />
+                  </div>
+                )}
+              </div>
             </div>
           </form>
         )}

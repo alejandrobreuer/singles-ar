@@ -39,7 +39,7 @@ export function PriceChart({ history, className }: PriceChartProps) {
   );
 
   const dataset = {
-    label:            "Singles.ar",
+    label:            "Card Stash",
     data:             rows.map((h) => h.price_ars as number),
     borderColor:      "rgb(26,122,74)",
     backgroundColor:  "rgba(26,122,74,0.08)",
@@ -62,7 +62,7 @@ export function PriceChart({ history, className }: PriceChartProps) {
         borderWidth:     1,
         titleColor:      "#1a2030",
         bodyColor:       "#4a5578",
-        titleFont:       { family: "var(--font-dm-sans)", size: 12, weight: "600" },
+        titleFont:       { family: "var(--font-dm-sans)", size: 12, weight: 600 },
         bodyFont:        { family: "var(--font-dm-sans)", size: 12 },
         padding:         10,
         callbacks: {

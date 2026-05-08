@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeRarity }   from "@/lib/sync/normalizeRarity";
 
 // ─── OPTCG API types ──────────────────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ function toCardRow(c: OPTCGCard, externalId: string): CardRow {
     set_name:    c.set_name,
     set_code:    c.set_id,
     card_number: cardNumber,
-    rarity:      c.rarity,
+    rarity:      normalizeRarity(c.rarity) ?? c.rarity,
     color:       c.card_color || null,
     image_url:   c.card_image || null,
     game:        "onepiece",

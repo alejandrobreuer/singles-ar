@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, Clock, AlertCircle, PackageCheck, CreditCard, Loader2 } from "lucide-react";
+import {
+  CheckCircle, XCircle, Clock, AlertCircle,
+  PackageCheck, CreditCard, Loader2, ShieldAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TransactionWithDetails } from "@/types/database";
 
@@ -26,12 +29,7 @@ export function TransactionActions({
   const isSeller = transaction.seller_id === currentUserId;
   const { status } = transaction;
 
-  const myConfirmedAt = isBuyer
-    ? transaction.buyer_confirmed_delivery_at
-    : transaction.seller_confirmed_delivery_at;
-  const otherConfirmedAt = isBuyer
-    ? transaction.seller_confirmed_delivery_at
-    : transaction.buyer_confirmed_delivery_at;
+  // ── Helpers ───────────────────────────────────────────────────────────────────
 
   async function handlePay() {
     setError(null);
@@ -57,14 +55,27 @@ export function TransactionActions({
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch(`/api/transactions/${transaction.id}/confirm-delivery`, {
-        method: "POST",
-      });
+      const res  = await fetch(`/api/transactions/${transaction.id}/confirm-delivery`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Error al confirmar.");
-      if (json.bothConfirmed) {
-        onStatusChange?.("completed");
-      }
+      const next = json.transition === "completed" ? "completed" : "delivered";
+      onStatusChange?.(next);
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDispute() {
+    setError(null);
+    setBusy(true);
+    try {
+      const res  = await fetch(`/api/transactions/${transaction.id}/dispute`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error al disputar.");
+      onStatusChange?.("disputed");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
@@ -77,7 +88,7 @@ export function TransactionActions({
     setError(null);
     setCancelBusy(true);
     try {
-      const res = await fetch(`/api/transactions/${transaction.id}/action`, {
+      const res  = await fetch(`/api/transactions/${transaction.id}/action`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ action: "cancel" }),
@@ -93,8 +104,23 @@ export function TransactionActions({
     }
   }
 
-  // ── in_chat ───────────────────────────────────────────────────────────────
-  if (status === "in_chat") {
+  // ── Hours remaining in dispute window ─────────────────────────────────────────
+
+  function hoursLeft(): number | null {
+    if (!transaction.release_at) return null;
+    const ms = new Date(transaction.release_at).getTime() - Date.now();
+    return Math.max(0, Math.floor(ms / (1000 * 60 * 60)));
+  }
+
+  const errNode = error && (
+    <div className="flex items-center gap-1.5 text-xs text-error font-sans">
+      <AlertCircle size={12} />
+      {error}
+    </div>
+  );
+
+  // ── in_chat — awaiting payment (no mp_payment_id yet) ────────────────────────
+  if (status === "in_chat" && !transaction.mp_payment_id) {
     return (
       <div className="flex flex-col gap-2.5">
         {isBuyer ? (
@@ -104,21 +130,16 @@ export function TransactionActions({
             </p>
             <div className="flex items-center gap-2">
               <Button
-                variant="primary"
-                size="sm"
+                variant="primary" size="sm" className="flex-1"
                 leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                onClick={handlePay}
-                disabled={busy}
-                className="flex-1"
+                onClick={handlePay} disabled={busy}
               >
                 {busy ? "Iniciando pago…" : "Pagar con MercadoPago"}
               </Button>
               <Button
-                variant="ghost"
-                size="sm"
+                variant="ghost" size="sm"
                 leftIcon={<XCircle size={14} />}
-                loading={cancelBusy}
-                onClick={doCancel}
+                loading={cancelBusy} onClick={doCancel}
                 className="text-error hover:bg-error-subtle hover:text-error shrink-0"
               >
                 Cancelar
@@ -132,29 +153,49 @@ export function TransactionActions({
               Esperando que el comprador realice el pago…
             </div>
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               leftIcon={<XCircle size={14} />}
-              loading={cancelBusy}
-              onClick={doCancel}
+              loading={cancelBusy} onClick={doCancel}
               className="text-error hover:bg-error-subtle hover:text-error shrink-0"
             >
               Cancelar
             </Button>
           </div>
         )}
-
-        {error && (
-          <div className="flex items-center gap-1.5 text-xs text-error font-sans">
-            <AlertCircle size={12} />
-            {error}
-          </div>
-        )}
+        {errNode}
       </div>
     );
   }
 
-  // ── payment_pending ───────────────────────────────────────────────────────
+  // ── in_chat — payment confirmed, coordinate delivery ─────────────────────────
+  if (status === "in_chat" && transaction.mp_payment_id) {
+    return (
+      <div className="flex flex-col gap-2.5">
+        {isSeller ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-text-muted font-sans">
+              El pago fue confirmado. Coordiná la entrega con el comprador por este chat y, cuando la carta esté entregada, confirmalo acá.
+            </p>
+            <Button
+              variant="primary" size="sm"
+              leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+              onClick={handleConfirmDelivery} disabled={busy}
+            >
+              {busy ? "Confirmando…" : "Confirmar entrega"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-text-muted text-xs font-sans">
+            <Clock size={13} />
+            Pago confirmado — esperando que el vendedor confirme la entrega…
+          </div>
+        )}
+        {errNode}
+      </div>
+    );
+  }
+
+  // ── payment_pending ───────────────────────────────────────────────────────────
   if (status === "payment_pending") {
     return (
       <div className="flex items-center gap-2">
@@ -165,11 +206,9 @@ export function TransactionActions({
               Pago en proceso — completá el pago en MercadoPago.
             </div>
             <Button
-              variant="secondary"
-              size="sm"
+              variant="secondary" size="sm"
               leftIcon={<CreditCard size={14} />}
-              onClick={handlePay}
-              disabled={busy}
+              onClick={handlePay} disabled={busy}
               className="w-fit"
             >
               Reintentar / volver al checkout
@@ -185,7 +224,87 @@ export function TransactionActions({
     );
   }
 
-  // ── completed ─────────────────────────────────────────────────────────────
+  // ── delivered — 72h dispute window ───────────────────────────────────────────
+  if (status === "delivered") {
+    const hrs = hoursLeft();
+    return (
+      <div className="flex flex-col gap-2.5">
+        {isBuyer ? (
+          <>
+            <div className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2.5 flex flex-col gap-1">
+              <p className="text-xs font-semibold font-sans text-warning flex items-center gap-1.5">
+                <ShieldAlert size={13} />
+                Período de protección activo
+              </p>
+              <p className="text-xs text-text-secondary font-sans">
+                Tenés{" "}
+                <span className="font-semibold text-text-primary">
+                  {hrs != null ? `${hrs} horas` : "72 horas"}
+                </span>{" "}
+                para reportar cualquier problema. Si no hay disputa, la transacción se cerrará automáticamente.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="primary" size="sm" className="flex-1"
+                leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                onClick={handleConfirmDelivery} disabled={busy}
+              >
+                {busy ? "Confirmando…" : "Recibí la carta"}
+              </Button>
+              <Button
+                variant="ghost" size="sm"
+                leftIcon={<ShieldAlert size={14} />}
+                loading={busy} onClick={handleDispute}
+                className="text-error hover:bg-error-subtle hover:text-error shrink-0"
+              >
+                Disputar
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5 text-success text-xs font-sans">
+              <PackageCheck size={13} />
+              Entrega confirmada
+            </div>
+            <p className="text-xs text-text-muted font-sans">
+              Esperando confirmación del comprador.{" "}
+              {hrs != null && hrs > 0
+                ? `El período de disputa vence en ${hrs} horas.`
+                : "El período de disputa venció."}
+            </p>
+          </div>
+        )}
+        {errNode}
+      </div>
+    );
+  }
+
+  // ── disputed ──────────────────────────────────────────────────────────────────
+  if (status === "disputed") {
+    const resolved   = !!transaction.dispute_resolved_at;
+    const resolution = transaction.dispute_resolution;
+    return (
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5 text-error text-xs font-sans font-semibold">
+          <ShieldAlert size={13} />
+          {resolved ? "Disputa resuelta" : "Disputa en revisión"}
+        </div>
+        <p className="text-xs text-text-muted font-sans leading-relaxed">
+          {resolved
+            ? resolution === "buyer"
+              ? "La disputa fue resuelta a favor del comprador. El vendedor debe procesar el reembolso vía MercadoPago."
+              : "La disputa fue resuelta a favor del vendedor."
+            : isBuyer
+              ? "Tu disputa fue recibida. El equipo de Card Stash la revisará. En caso de validarse, el vendedor deberá reembolsar el pago."
+              : "El comprador abrió una disputa. El equipo de Card Stash la está revisando."}
+        </p>
+      </div>
+    );
+  }
+
+  // ── completed ─────────────────────────────────────────────────────────────────
   if (status === "completed") {
     return (
       <div className="flex items-center gap-1.5 text-success text-xs font-sans">
@@ -195,7 +314,7 @@ export function TransactionActions({
     );
   }
 
-  // ── cancelled ─────────────────────────────────────────────────────────────
+  // ── cancelled ─────────────────────────────────────────────────────────────────
   if (status === "cancelled") {
     return (
       <div className="flex items-center gap-1.5 text-error text-xs font-sans">
@@ -205,63 +324,5 @@ export function TransactionActions({
     );
   }
 
-  // ── paid (legacy MP flow) ─────────────────────────────────────────────────
-  if (status === "paid") {
-    return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-success text-xs font-sans flex-1">
-            <CheckCircle size={14} />
-            Pago confirmado
-          </div>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<CheckCircle size={14} />}
-            loading={busy}
-            onClick={async () => {
-              setBusy(true);
-              const res = await fetch(`/api/transactions/${transaction.id}/action`, {
-                method:  "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ action: "complete" }),
-              });
-              const json = await res.json();
-              if (res.ok) { onStatusChange?.("completed"); router.refresh(); }
-              else setError(json.error ?? "Error.");
-              setBusy(false);
-            }}
-          >
-            Marcar como completado
-          </Button>
-        </div>
-        {error && (
-          <div className="flex items-center gap-1.5 text-xs text-error font-sans">
-            <AlertCircle size={12} /> {error}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return null;
-}
-
-// ─── Party badge ──────────────────────────────────────────────────────────────
-
-function ConfirmPartyBadge({ label, confirmed }: { label: string; confirmed: boolean }) {
-  return (
-    <div className={[
-      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-sans font-medium border flex-1 justify-center",
-      confirmed
-        ? "bg-success/10 border-success/20 text-success"
-        : "bg-secondary border-border text-text-muted",
-    ].join(" ")}>
-      {confirmed
-        ? <CheckCircle size={11} />
-        : <Clock size={11} />
-      }
-      {label}
-    </div>
-  );
 }

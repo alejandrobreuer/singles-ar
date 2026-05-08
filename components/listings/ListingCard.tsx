@@ -3,9 +3,10 @@
 import * as React from "react";
 import { Star, ShoppingCart, MessageCircle, Award, Repeat2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { formatARS } from "@/lib/formatting";
+import { Avatar }          from "@/components/ui/avatar";
+import { Button }          from "@/components/ui/button";
+import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import { formatARS }       from "@/lib/formatting";
 import type { Condition, ListingType, PublicProfile } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,16 +31,6 @@ interface ListingCardProps {
   className?: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CONDITION_META: Record<Condition, { label: string; color: string }> = {
-  NM:  { label: "NM",  color: "bg-success-subtle text-success border-success/25" },
-  LP:  { label: "LP",  color: "bg-blue-50 text-blue-700 border-blue-200" },
-  MP:  { label: "MP",  color: "bg-warning-subtle text-warning border-warning/25" },
-  HP:  { label: "HP",  color: "bg-orange-50 text-orange-700 border-orange-200" },
-  DMG: { label: "DMG", color: "bg-error-subtle text-error border-error/25" },
-};
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ListingCard({
@@ -50,7 +41,6 @@ export function ListingCard({
   className,
 }: ListingCardProps) {
   const { profiles: seller } = listing;
-  const cond  = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
   const isSale = listing.listing_type === "sale";
 
   return (
@@ -121,12 +111,7 @@ export function ListingCard({
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             {/* Condition badge */}
-            <span className={cn(
-              "inline-flex items-center justify-center w-9 h-6 rounded text-2xs font-bold border font-sans",
-              cond.color
-            )}>
-              {cond.label}
-            </span>
+            <ConditionBadge condition={listing.condition} className="w-9" />
 
             {/* Listing type indicator */}
             {listing.listing_type === "trade" && (
@@ -179,7 +164,7 @@ export function ListingCard({
         {/* Notes */}
         {listing.notes && (
           <blockquote className="mb-3 border-l-2 border-border pl-3 text-sm text-text-muted font-sans italic leading-relaxed">
-            "{listing.notes}"
+            {'"'}{listing.notes}{'"'}
           </blockquote>
         )}
 

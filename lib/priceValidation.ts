@@ -4,10 +4,13 @@
 // ─── Default settings (used as fallback if DB unavailable) ───────────────────
 
 export const DEFAULT_SETTINGS = {
-  price_tolerance_percent: 30,
-  usd_to_ars_rate:         1000,
-  platform_fee_percent:    5,
-  mp_fee_percent:          5.99,
+  price_tolerance_percent:     30,
+  usd_to_ars_rate:             1000,
+  platform_commission_percent: 5,
+  mp_fee_percent:              5.99,
+  buy_order_default_days:      30,
+  max_cancels_before_flag:     3,
+  cancel_window_days:          1,
 } as const;
 
 // ─── Price validation ─────────────────────────────────────────────────────────
@@ -59,7 +62,7 @@ export interface CommissionResult {
 
 export function calculateCommission(
   priceARS:           number,
-  platformFeePercent: number = DEFAULT_SETTINGS.platform_fee_percent,
+  platformFeePercent: number = DEFAULT_SETTINGS.platform_commission_percent,
   mpFeePercent:       number = DEFAULT_SETTINGS.mp_fee_percent
 ): CommissionResult {
   const platformFee   = priceARS * (platformFeePercent / 100);

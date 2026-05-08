@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeRarity }   from "@/lib/sync/normalizeRarity";
 
 // ─── Streaming JSON array parser ──────────────────────────────────────────────
 // Avoids loading the entire ~700 MB Scryfall bulk file into a single string,
@@ -141,7 +142,7 @@ function toCardRow(c: ScryfallCard): CardRow {
     set_name:     c.set_name,
     set_code:     c.set.toUpperCase(),
     card_number:  c.collector_number,
-    rarity:       c.rarity,
+    rarity:       normalizeRarity(c.rarity) ?? c.rarity,
     color:        mtgColor(c.colors),
     image_url,
     game:         "magic",
@@ -167,7 +168,7 @@ export async function fetchAndSyncScryfall(): Promise<ScryfallSyncResult> {
   // ── Step 1: fetch bulk-data manifest ────────────────────────────────────────
   console.log("[scryfall] Fetching bulk-data manifest…");
   const manifestRes = await fetch("https://api.scryfall.com/bulk-data", {
-    headers: { "User-Agent": "singles-ar/1.0 (marketplace)" },
+    headers: { "User-Agent": "card-stash/1.0 (marketplace)" },
   });
 
   if (!manifestRes.ok) {
@@ -185,7 +186,7 @@ export async function fetchAndSyncScryfall(): Promise<ScryfallSyncResult> {
 
   // ── Step 2: download the JSON file (~200 MB uncompressed, ~30 MB gzipped) ──
   const dataRes = await fetch(entry.download_uri, {
-    headers: { "User-Agent": "singles-ar/1.0 (marketplace)" },
+    headers: { "User-Agent": "card-stash/1.0 (marketplace)" },
   });
 
   if (!dataRes.ok) {

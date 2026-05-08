@@ -2,19 +2,9 @@ import * as React from "react";
 import Link from "next/link";
 import { ShieldCheck, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Avatar } from "@/components/ui/avatar";
-import type { Condition, ListingWithSeller } from "@/types/database";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CONDITION_META: Record<Condition, { label: string; color: string }> = {
-  NM:  { label: "NM",  color: "bg-success-subtle text-success border-success/20" },
-  LP:  { label: "LP",  color: "bg-blue-50 text-blue-700 border-blue-200" },
-  MP:  { label: "MP",  color: "bg-warning-subtle text-warning border-warning/20" },
-  HP:  { label: "HP",  color: "bg-orange-50 text-orange-700 border-orange-200" },
-  DMG: { label: "DMG", color: "bg-error-subtle text-error border-error/20" },
-};
+import { Avatar }          from "@/components/ui/avatar";
+import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import type { ListingWithSeller } from "@/types/database";
 
 function formatARS(price: number): string {
   return new Intl.NumberFormat("es-AR", {
@@ -33,7 +23,6 @@ interface ListingRowProps {
 
 export function ListingRow({ listing, className }: ListingRowProps) {
   const { profiles: seller } = listing;
-  const cond = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
 
   return (
     <div
@@ -44,14 +33,7 @@ export function ListingRow({ listing, className }: ListingRowProps) {
       )}
     >
       {/* Condition badge */}
-      <span
-        className={cn(
-          "shrink-0 inline-flex items-center justify-center w-10 h-6 rounded text-2xs font-sans font-bold border",
-          cond.color
-        )}
-      >
-        {cond.label}
-      </span>
+      <ConditionBadge condition={listing.condition} />
 
       {/* Seller info */}
       <Link
@@ -89,7 +71,7 @@ export function ListingRow({ listing, className }: ListingRowProps) {
 
       {/* Price */}
       <span className="shrink-0 font-price text-base text-text-primary ml-auto">
-        {formatARS(listing.price)}
+        {listing.price != null ? formatARS(listing.price) : "—"}
       </span>
     </div>
   );

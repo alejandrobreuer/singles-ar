@@ -30,7 +30,7 @@ export function PriceValidator({
       )}>
         <Info size={14} className="shrink-0 mt-0.5 text-text-muted" />
         <p className="text-text-muted">
-          Sin transacciones registradas en Singles.ar para esta carta. Podés publicar a cualquier precio.
+          Sin transacciones registradas en Card Stash para esta carta. Podés publicar a cualquier precio.
         </p>
       </div>
     );
@@ -66,10 +66,10 @@ export function PriceValidator({
           above ? "text-warning" : below ? "text-blue-600" : "text-success"
         )}>
           {above
-            ? `${pct.toFixed(0)}% sobre la mediana de Singles.ar`
+            ? `${pct.toFixed(0)}% sobre la mediana de Card Stash`
             : below
-            ? `${Math.abs(pct).toFixed(0)}% bajo la mediana de Singles.ar`
-            : "Cerca de la mediana de Singles.ar"
+            ? `${Math.abs(pct).toFixed(0)}% bajo la mediana de Card Stash`
+            : "Cerca de la mediana de Card Stash"
           }
         </p>
       </div>
@@ -83,7 +83,7 @@ export function PriceValidator({
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 text-2xs text-text-muted font-sans uppercase tracking-wide mb-0.5">
             <TrendingUp size={9} />
-            Mediana Singles.ar
+            Mediana Card Stash
           </div>
           <p className="text-sm font-price text-text-primary">{formatARS(platformMedianARS)}</p>
           <p className="text-2xs text-text-muted font-sans">{transactionCount} transacciones</p>

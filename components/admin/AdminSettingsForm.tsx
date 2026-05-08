@@ -27,7 +27,7 @@ const FIELDS: FieldDef[] = [
   {
     key:         "platform_commission_percent",
     label:       "Comisión de plataforma",
-    description: "Porcentaje que retiene Singles.ar de cada transacción completada.",
+    description: "Porcentaje que retiene Card Stash de cada transacción completada.",
     min: 0.1, max: 20, step: 0.1, suffix: "%",
   },
   {

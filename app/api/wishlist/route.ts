@@ -30,7 +30,7 @@ export async function GET() {
 
   // Fetch listing stats for these cards
   const cardIds = (items ?? []).map((i) => i.card_id);
-  let statsMap: Record<string, { listing_count: number; lowest_price: number | null }> = {};
+  const statsMap: Record<string, { listing_count: number; lowest_price: number | null }> = {};
 
   if (cardIds.length > 0) {
     const { data: stats } = await admin

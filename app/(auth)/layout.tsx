@@ -8,14 +8,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Minimal header */}
       <header className="w-full border-b border-border bg-surface">
         <div className="mx-auto max-w-7xl px-6 h-14 flex items-center">
-          <Link href="/" className="no-underline flex items-baseline gap-0">
-            <span className="font-serif font-semibold text-xl text-text-primary">
-              Singles
-            </span>
-            <span className="font-serif font-bold text-xl text-accent">.</span>
-            <span className="font-serif font-semibold text-xl text-text-primary">
-              ar
-            </span>
+          <Link href="/" className="no-underline flex items-center" aria-label="Card Stash — Inicio">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/CardStashLogo.png" alt="Card Stash" className="h-8 w-auto object-contain" />
           </Link>
         </div>
       </header>
@@ -28,7 +23,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Footer */}
       <footer className="py-6 text-center">
         <p className="text-xs text-text-muted font-sans">
-          © {new Date().getFullYear()} Singles.ar — Todos los derechos reservados
+          © {new Date().getFullYear()} Card Stash — Todos los derechos reservados
         </p>
       </footer>
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, CreditCard, ArrowRight, ExternalLink, CheckCircle2 } from "lucide-react";
 import { buildMPAuthUrl } from "@/lib/auth/utils";
@@ -23,7 +22,7 @@ const FLOW_STEPS = [
   {
     icon:  <ShieldCheck size={18} className="text-primary" />,
     title: "Autorizá el acceso",
-    desc:  "Te redirigimos a MercadoPago para que autoricés a Singles.ar a procesar cobros en tu nombre.",
+    desc:  "Te redirigimos a MercadoPago para que autoricés a Card Stash a procesar cobros en tu nombre.",
   },
   {
     icon:  <CreditCard size={18} className="text-primary" />,
@@ -112,7 +111,7 @@ export default function MercadoPagoOnboardingPage() {
         <div className="flex gap-2.5 mb-6 text-xs text-text-muted font-sans">
           <ShieldCheck size={14} className="shrink-0 mt-0.5 text-success" />
           <p>
-            La conexión utiliza OAuth 2.0 oficial de MercadoPago. Singles.ar
+            La conexión utiliza OAuth 2.0 oficial de MercadoPago. Card Stash
             solo accede a cobros — nunca a transferencias o datos personales.
           </p>
         </div>

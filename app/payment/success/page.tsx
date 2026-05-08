@@ -19,7 +19,6 @@ export default async function PaymentSuccessPage({
   // MP appends: payment_id, status, external_reference (= transactionId), preference_id
   const externalRef = searchParams.external_reference;
   const paymentId   = searchParams.payment_id;
-  const status      = searchParams.status;
 
   if (!externalRef) redirect("/");
 
@@ -45,7 +44,7 @@ export default async function PaymentSuccessPage({
   const isSeller = tx.seller_id === user.id;
   if (!isBuyer && !isSeller) redirect("/");
 
-  const card = tx.card as { id: string; name: string; image_url: string | null; set_name: string | null } | null;
+  const card = tx.card as unknown as { id: string; name: string; image_url: string | null; set_name: string | null } | null;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -129,10 +128,9 @@ export default async function PaymentSuccessPage({
             </Button>
           </div>
 
-          {/* Review note */}
+          {/* Protection note */}
           <p className="text-xs text-text-muted font-sans leading-relaxed px-2">
-            Una vez que coordinés y recibas la carta, recordá marcar la transacción como completada
-            y dejar una reseña en el chat.
+            Coordiná la entrega con el vendedor por el chat. Tenés <strong className="text-text-secondary">72 horas</strong> para reportar cualquier problema desde que el vendedor confirme la entrega.
           </p>
         </div>
       </div>

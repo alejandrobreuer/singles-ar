@@ -179,21 +179,30 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   -- State machine
   status              text        NOT NULL DEFAULT 'in_chat'
                       CHECK (status IN (
-                        'in_chat',          -- chat started, no payment yet
+                        'in_chat',          -- chat open (pre-payment OR post-payment with mp_payment_id set)
                         'payment_pending',  -- preference created, waiting for MP
-                        'paid',             -- MP confirmed payment
-                        'completed',        -- both parties marked complete
-                        'disputed',         -- dispute opened
-                        'cancelled'         -- cancelled by either party
+                        'paid',             -- legacy: kept for existing rows only
+                        'delivered',        -- seller confirmed delivery, 72h dispute window open
+                        'completed',        -- buyer confirmed receipt (or dispute resolved for seller)
+                        'disputed',         -- buyer opened dispute within 72h
+                        'cancelled'         -- cancelled by either party (pre-payment only)
                       )),
 
   -- Chat read tracking
   buyer_last_read_at  timestamptz,
   seller_last_read_at timestamptz,
 
-  -- Delivery confirmation (both required to complete)
+  -- Delivery confirmation
   buyer_confirmed_delivery_at  timestamptz,
   seller_confirmed_delivery_at timestamptz,
+
+  -- Virtual-hold delivery / dispute window
+  -- NOTE: MP transfers funds to seller immediately on payment approval.
+  -- These fields are for UI tracking only — not for fund release.
+  delivered_at        timestamptz,                   -- when seller confirmed delivery
+  release_at          timestamptz,                   -- delivered_at + 72h — dispute window expiry
+  dispute_resolved_at timestamptz,                   -- when admin resolved the dispute
+  dispute_resolution  text CHECK (dispute_resolution IN ('buyer', 'seller')),
 
   created_at          timestamptz DEFAULT now() NOT NULL,
   updated_at          timestamptz DEFAULT now() NOT NULL,

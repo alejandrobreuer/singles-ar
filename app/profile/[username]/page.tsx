@@ -1,24 +1,20 @@
 import * as React from "react";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Star, ShieldAlert, Award, Tag, Package, MessageSquare } from "lucide-react";
+import { Star, ShieldAlert, Award } from "lucide-react";
 import { createAdminClient }  from "@/lib/supabase/admin";
 import { Avatar }             from "@/components/ui/avatar";
 import { Badge }              from "@/components/ui/badge";
-import { Divider }            from "@/components/ui/divider";
 import { Topbar }             from "@/components/layout/Topbar";
-import { formatARS }          from "@/lib/formatting";
 import type { ListingWithCard, ReviewWithReviewer, Game } from "@/types/database";
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: { params: { username: string } }) {
   return {
-    title: `${params.username} — Singles.ar`,
-    description: `Perfil de ${params.username} en Singles.ar. Comprá cartas TCG de vendedores verificados.`,
+    title: `${params.username} — Card Stash`,
+    description: `Perfil de ${params.username} en Card Stash. Comprá cartas TCG de vendedores verificados.`,
   };
 }
 

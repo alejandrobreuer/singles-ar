@@ -91,15 +91,15 @@ export async function POST(
   const _txId     = tx.id;
   admin
     .from("cards").select("name").eq("id", _cardId).single()
-    .then(({ data: card }) =>
-      notify({
+    .then(
+      ({ data: card }) => notify({
         user_id: _sellerId,
         type:    "card_sold",
         title:   `Quieren comprar: ${card?.name ?? "tu carta"}`,
         link:    `/chat/${_txId}`,
-      })
-    )
-    .catch(() => null);
+      }),
+      () => null
+    );
 
   return NextResponse.json({ data: { transactionId: tx.id } });
 }

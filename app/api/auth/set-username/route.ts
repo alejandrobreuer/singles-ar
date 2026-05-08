@@ -42,12 +42,21 @@ export async function POST(req: NextRequest) {
 
   const { error } = await admin
     .from("profiles")
-    .update({ username })
+    .update({
+      username,
+      terms_accepted:    true,
+      terms_accepted_at: new Date().toISOString(),
+    })
     .eq("id", userId);
 
   if (error) {
     return NextResponse.json({ error: "No se pudo guardar el apodo." }, { status: 500 });
   }
+
+  // Store in user_metadata so middleware can check terms without an extra DB query
+  await admin.auth.admin.updateUserById(userId, {
+    user_metadata: { terms_accepted: true },
+  });
 
   return NextResponse.json({ ok: true });
 }

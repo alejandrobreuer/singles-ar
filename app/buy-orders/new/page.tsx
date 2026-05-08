@@ -4,17 +4,15 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { z } from "zod";
 import { AlertCircle, ChevronLeft, Clock, ShieldAlert, Tag } from "lucide-react";
 import { Button }            from "@/components/ui/button";
 import { Input }             from "@/components/ui/input";
-import { Badge }             from "@/components/ui/badge";
 import { Spinner }           from "@/components/ui/spinner";
 import { Divider }           from "@/components/ui/divider";
 import { toast }             from "sonner";
 import { CardAutocomplete }  from "@/components/sell/CardAutocomplete";
 import { PriceValidator }    from "@/components/sell/PriceValidator";
-import { formatARS, parseARSInput } from "@/lib/formatting";
+import { parseARSInput }     from "@/lib/formatting";
 import type { CardSearchResult } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -72,15 +70,34 @@ function StepDots({ step }: { step: number }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function NewBuyOrderPage() {
+function NewBuyOrderPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
+  // ── Build pre-selected card from URL params (passed by card page) ───────────
+  const preselectedCard = React.useMemo<CardSearchResult | null>(() => {
+    const id    = searchParams.get("card_id");
+    const name  = searchParams.get("card_name");
+    if (!id || !name) return null;
+    return {
+      id,
+      external_id: id,
+      name,
+      set_name:    searchParams.get("card_set")   || null,
+      set_code:    null,
+      card_number: null,
+      rarity:      null,
+      color:       null,
+      image_url:   searchParams.get("card_image") || null,
+      game:        (searchParams.get("card_game") as CardSearchResult["game"]) ?? "magic",
+    };
+  }, [searchParams]);
+
   // ── State ──────────────────────────────────────────────────────────────────
-  const [step,         setStep]       = React.useState(1);
-  const [card,         setCard]        = React.useState<CardSearchResult | null>(null);
-  const [priceResult,  setPriceResult] = React.useState<PriceResult | null>(null);
-  const [priceLoading, setPriceLoading] = React.useState(false);
+  const [step,         setStep]        = React.useState(() => preselectedCard ? 2 : 1);
+  const [card,         setCard]         = React.useState<CardSearchResult | null>(preselectedCard);
+  const [priceResult,  setPriceResult]  = React.useState<PriceResult | null>(null);
+  const [priceLoading, setPriceLoading] = React.useState(!!preselectedCard);
 
   // Step 2 fields
   const [priceRaw,   setPriceRaw]   = React.useState("");
@@ -89,23 +106,18 @@ export default function NewBuyOrderPage() {
   const [duration,   setDuration]   = React.useState(30);
   const [notes,      setNotes]      = React.useState("");
 
-  const [submitting, setSubmitting] = React.useState(false);
+  const [submitting,  setSubmitting]  = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   const priceNum = parseARSInput(priceRaw);
 
-  // ── Pre-select card from ?card_id= ─────────────────────────────────────────
+  // ── Fetch price reference for pre-selected card ────────────────────────────
   React.useEffect(() => {
-    const cardId = searchParams.get("card_id");
-    if (!cardId) return;
-
-    fetch(`/api/cards/search?q=&limit=1&id=${cardId}`)
-      .then((r) => r.json())
-      .then((json) => {
-        const found = json.data?.[0];
-        if (found) handleCardSelect(found);
-      })
-      .catch(() => null);
+    if (!preselectedCard) return;
+    fetchPrice(preselectedCard.id).then((result) => {
+      setPriceResult(result);
+      setPriceLoading(false);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -213,7 +225,7 @@ export default function NewBuyOrderPage() {
                 )}
                 {priceResult?.price_ars != null && !priceLoading && (
                   <p className="text-xs text-text-muted font-sans mt-0.5">
-                    Mediana Singles.ar:{" "}
+                    Mediana Card Stash:{" "}
                     <span className="text-text-primary font-medium font-price">
                       {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(priceResult.price_ars)}
                     </span>
@@ -403,4 +415,8 @@ export default function NewBuyOrderPage() {
       </div>
     </div>
   );
+}
+
+export default function Page() {
+  return <React.Suspense><NewBuyOrderPage /></React.Suspense>;
 }

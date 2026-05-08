@@ -99,7 +99,7 @@ export async function getCardPrice(
       {
         headers: {
           Authorization:  `bearer ${token}`,
-          "User-Agent":   "singles-ar/1.0",
+          "User-Agent":   "card-stash/1.0",
         },
         // 5 second timeout to avoid hanging
         signal: AbortSignal.timeout(5000),

@@ -2,7 +2,8 @@ import * as React from "react";
 import Image from "next/image";
 import { Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { Badge }           from "@/components/ui/badge";
+import { ConditionBadge }  from "@/components/ui/ConditionBadge";
 import { CommissionBreakdown } from "./CommissionBreakdown";
 import { formatARS, setLabel } from "@/lib/formatting";
 import type { CardSearchResult, Condition, ListingType, Game } from "@/types/database";
@@ -26,13 +27,6 @@ interface ListingPreviewProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const CONDITION_META: Record<Condition, { label: string; color: string }> = {
-  NM:  { label: "Near Mint (NM)",           color: "text-success bg-success-subtle border-success/20" },
-  LP:  { label: "Lightly Played (LP)",       color: "text-blue-700 bg-blue-50 border-blue-200" },
-  MP:  { label: "Moderately Played (MP)",    color: "text-warning bg-warning-subtle border-warning/20" },
-  HP:  { label: "Heavily Played (HP)",       color: "text-orange-700 bg-orange-50 border-orange-200" },
-  DMG: { label: "Damaged (DMG)",             color: "text-error bg-error-subtle border-error/20" },
-};
 
 const GAME_BADGE: Record<Game, React.ComponentProps<typeof Badge>["variant"]> = {
   magic: "magic", pokemon: "poke", onepiece: "op",
@@ -54,8 +48,6 @@ export function ListingPreview({
   mpFeePercent,
   className,
 }: ListingPreviewProps) {
-  const cond = CONDITION_META[condition];
-
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {/* Card detail section */}
@@ -100,12 +92,7 @@ export function ListingPreview({
 
             {/* Meta row */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className={cn(
-                "text-2xs font-sans font-medium px-2 py-0.5 rounded border",
-                cond.color
-              )}>
-                {cond.label}
-              </span>
+              <ConditionBadge condition={condition} variant="long" />
 
               {quantity > 1 && (
                 <span className="text-xs text-text-muted font-sans">
@@ -145,7 +132,7 @@ export function ListingPreview({
         {/* Notes */}
         {notes && (
           <blockquote className="mt-3 border-l-2 border-border pl-3 text-sm text-text-secondary font-sans italic">
-            "{notes}"
+            {'"'}{notes}{'"'}
           </blockquote>
         )}
 

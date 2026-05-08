@@ -95,6 +95,15 @@ export default async function AdminDashboardPage() {
       .gte("created_at", thirtyDaysAgo),
   ]);
 
+  type TxRow = {
+    id: string; price: number; platform_fee: number | null;
+    status: string; created_at: string; currency: string;
+    buyer: { username: string } | null;
+    seller: { username: string } | null;
+    card: { name: string } | null;
+  };
+  const txRows = (recentTx ?? []) as unknown as TxRow[];
+
   const totalVolume    = (volumeData ?? []).reduce((s, r) => s + (r.price ?? 0), 0);
   const totalCommision = (volumeData ?? []).reduce((s, r) => s + (r.platform_fee ?? 0), 0);
   const activeUserIds  = new Set(
@@ -159,10 +168,10 @@ export default async function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {(recentTx ?? []).map((tx) => {
-                const buyer  = tx.buyer  as { username: string } | null;
-                const seller = tx.seller as { username: string } | null;
-                const card   = tx.card   as { name: string }     | null;
+              {txRows.map((tx) => {
+                const buyer  = tx.buyer;
+                const seller = tx.seller;
+                const card   = tx.card;
                 return (
                   <tr key={tx.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                     <td className="px-4 py-2.5 text-text-primary truncate max-w-[160px]">
@@ -191,7 +200,7 @@ export default async function AdminDashboardPage() {
                   </tr>
                 );
               })}
-              {(recentTx ?? []).length === 0 && (
+              {txRows.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
                     No hay transacciones aún.

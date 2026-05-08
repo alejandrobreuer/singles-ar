@@ -26,7 +26,7 @@ export function MessageBubble({ message, isMine, showAvatar }: MessageBubbleProp
       <div className="w-7 shrink-0">
         {!isMine && showAvatar && (
           <Avatar
-            src={message.sender?.avatar_url ?? null}
+            src={message.sender?.avatar_url ?? undefined}
             name={message.sender?.username ?? "?"}
             size="sm"
           />

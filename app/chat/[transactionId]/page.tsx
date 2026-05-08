@@ -147,12 +147,12 @@ export default async function ChatPage({
           {/* Counterpart avatar */}
           <div className="shrink-0 flex items-center gap-1.5">
             <Avatar
-              src={counterpart.avatar_url ?? null}
+              src={counterpart.avatar_url ?? undefined}
               name={counterpart.username}
               size="sm"
             />
             {isBuyer && (
-              <ShieldCheck size={13} className="text-success" title="Vendedor verificado" />
+              <ShieldCheck size={13} className="text-success" aria-label="Vendedor verificado" />
             )}
           </div>
         </div>

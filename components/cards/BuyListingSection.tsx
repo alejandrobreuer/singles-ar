@@ -5,20 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, X, Star, Tag, Plus, Clock, MapPin } from "lucide-react";
 import { cn }           from "@/lib/utils";
-import { Badge }        from "@/components/ui/badge";
-import { Avatar }       from "@/components/ui/avatar";
-import { fantasyName }  from "@/lib/fantasy-name";
-import type { Card, ListingWithSeller, Condition } from "@/types/database";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CONDITION_META: Record<Condition, { label: string; color: string }> = {
-  NM:  { label: "NM",  color: "bg-success-subtle text-success border-success/20"   },
-  LP:  { label: "LP",  color: "bg-blue-50 text-blue-700 border-blue-200"           },
-  MP:  { label: "MP",  color: "bg-warning-subtle text-warning border-warning/20"   },
-  HP:  { label: "HP",  color: "bg-orange-50 text-orange-700 border-orange-200"     },
-  DMG: { label: "DMG", color: "bg-error-subtle text-error border-error/20"         },
-};
+import { Badge }           from "@/components/ui/badge";
+import { Avatar }          from "@/components/ui/avatar";
+import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import { fantasyName }     from "@/lib/fantasy-name";
+import type { Card, ListingWithSeller } from "@/types/database";
 
 function formatARS(price: number): string {
   return new Intl.NumberFormat("es-AR", {
@@ -98,7 +89,6 @@ function BuyableListingRow({
   onBuy:      () => void;
 }) {
   const { profiles: seller } = listing;
-  const cond   = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
   const alias  = fantasyName(listing.id);
 
   const isReserved = listing.status === "reserved";
@@ -113,12 +103,7 @@ function BuyableListingRow({
       {/* Main row */}
       <div className="flex items-center gap-4 px-4 py-3.5">
         {/* Condition */}
-        <span className={cn(
-          "shrink-0 inline-flex items-center justify-center w-10 h-6 rounded text-2xs font-sans font-bold border",
-          cond.color
-        )}>
-          {cond.label}
-        </span>
+        <ConditionBadge condition={listing.condition} />
 
         {/* Seller — anonymised */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -211,7 +196,6 @@ function BuyConfirmModal({
   const [error, setError] = React.useState<string | null>(null);
 
   const { profiles: seller } = listing;
-  const cond   = CONDITION_META[listing.condition] ?? CONDITION_META.NM;
   const alias  = fantasyName(listing.id);
   const imgSrc = card.image_override_url ?? card.image_url;
 
@@ -295,12 +279,7 @@ function BuyConfirmModal({
             <p className="text-xs text-text-muted font-sans mb-2 truncate">{card.set_name}</p>
 
             <div className="flex items-center gap-2 mb-2">
-              <span className={cn(
-                "inline-flex items-center justify-center px-2 py-0.5 rounded text-2xs font-sans font-bold border",
-                cond.color
-              )}>
-                {cond.label}
-              </span>
+              <ConditionBadge condition={listing.condition} />
               {card.game && (
                 <Badge
                   variant={card.game === "magic" ? "magic" : card.game === "pokemon" ? "poke" : "op"}
@@ -331,11 +310,44 @@ function BuyConfirmModal({
           </div>
         </div>
 
+        {/* Delivery options */}
+        <div className="mx-5 mb-4 rounded-xl border border-border bg-secondary/50 px-3.5 py-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <MapPin size={12} className="text-text-muted shrink-0" />
+            <p className="text-xs font-semibold font-sans text-text-secondary uppercase tracking-wide">
+              Lugar de entrega
+            </p>
+          </div>
+          {listing.delivery_stores && listing.delivery_stores.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 mb-2.5">
+              {listing.delivery_stores.map((store) => (
+                <span
+                  key={store}
+                  className="inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-sans bg-surface border border-border text-text-secondary"
+                >
+                  {store}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-text-muted font-sans mb-2.5">
+              A coordinar con el vendedor por chat tras el pago.
+            </p>
+          )}
+          <p className="text-2xs text-text-muted font-sans leading-relaxed">
+            Al confirmar el pago aceptás que la entrega se realizará únicamente en{" "}
+            {listing.delivery_stores && listing.delivery_stores.length > 0
+              ? "los lugares indicados arriba"
+              : "el lugar que acuerden por chat"}
+            {" "}y dentro de los plazos acordados.
+          </p>
+        </div>
+
         {/* Note */}
         <p className="mx-5 mb-4 text-xs text-text-muted font-sans leading-relaxed">
           {step === "paying"
             ? "Reservando la carta y preparando el checkout de MercadoPago…"
-            : "Serás redirigido a MercadoPago para completar el pago. Una vez confirmado, podrás coordinar la entrega con el vendedor."}
+            : "Serás redirigido a la página de MercadoPago para efectuar el pago. Luego se habilitará un chat con el vendedor para acordar la entrega."}
         </p>
 
         {error && (

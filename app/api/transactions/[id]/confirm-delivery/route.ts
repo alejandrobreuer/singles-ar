@@ -3,8 +3,15 @@ import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // ─── POST /api/transactions/[id]/confirm-delivery ─────────────────────────────
-// Each party calls this once. When both have confirmed, the transaction
-// is automatically marked completed.
+//
+// Two roles, two transitions:
+//
+//   Seller (status = in_chat, mp_payment_id set)
+//     → delivered_at = now(), release_at = now()+72h, status = 'delivered'
+//
+//   Buyer (status = delivered)
+//     → completed_at = now(), status = 'completed'
+//     → triggers price_history + reputation RPCs
 
 export async function POST(
   _req: NextRequest,
@@ -18,7 +25,7 @@ export async function POST(
 
   const { data: tx, error: fetchErr } = await admin
     .from("transactions")
-    .select("id, buyer_id, seller_id, card_id, price, status, listing_id, buyer_confirmed_delivery_at, seller_confirmed_delivery_at")
+    .select("id, buyer_id, seller_id, card_id, price, status, listing_id, mp_payment_id")
     .eq("id", params.id)
     .single();
 
@@ -32,77 +39,76 @@ export async function POST(
   if (!isBuyer && !isSeller) {
     return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
   }
-  if (tx.status !== "in_chat") {
-    return NextResponse.json({ error: "Solo se puede confirmar durante el chat." }, { status: 422 });
-  }
 
-  // Idempotent — if already confirmed by this party, return early
-  if (isBuyer  && tx.buyer_confirmed_delivery_at)  return NextResponse.json({ ok: true });
-  if (isSeller && tx.seller_confirmed_delivery_at) return NextResponse.json({ ok: true });
+  const now = new Date();
 
-  const now = new Date().toISOString();
-  const update: Record<string, string | null> = { updated_at: now };
-
-  if (isBuyer) {
-    update.buyer_confirmed_delivery_at = now;
-  } else {
-    update.seller_confirmed_delivery_at = now;
-  }
-
-  const buyerConfirmed  = isBuyer  ? true : !!tx.buyer_confirmed_delivery_at;
-  const sellerConfirmed = isSeller ? true : !!tx.seller_confirmed_delivery_at;
-  const bothConfirmed   = buyerConfirmed && sellerConfirmed;
-
-  if (bothConfirmed) {
-    update.status       = "completed";
-    update.completed_at = now;
-  }
-
-  await admin.from("transactions").update(update).eq("id", params.id);
-
-  if (bothConfirmed) {
-    await admin.from("price_history").insert({
-      card_id:     tx.card_id,
-      price_ars:   tx.price,
-      price_usd:   null,
-      source:      "listing",
-      recorded_at: now,
-    });
-
-    // Delete listing if it was reserved (last copy sold), leave active ones alone (qty already decremented at purchase)
-    if (tx.listing_id) {
-      const { data: lst } = await admin
-        .from("listings")
-        .select("status")
-        .eq("id", tx.listing_id)
-        .maybeSingle();
-      if (lst?.status === "reserved") {
-        await admin.from("listings").delete().eq("id", tx.listing_id);
-      }
+  // ── Seller confirms delivery ──────────────────────────────────────────────────
+  if (isSeller) {
+    if (tx.status !== "in_chat" || !tx.mp_payment_id) {
+      return NextResponse.json(
+        { error: "Solo podés confirmar la entrega después de que el pago sea confirmado." },
+        { status: 422 }
+      );
     }
+
+    const releaseAt = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
+
+    await Promise.all([
+      admin.from("transactions").update({
+        status:       "delivered",
+        delivered_at: now.toISOString(),
+        release_at:   releaseAt,
+        updated_at:   now.toISOString(),
+      }).eq("id", params.id),
+
+      admin.from("chat_messages").insert({
+        transaction_id: tx.id,
+        sender_id:      null,
+        body:           "📦 El vendedor confirmó la entrega. El comprador tiene 72 horas para reportar cualquier problema. Si no hay disputa, la transacción se cerrará automáticamente.",
+        message_type:   "system",
+      }),
+    ]);
+
+    return NextResponse.json({ ok: true, transition: "delivered" });
   }
 
-  // System message for this party's confirmation
-  const confirmMsg = isBuyer
-    ? "El comprador confirmó la entrega."
-    : "El vendedor confirmó la entrega.";
+  // ── Buyer confirms receipt ────────────────────────────────────────────────────
+  if (isBuyer) {
+    if (tx.status !== "delivered") {
+      return NextResponse.json(
+        { error: "Solo podés confirmar la recepción después de que el vendedor confirme la entrega." },
+        { status: 422 }
+      );
+    }
 
-  const messagesToInsert = [
-    { transaction_id: tx.id, sender_id: null, body: confirmMsg, message_type: "system" },
-  ];
+    await Promise.all([
+      admin.from("transactions").update({
+        status:       "completed",
+        completed_at: now.toISOString(),
+        updated_at:   now.toISOString(),
+      }).eq("id", params.id),
 
-  if (bothConfirmed) {
-    messagesToInsert.push({
-      transaction_id: tx.id,
-      sender_id:      null,
-      body:           "Ambas partes confirmaron la entrega. ¡Transacción completada!",
-      message_type:   "system",
-    });
-    await admin.rpc("increment_total_sales",     { seller_id: tx.seller_id });
-    await admin.rpc("increment_total_purchases", { buyer_id:  tx.buyer_id  });
+      admin.rpc("increment_total_sales",     { seller_id: tx.seller_id }),
+      admin.rpc("increment_total_purchases", { buyer_id:  tx.buyer_id  }),
+
+      admin.from("price_history").insert({
+        card_id:     tx.card_id,
+        price_ars:   tx.price,
+        price_usd:   null,
+        source:      "listing",
+        recorded_at: now.toISOString(),
+      }),
+
+      admin.from("chat_messages").insert({
+        transaction_id: tx.id,
+        sender_id:      null,
+        body:           "✅ El comprador confirmó la recepción. ¡Transacción completada! Gracias por usar Card Stash.",
+        message_type:   "system",
+      }),
+    ]);
+
+    return NextResponse.json({ ok: true, transition: "completed" });
   }
 
-  await admin.from("chat_messages").insert(messagesToInsert);
-
-  return NextResponse.json({ ok: true, bothConfirmed });
+  return NextResponse.json({ error: "Acción no válida." }, { status: 422 });
 }

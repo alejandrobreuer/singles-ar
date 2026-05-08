@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { addDays } from "date-fns";
 import { z } from "zod";
 import { createClient }       from "@/lib/supabase/server";
-import { createAdminClient }  from "@/lib/supabase/admin";
-import { DEFAULT_SETTINGS } from "@/lib/priceValidation";
-
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const createBuyOrderSchema = z.object({
@@ -17,21 +14,6 @@ const createBuyOrderSchema = z.object({
   }).default(30),
   notes: z.string().max(300).nullable().optional(),
 });
-
-// ─── Settings helper ──────────────────────────────────────────────────────────
-
-async function getSettings() {
-  const admin = createAdminClient();
-  const { data } = await admin.from("admin_settings").select("key, value");
-  if (!data) return { ...DEFAULT_SETTINGS, max_cancels_before_flag: 3, buy_order_default_days: 30 };
-
-  const s = { ...DEFAULT_SETTINGS, max_cancels_before_flag: 3, buy_order_default_days: 30 } as Record<string, number>;
-  for (const row of data) {
-    const val = parseFloat(String(row.value));
-    if (!isNaN(val)) s[row.key] = val;
-  }
-  return s;
-}
 
 // ─── POST /api/buy-orders ─────────────────────────────────────────────────────
 

@@ -1,3 +1,5 @@
+"use server";
+
 import * as React from "react";
 import { notFound }          from "next/navigation";
 import Link                  from "next/link";
@@ -6,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { format }            from "date-fns";
 import { es }                from "date-fns/locale";
 import { ArrowLeft }         from "lucide-react";
+import { AdminDisputeActions } from "@/components/admin/AdminDisputeActions";
 
 // ─── Status display ───────────────────────────────────────────────────────────
 
@@ -13,6 +16,7 @@ const STATUS_STYLES: Record<string, string> = {
   in_chat:         "bg-blue-500/10 text-blue-400",
   payment_pending: "bg-amber-500/10 text-amber-400",
   paid:            "bg-emerald-500/10 text-emerald-400",
+  delivered:       "bg-purple-500/10 text-purple-400",
   completed:       "bg-emerald-600/10 text-emerald-500",
   disputed:        "bg-red-500/10 text-red-400",
   cancelled:       "bg-secondary text-text-muted",
@@ -20,7 +24,8 @@ const STATUS_STYLES: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   in_chat:         "En chat",
   payment_pending: "Pago pendiente",
-  paid:            "Pagado",
+  paid:            "Pagado (legacy)",
+  delivered:       "Entregado",
   completed:       "Completado",
   disputed:        "Disputado",
   cancelled:       "Cancelado",
@@ -108,11 +113,12 @@ export default async function AdminTransactionDetailPage({
 }) {
   const admin = createAdminClient();
 
-  const [{ data: tx }, { data: messages }] = await Promise.all([
+  const [{ data: rawTx }, { data: messages }] = await Promise.all([
     admin
       .from("transactions")
       .select(
         "id, price, platform_fee, status, currency, mp_preference_id, mp_payment_id, " +
+        "delivered_at, release_at, dispute_resolved_at, dispute_resolution, " +
         "created_at, updated_at, " +
         "buyer:profiles!buyer_id(id, username, email, reputation_score, total_sales), " +
         "seller:profiles!seller_id(id, username, email, reputation_score, total_sales), " +
@@ -128,11 +134,21 @@ export default async function AdminTransactionDetailPage({
       .order("created_at", { ascending: true }),
   ]);
 
+  type TxDetail = {
+    id: string; price: number; platform_fee: number | null; status: string; currency: string;
+    mp_preference_id: string | null; mp_payment_id: string | null;
+    delivered_at: string | null; release_at: string | null;
+    dispute_resolved_at: string | null; dispute_resolution: string | null;
+    created_at: string; updated_at: string;
+    buyer: { id: string; username: string; email: string; reputation_score: number; total_sales: number } | null;
+    seller: { id: string; username: string; email: string; reputation_score: number; total_sales: number } | null;
+    card: { id: string; name: string; set_name: string | null; image_url: string | null; game: string } | null;
+  };
+  const tx     = rawTx as unknown as TxDetail | null;
   if (!tx) notFound();
-
-  const buyer  = tx.buyer  as { id: string; username: string; email: string; reputation_score: number; total_sales: number } | null;
-  const seller = tx.seller as { id: string; username: string; email: string; reputation_score: number; total_sales: number } | null;
-  const card   = tx.card   as { id: string; name: string; set_name: string | null; image_url: string | null; game: string } | null;
+  const buyer  = tx.buyer;
+  const seller = tx.seller;
+  const card   = tx.card;
 
   function formatARS(n: number) {
     return new Intl.NumberFormat("es-AR", {
@@ -243,6 +259,27 @@ export default async function AdminTransactionDetailPage({
         </div>
       )}
 
+      {/* Dispute resolution panel */}
+      {(tx.status === "disputed") && (
+        <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-5 mb-6">
+          <h2 className="text-sm font-semibold font-sans text-red-400 mb-1">Disputa abierta</h2>
+          {tx.dispute_resolved_at ? (
+            <p className="text-xs text-text-muted font-sans mb-3">
+              Resuelta a favor del <strong>{tx.dispute_resolution === "buyer" ? "comprador" : "vendedor"}</strong>{" "}
+              el {format(new Date(tx.dispute_resolved_at), "d 'de' MMMM yyyy, HH:mm", { locale: es })}.
+            </p>
+          ) : (
+            <p className="text-xs text-text-muted font-sans mb-3">
+              Pendiente de resolución.{" "}
+              {tx.delivered_at && `Entregado el ${format(new Date(tx.delivered_at), "d MMM HH:mm", { locale: es })}.`}
+            </p>
+          )}
+          {!tx.dispute_resolved_at && (
+            <AdminDisputeActions transactionId={tx.id} />
+          )}
+        </div>
+      )}
+
       {/* Chat transcript */}
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
@@ -251,7 +288,7 @@ export default async function AdminTransactionDetailPage({
           </h2>
         </div>
         <div className="px-5 py-4 max-h-[600px] overflow-y-auto">
-          <ChatTranscript messages={(messages ?? []) as ChatMsg[]} />
+          <ChatTranscript messages={(messages ?? []) as unknown as ChatMsg[]} />
         </div>
       </div>
     </div>

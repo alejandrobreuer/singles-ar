@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -181,6 +181,7 @@ export function ExploreFilters({
                 options={filterOptions.sets.map((s) => ({ value: s.code, label: `${s.code} ${s.name}` }))}
                 selected={currentSet}
                 onSelect={(v) => router.push(buildUrl({ set: v === currentSet ? "" : v }))}
+                searchable
               />
             </FilterGroup>
           )}
@@ -195,8 +196,18 @@ export function ExploreFilters({
             </FilterGroup>
           )}
 
-          {filterOptions.colors.length > 0 && (
+          {filterOptions.colors.length > 0 && currentGame !== "pokemon" && (
             <FilterGroup label="Color">
+              <OptionList
+                options={filterOptions.colors.map((c) => ({ value: c, label: c }))}
+                selected={currentColor}
+                onSelect={(v) => router.push(buildUrl({ color: v === currentColor ? "" : v }))}
+              />
+            </FilterGroup>
+          )}
+
+          {filterOptions.colors.length > 0 && currentGame === "pokemon" && (
+            <FilterGroup label="Tipos">
               <OptionList
                 options={filterOptions.colors.map((c) => ({ value: c, label: c }))}
                 selected={currentColor}
@@ -238,39 +249,83 @@ function FilterGroup({ label, children }: { label: string; children: React.React
 // ─── OptionList ───────────────────────────────────────────────────────────────
 
 function OptionList({
-  options, selected, onSelect,
+  options, selected, onSelect, searchable = false,
 }: {
-  options:  { value: string; label: string }[];
-  selected: string;
-  onSelect: (v: string) => void;
+  options:    { value: string; label: string }[];
+  selected:   string;
+  onSelect:   (v: string) => void;
+  searchable?: boolean;
 }) {
   const SHOW_ALL_THRESHOLD = 8;
   const [expanded, setExpanded] = React.useState(false);
+  const [query,    setQuery]    = React.useState("");
 
-  const visible = expanded ? options : options.slice(0, SHOW_ALL_THRESHOLD);
-  const hasMore = options.length > SHOW_ALL_THRESHOLD;
+  // When searchable: filter by query; otherwise use expand/collapse
+  const filtered = searchable && query.trim()
+    ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const visible  = searchable ? filtered : (expanded ? filtered : filtered.slice(0, SHOW_ALL_THRESHOLD));
+  const hasMore  = !searchable && filtered.length > SHOW_ALL_THRESHOLD;
+
+  // Reset expand state when query changes
+  React.useEffect(() => { setExpanded(false); }, [query]);
 
   return (
     <div className="flex flex-col gap-0.5">
-      {visible.map((opt) => {
-        const active = selected === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onSelect(opt.value)}
+      {searchable && (
+        <div className="relative mb-1">
+          <Search
+            size={11}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar set…"
             className={cn(
-              "flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-sans transition-all text-left",
-              active
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-text-secondary hover:bg-secondary"
+              "w-full h-7 pl-7 pr-7 rounded-lg border border-border bg-background",
+              "font-sans text-xs text-text-primary placeholder:text-text-muted",
+              "focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50",
+              "transition-colors",
             )}
-          >
-            <span className="truncate">{opt.label}</span>
-            {active && <X size={10} className="shrink-0 ml-1.5 opacity-60" />}
-          </button>
-        );
-      })}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {visible.length === 0 ? (
+        <p className="text-xs text-text-muted font-sans px-3 py-2">Sin resultados.</p>
+      ) : (
+        visible.map((opt) => {
+          const active = selected === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onSelect(opt.value)}
+              className={cn(
+                "flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-sans transition-all text-left",
+                active
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-text-secondary hover:bg-secondary"
+              )}
+            >
+              <span className="truncate">{opt.label}</span>
+              {active && <X size={10} className="shrink-0 ml-1.5 opacity-60" />}
+            </button>
+          );
+        })
+      )}
 
       {hasMore && (
         <button
@@ -280,7 +335,7 @@ function OptionList({
         >
           {expanded
             ? <><ChevronUp size={11} /> Mostrar menos</>
-            : <><ChevronDown size={11} /> Ver {options.length - SHOW_ALL_THRESHOLD} más</>
+            : <><ChevronDown size={11} /> Ver {filtered.length - SHOW_ALL_THRESHOLD} más</>
           }
         </button>
       )}

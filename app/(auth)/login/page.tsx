@@ -22,7 +22,7 @@ type FieldErrors = Partial<Record<keyof LoginFields, string>>;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function LoginPage() {
+function LoginPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const nextPath     = searchParams.get("next") ?? "/";
@@ -90,7 +90,7 @@ export default function LoginPage() {
           Iniciar sesión
         </h1>
         <p className="text-sm text-text-secondary font-sans">
-          Bienvenido de nuevo a Singles.ar
+          Bienvenido de nuevo a Card Stash
         </p>
       </div>
 
@@ -180,4 +180,8 @@ export default function LoginPage() {
       </p>
     </div>
   );
+}
+
+export default function Page() {
+  return <React.Suspense><LoginPage /></React.Suspense>;
 }

@@ -28,7 +28,7 @@ export default function PaymentFailurePage({
     pending_review_manual:              { title: "Pago en revisión manual",         detail: "El pago está siendo revisado por MercadoPago. Puede demorar hasta 48 h." },
   };
 
-  const err = (statusDetail && errorMessages[statusDetail]) ?? {
+  const err = (statusDetail ? errorMessages[statusDetail] : undefined) ?? {
     title:  "Pago no aprobado",
     detail: "Tu pago no pudo ser procesado. Podés intentarlo de nuevo o usar otro medio de pago.",
   };

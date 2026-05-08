@@ -25,7 +25,8 @@ export default async function AdminUsersPage({
 
   if (q) query = query.or(`username.ilike.%${q}%,email.ilike.%${q}%`);
 
-  const { data: users, count } = await query;
+  const { data: rawUsers, count } = await query;
+  const users = rawUsers as unknown as React.ComponentProps<typeof AdminUsersClient>["users"];
 
   return (
     <div className="p-6 max-w-6xl mx-auto">

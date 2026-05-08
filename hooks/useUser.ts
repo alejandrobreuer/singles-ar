@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import type { User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
 
@@ -48,15 +48,16 @@ export function useUser(): UseUserResult {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getUser().then(async ({ data }) => {
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
       if (!mounted) return;
       setUser(data.user ?? null);
       if (data.user) await fetchProfile(data.user.id);
       setLoading(false);
-    });
+    })();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (_event: unknown, session: Session | null) => {
         if (!mounted) return;
         const u = session?.user ?? null;
         setUser(u);

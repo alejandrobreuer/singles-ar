@@ -100,8 +100,8 @@ export function ChatRoom({
           table:  "chat_messages",
           filter: `transaction_id=eq.${transaction.id}`,
         },
-        (payload) => {
-          const raw = payload.new as ChatMessage;
+        (payload: { new: Record<string, unknown> }) => {
+          const raw = payload.new as unknown as ChatMessage;
 
           // Determine sender profile from known participants
           let sender: ChatMessageWithSender["sender"] = null;

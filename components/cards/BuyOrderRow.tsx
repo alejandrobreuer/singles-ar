@@ -1,12 +1,7 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
-import type { BuyOrderWithBuyer, Condition } from "@/types/database";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CONDITION_LABELS: Record<Condition, string> = {
-  NM: "NM", LP: "LP", MP: "MP", HP: "HP", DMG: "DMG",
-};
+import { cn }              from "@/lib/utils";
+import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import type { BuyOrderWithBuyer } from "@/types/database";
 
 function formatARS(price: number): string {
   return new Intl.NumberFormat("es-AR", {
@@ -38,9 +33,10 @@ export function BuyOrderRow({ order, className }: BuyOrderRowProps) {
       </span>
 
       {/* Condition */}
-      <span className="text-xs font-sans text-text-muted shrink-0">
-        {order.condition ? CONDITION_LABELS[order.condition] : "Cualquier estado"}
-      </span>
+      {order.condition
+        ? <ConditionBadge condition={order.condition} />
+        : <span className="text-xs font-sans text-text-muted shrink-0">Cualquier estado</span>
+      }
 
       {/* Qty */}
       {order.quantity > 1 && (

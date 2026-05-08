@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, ChevronDown, LogOut, User, Package, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
@@ -25,8 +26,6 @@ interface TopbarUser {
   avatarUrl?: string;
 }
 
-export interface TopbarProps {}
-
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
@@ -43,13 +42,13 @@ function Logo() {
     <Link
       href="/"
       className="flex items-center no-underline group"
-      aria-label="Singles.ar — Inicio"
+      aria-label="Card Stash — Inicio"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/logo.png"
-        alt="Singles.ar"
-        className="h-8 w-auto object-contain"
+        src="/images/CardStashLogo.png"
+        alt="Card Stash"
+        className="h-12 w-auto object-contain"
       />
     </Link>
   );
@@ -271,11 +270,12 @@ function MobileMenu({ open, user, onClose, onLogout }: MobileMenuProps) {
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-export function Topbar(_props: TopbarProps) {
+export function Topbar() {
   const router                      = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [user,       setUser]       = React.useState<TopbarUser | null>(null);
   const [isAdmin,    setIsAdmin]    = React.useState(false);
+  const [authReady,  setAuthReady]  = React.useState(false);
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -298,13 +298,17 @@ export function Topbar(_props: TopbarProps) {
         .catch(() => setIsAdmin(false));
     }
 
-    // Fetch current session on mount
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      if (u) loadUser(u.id, u.email ?? "");
-    });
+    // Fetch current session on mount — mark ready regardless of outcome
+    void (async () => {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u) {
+        await loadUser(u.id, u.email ?? "");
+      }
+      setAuthReady(true);
+    })();
 
     // Keep in sync on sign-in / sign-out
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: unknown, session: Session | null) => {
       if (session?.user) {
         loadUser(session.user.id, session.user.email ?? "");
       } else {
@@ -341,7 +345,12 @@ export function Topbar(_props: TopbarProps) {
 
           {/* Right: Auth — pushed to far right */}
           <div className="ml-auto flex items-center gap-2">
-            {user ? (
+            {!authReady ? (
+              <div className="hidden md:flex items-center gap-2">
+                <div className="w-20 h-8 rounded-lg bg-secondary animate-pulse" />
+                <div className="w-8 h-8 rounded-full bg-secondary animate-pulse" />
+              </div>
+            ) : user ? (
               <>
                 <NotificationBell userId={user.id} />
                 <UserMenu user={user} isAdmin={isAdmin} onLogout={handleLogout} />

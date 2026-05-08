@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     results.errors.push(`Expiring-soon error: ${soonError.message}`);
   } else {
     results.expiringSoon = expiringSoon?.length ?? 0;
-    const buyerIds = [...new Set((expiringSoon ?? []).map((o) => o.buyer_id))];
+    const buyerIds = Array.from(new Set((expiringSoon ?? []).map((o) => o.buyer_id)));
     // TODO: trigger push/email notifications for buyerIds
     console.log(
       `[cron/expire] ${results.expiringSoon} orders expiring soon. Buyer IDs:`,

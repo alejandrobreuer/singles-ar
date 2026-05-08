@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminUser }      from "@/lib/admin/auth";
 import { AdminSidebar }      from "@/components/admin/AdminSidebar";
 
-export const metadata = { title: "Admin — Singles.ar" };
+export const metadata = { title: "Admin — Card Stash" };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Auth guard — redirect non-admins to home

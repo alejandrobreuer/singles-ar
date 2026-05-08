@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   ShoppingBag, Repeat2, ChevronRight, ChevronDown,
-  MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin,
+  MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Topbar }               from "@/components/layout/Topbar";
@@ -17,7 +17,11 @@ import { Input }                from "@/components/ui/input";
 import { Divider }              from "@/components/ui/divider";
 import { Spinner }              from "@/components/ui/spinner";
 import { Badge }                from "@/components/ui/badge";
+import { HoverTooltip }         from "@/components/ui/HoverTooltip";
+import { SearchableSelect }     from "@/components/ui/SearchableSelect";
+import { CONDITIONS, CONDITION_DETAILS, ConditionGuideModal, ConditionConfirmModal } from "@/components/sell/ConditionModals";
 import { toast }               from "sonner";
+import { RARITY_DESCRIPTIONS, COLOR_DESCRIPTIONS } from "@/lib/cardAttributes";
 import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
@@ -29,14 +33,6 @@ const STEPS = [
   { label: "Carta",    sublabel: "Elegí qué vendés" },
   { label: "Detalles", sublabel: "Precio y condición" },
   { label: "Publicar", sublabel: "Revisión final" },
-];
-
-const CONDITIONS: Array<{ value: Condition; label: string; desc: string; color: string }> = [
-  { value: "NM",  label: "NM",  desc: "Near Mint",           color: "border-success/40 data-[selected]:bg-success-subtle data-[selected]:border-success data-[selected]:text-success" },
-  { value: "LP",  label: "LP",  desc: "Lightly Played",      color: "border-blue-200 data-[selected]:bg-blue-50 data-[selected]:border-blue-500 data-[selected]:text-blue-700" },
-  { value: "MP",  label: "MP",  desc: "Moderately Played",   color: "border-warning/30 data-[selected]:bg-warning-subtle data-[selected]:border-warning data-[selected]:text-warning" },
-  { value: "HP",  label: "HP",  desc: "Heavily Played",      color: "border-orange-200 data-[selected]:bg-orange-50 data-[selected]:border-orange-500 data-[selected]:text-orange-700" },
-  { value: "DMG", label: "DMG", desc: "Damaged",             color: "border-error/30 data-[selected]:bg-error-subtle data-[selected]:border-error data-[selected]:text-error" },
 ];
 
 const GAME_OPTIONS: Array<{ game: Game; label: string; sublabel: string; accent: string; badge: React.ComponentProps<typeof Badge>["variant"] }> = [
@@ -101,6 +97,10 @@ export default function SellPage() {
   // ── Submission ────────────────────────────────────────────────────────────
   const [submitting,   setSubmitting]   = React.useState(false);
   const [submitError,  setSubmitError]  = React.useState<string | null>(null);
+
+  // ── Condition guide + confirmation ────────────────────────────────────────
+  const [conditionGuideOpen, setConditionGuideOpen] = React.useState(false);
+  const [pendingCondition,   setPendingCondition]   = React.useState<Condition | null>(null);
 
   // ── Fetch settings + store options once ──────────────────────────────────
   React.useEffect(() => {
@@ -261,7 +261,7 @@ export default function SellPage() {
   if (userLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <Topbar user={null} />
+        <Topbar />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
         </div>
@@ -287,7 +287,7 @@ export default function SellPage() {
               Publicar listing
             </h1>
             <p className="text-sm text-text-secondary font-sans">
-              Vendé o intercambiá una carta en Singles.ar
+              Vendé o intercambiá una carta en Card Stash
             </p>
           </div>
         </div>
@@ -362,7 +362,7 @@ export default function SellPage() {
                       <div className="flex flex-wrap gap-2 mb-4">
                         {/* Set filter */}
                         {filterOptions.sets.length > 0 && (
-                          <FilterSelect
+                          <SearchableSelect
                             label="Set"
                             value={filterSet}
                             onChange={setFilterSet}
@@ -487,26 +487,27 @@ export default function SellPage() {
                     Tipo de publicación
                   </p>
                   <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { value: "sale"  as ListingType, icon: <ShoppingBag size={16} />, label: "Venta directa", desc: "Precio fijo en ARS" },
-                      { value: "trade" as ListingType, icon: <Repeat2     size={16} />, label: "Trade / Canje",  desc: "Intercambio de cartas" },
-                    ]).map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setListingType(opt.value)}
-                        className={cn(
-                          "flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all duration-150 text-center",
-                          listingType === opt.value
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-border bg-surface text-text-secondary hover:border-primary/30 hover:bg-secondary/50"
-                        )}
-                      >
-                        {opt.icon}
-                        <span className="text-sm font-semibold font-sans">{opt.label}</span>
-                        <span className="text-xs font-sans opacity-70">{opt.desc}</span>
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setListingType("sale")}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 transition-all duration-150 text-center",
+                        listingType === "sale"
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border bg-surface text-text-secondary hover:border-primary/30 hover:bg-secondary/50"
+                      )}
+                    >
+                      <ShoppingBag size={16} />
+                      <span className="text-sm font-semibold font-sans">Venta directa</span>
+                      <span className="text-xs font-sans opacity-70">Precio fijo en ARS</span>
+                    </button>
+
+                    <div className="flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 text-center border-border bg-surface opacity-50 cursor-not-allowed select-none">
+                      <Repeat2 size={16} className="text-text-muted" />
+                      <span className="text-sm font-semibold font-sans text-text-muted">Trade / Canje</span>
+                      <span className="text-xs font-sans text-text-muted">Intercambio de cartas</span>
+                      <span className="text-2xs font-sans text-text-muted italic">Próximamente</span>
+                    </div>
                   </div>
                 </div>
 
@@ -514,28 +515,47 @@ export default function SellPage() {
 
                 {/* Condition selector */}
                 <div>
-                  <p className="text-sm font-medium text-text-primary font-sans mb-3">
-                    Estado de la carta
-                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-text-primary font-sans">
+                      Estado de la carta
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setConditionGuideOpen(true)}
+                      className="flex items-center gap-1 text-xs text-text-muted hover:text-primary font-sans transition-colors"
+                    >
+                      <Info size={13} />
+                      Ver guía
+                    </button>
+                  </div>
                   <div className="grid grid-cols-5 gap-1.5">
-                    {CONDITIONS.map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        data-selected={condition === c.value || undefined}
-                        onClick={() => setCondition(c.value)}
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-lg border-2 py-2.5 px-1 transition-all duration-100",
-                          "text-text-secondary bg-surface hover:bg-secondary/60",
-                          c.color
-                        )}
-                      >
-                        <span className="text-xs font-bold font-sans">{c.label}</span>
-                        <span className="text-2xs font-sans leading-none text-center opacity-70 hidden sm:block">
-                          {c.desc}
-                        </span>
-                      </button>
-                    ))}
+                    {CONDITIONS.map((c) => {
+                      const detail = CONDITION_DETAILS[c.value];
+                      return (
+                        <HoverTooltip
+                          key={c.value}
+                          label={detail.fullName}
+                          detail={detail.subtitle}
+                          className="contents"
+                        >
+                          <button
+                            type="button"
+                            data-selected={condition === c.value || undefined}
+                            onClick={() => setPendingCondition(c.value)}
+                            className={cn(
+                              "flex flex-col items-center gap-1 rounded-lg border-2 py-2.5 px-1 transition-all duration-100",
+                              "text-text-secondary bg-surface hover:bg-secondary/60",
+                              c.color
+                            )}
+                          >
+                            <span className="text-xs font-bold font-sans">{c.label}</span>
+                            <span className="text-2xs font-sans leading-none text-center opacity-70 hidden sm:block">
+                              {c.desc}
+                            </span>
+                          </button>
+                        </HoverTooltip>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -580,7 +600,7 @@ export default function SellPage() {
                     {priceARS > 0 && (
                       <CommissionBreakdown
                         priceARS={priceARS}
-                        platformFeePercent={settings.platform_fee_percent}
+                        platformFeePercent={settings.platform_commission_percent}
                         mpFeePercent={settings.mp_fee_percent}
                       />
                     )}
@@ -733,7 +753,7 @@ export default function SellPage() {
                 tradeFor={tradeFor}
                 priceDiff={priceDiffNum}
                 sellerUsername={profile?.username ?? "vos"}
-                platformFeePercent={settings.platform_fee_percent}
+                platformFeePercent={settings.platform_commission_percent}
                 mpFeePercent={settings.mp_fee_percent}
               />
 
@@ -768,12 +788,23 @@ export default function SellPage() {
                 <a href="/terminos" className="underline hover:text-text-secondary">
                   Términos y Condiciones
                 </a>{" "}
-                de Singles.ar
+                de Card Stash
               </p>
             </div>
           )}
         </div>
       </main>
+
+      {conditionGuideOpen && (
+        <ConditionGuideModal onClose={() => setConditionGuideOpen(false)} />
+      )}
+      {pendingCondition && (
+        <ConditionConfirmModal
+          condition={pendingCondition}
+          onConfirm={(c) => { setCondition(c); setPendingCondition(null); }}
+          onCancel={() => setPendingCondition(null)}
+        />
+      )}
     </div>
   );
 }
@@ -818,8 +849,32 @@ function CardTile({ card, onClick }: { card: CardSearchResult; onClick: () => vo
           {card.external_id}
         </p>
       )}
-      {card.rarity && (
-        <span className="text-2xs font-sans text-text-muted opacity-70">{card.rarity}</span>
+      {(card.rarity || card.color) && (
+        <div className="flex flex-wrap justify-center gap-1 w-full">
+          {card.rarity && (
+            <HoverTooltip
+              label={card.rarity}
+              detail={RARITY_DESCRIPTIONS[card.rarity]}
+            >
+              <span className="text-2xs font-sans text-text-muted opacity-70 cursor-default">
+                {card.rarity}
+              </span>
+            </HoverTooltip>
+          )}
+          {card.color && (() => {
+            const primary = card.color.split(/[/ ]+/)[0];
+            return (
+              <HoverTooltip
+                label={card.color}
+                detail={primary ? COLOR_DESCRIPTIONS[primary] : undefined}
+              >
+                <span className="text-2xs font-sans text-text-muted opacity-70 cursor-default">
+                  {card.color}
+                </span>
+              </HoverTooltip>
+            );
+          })()}
+        </div>
       )}
     </button>
   );

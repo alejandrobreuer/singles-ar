@@ -10,6 +10,7 @@ import {
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
 import { setLabel }           from "@/lib/formatting";
+import { fantasyName }        from "@/lib/fantasy-name";
 import { Badge }              from "@/components/ui/badge";
 import { Button }             from "@/components/ui/button";
 import { Divider }            from "@/components/ui/divider";
@@ -43,15 +44,15 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
     .eq("id", params.id)
     .single();
 
-  if (!data) return { title: "Carta no encontrada — Singles.ar" };
+  if (!data) return { title: "Carta no encontrada — Card Stash" };
 
-  const baseUrl    = process.env.NEXT_PUBLIC_APP_URL ?? "https://singles.ar";
-  const title      = `${data.name} — Singles.ar`;
+  const baseUrl    = process.env.NEXT_PUBLIC_APP_URL ?? "https://cardstash.ar";
+  const title      = `${data.name} — Card Stash`;
   const setLabel   = data.set_name ? ` (${data.set_name})` : "";
   const priceLabel = data.listing_count > 0 && data.lowest_price != null
     ? ` ${data.listing_count} listings desde $${Math.round(data.lowest_price).toLocaleString("es-AR")} ARS.`
     : "";
-  const description = `Comprá ${data.name}${setLabel} en Singles.ar.${priceLabel}`;
+  const description = `Comprá ${data.name}${setLabel} en Card Stash.${priceLabel}`;
 
   return {
     title,
@@ -281,7 +282,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                   {lowestListing && (
                     <div className="flex flex-col">
                       <span className="text-2xs text-text-muted font-sans uppercase tracking-wide">Precio más bajo</span>
-                      <span className="text-lg font-price text-text-primary">{formatARS(lowestListing.price)}</span>
+                      <span className="text-lg font-price text-text-primary">{lowestListing.price != null ? formatARS(lowestListing.price) : "—"}</span>
                     </div>
                   )}
                   {highestBuyOrder && (
@@ -328,7 +329,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                   </p>
                 </div>
                 {user && (
-                  <Link href={`/buy-orders/new?card_id=${card.id}`}>
+                  <Link href={`/buy-orders/new?card_id=${card.id}&card_name=${encodeURIComponent(card.name)}&card_set=${encodeURIComponent(card.set_name ?? "")}&card_image=${encodeURIComponent(card.image_url ?? "")}&card_game=${card.game}`}>
                     <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />}>
                       Crear orden
                     </Button>
@@ -362,7 +363,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 <div>
                   <p className="text-xs text-text-muted font-sans mb-0.5 flex items-center gap-1">
                     <TrendingUp size={11} />
-                    Mediana Singles.ar
+                    Mediana Card Stash
                   </p>
                   <p className="font-price text-2xl text-text-primary">
                     {platformMedian != null ? formatARS(platformMedian) : "—"}
@@ -378,12 +379,12 @@ export default async function CardDetailPage({ params }: { params: { id: string 
               {/* Local market price */}
               {lowestListing && (
                 <div className="bg-secondary rounded-lg px-4 py-3 mb-4">
-                  <p className="text-xs text-text-muted font-sans mb-0.5">Precio más bajo en Singles.ar</p>
+                  <p className="text-xs text-text-muted font-sans mb-0.5">Precio más bajo en Card Stash</p>
                   <p className="font-price text-xl text-text-primary">
-                    {formatARS(lowestListing.price)}
+                    {lowestListing.price != null ? formatARS(lowestListing.price) : "—"}
                   </p>
                   <p className="text-xs text-text-muted font-sans mt-0.5">
-                    {lowestListing.condition} · {lowestListing.profiles.username}
+                    {lowestListing.condition} · {fantasyName(lowestListing.id)}
                   </p>
                 </div>
               )}
@@ -415,7 +416,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                     Publicar listing de venta
                   </Button>
                 </Link>
-                <Link href={`/buy-orders/new?card_id=${card.id}`}>
+                <Link href={`/buy-orders/new?card_id=${card.id}&card_name=${encodeURIComponent(card.name)}&card_set=${encodeURIComponent(card.set_name ?? "")}&card_image=${encodeURIComponent(card.image_url ?? "")}&card_game=${card.game}`}>
                   <Button variant="ghost" size="md" className="w-full">
                     Crear orden de compra
                   </Button>
@@ -431,7 +432,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 </h3>
                 <span className="flex items-center gap-1 text-2xs text-text-muted font-sans">
                   <span className="size-2 rounded-full bg-success" />
-                  Singles.ar
+                  Card Stash
                 </span>
               </div>
 
@@ -469,7 +470,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
               <Info size={13} className="shrink-0 mt-0.5" />
               <p>
                 Los precios en ARS son orientativos y los fijan los vendedores
-                individuales. Singles.ar no garantiza la disponibilidad de la carta.
+                individuales. Card Stash no garantiza la disponibilidad de la carta.
               </p>
             </div>
 
@@ -480,22 +481,3 @@ export default async function CardDetailPage({ params }: { params: { id: string 
   );
 }
 
-// ─── Empty state helper ───────────────────────────────────────────────────────
-
-function EmptySection({
-  icon, title, description, cta,
-}: {
-  icon:        React.ReactNode;
-  title:       string;
-  description: string;
-  cta?:        React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-2 py-8 text-center rounded-xl border border-dashed border-border bg-secondary/40">
-      {icon}
-      <p className="text-sm font-medium font-sans text-text-secondary">{title}</p>
-      <p className="text-xs text-text-muted font-sans max-w-xs">{description}</p>
-      {cta && <div className="mt-1">{cta}</div>}
-    </div>
-  );
-}

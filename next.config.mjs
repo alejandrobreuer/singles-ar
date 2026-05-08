@@ -7,6 +7,8 @@ const nextConfig = {
       { protocol: "https", hostname: "c1.scryfall.com" },
       // Pokémon TCG API
       { protocol: "https", hostname: "images.pokemontcg.io" },
+      // TCGdex (Pokémon)
+      { protocol: "https", hostname: "assets.tcgdex.net" },
       // One Piece TCG
       { protocol: "https", hostname: "en.onepiece-cardgame.com" },
       { protocol: "https", hostname: "www.optcgapi.com" },

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Explorar cartas — Singles.ar",
+  title: "Explorar cartas — Card Stash",
   description:
     "Explorá el catálogo de singles TCG en Argentina. Magic: The Gathering, Pokémon y One Piece con precios en ARS.",
 };
@@ -77,7 +77,12 @@ async function fetchFilterOptions(game: string): Promise<FilterOptions | null> {
     code: r.set_code, name: r.set_name ?? r.set_code,
   }));
   const rarities = (raritiesRes.data ?? []).map((r: { rarity: string }) => r.rarity);
-  const colors   = (colorsRes.data   ?? []).map((r: { color:  string }) => r.color);
+  // Split multi-color values ("Blue Black" → ["Blue", "Black"]) and deduplicate
+  const colors = Array.from(new Set<string>(
+    (colorsRes.data ?? [])
+      .flatMap((r: { color: string }) => r.color.split(/[\s,/]+/))
+      .filter((v: string) => Boolean(v))
+  )).sort();
 
   return { sets, rarities, colors };
 }
@@ -217,10 +222,10 @@ export default async function ExplorePage({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <Link href="/" className="no-underline inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/logo.png" alt="Singles.ar" className="h-7 w-auto object-contain" />
+              <img src="/images/CardStashBlackText.png" alt="Card Stash" className="h-7 w-auto object-contain" />
             </Link>
             <p className="text-xs text-text-muted font-sans">
-              © {new Date().getFullYear()} Singles.ar — Todos los derechos reservados
+              © {new Date().getFullYear()} Card Stash — Todos los derechos reservados
             </p>
           </div>
         </div>

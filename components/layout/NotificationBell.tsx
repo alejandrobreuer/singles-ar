@@ -59,12 +59,12 @@ export function NotificationBell({ userId }: { userId: string }) {
           table:  "notifications",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        (payload: { eventType: string; new: Record<string, unknown> }) => {
           if (payload.eventType === "INSERT") {
-            setNotifications((prev) => [payload.new as Notification, ...prev.slice(0, 29)]);
+            setNotifications((prev) => [payload.new as unknown as Notification, ...prev.slice(0, 29)]);
           } else if (payload.eventType === "UPDATE") {
             setNotifications((prev) =>
-              prev.map((n) => n.id === (payload.new as Notification).id ? (payload.new as Notification) : n)
+              prev.map((n) => n.id === (payload.new as unknown as Notification).id ? (payload.new as unknown as Notification) : n)
             );
           }
         }

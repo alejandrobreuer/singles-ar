@@ -54,12 +54,21 @@ export default async function AdminTransactionsPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (to)     query = (query as any).lte("created_at", to + "T23:59:59Z");
 
-  const { data: txs, count } = await query;
+  const { data: rawTxs, count } = await query;
+
+  type TxRow = {
+    id: string; price: number; platform_fee: number | null;
+    status: string; currency: string; created_at: string;
+    buyer: { username: string } | null;
+    seller: { username: string } | null;
+    card: { name: string; game: string } | null;
+  };
+  const txs = (rawTxs ?? []) as unknown as TxRow[];
 
   // Filter by game client-side if specified (no FK filter in Supabase on joined field)
   const filtered = game
-    ? (txs ?? []).filter((t) => (t.card as { game?: string } | null)?.game === game)
-    : txs ?? [];
+    ? txs.filter((t) => t.card?.game === game)
+    : txs;
 
   const totalPages = Math.ceil((count ?? 0) / limit);
 
@@ -74,7 +83,7 @@ export default async function AdminTransactionsPage({
   function filterUrl(overrides: Record<string, string>) {
     const p = new URLSearchParams({ ...currentParams, page: "1", ...overrides });
     // Remove empty
-    for (const [k, v] of [...p.entries()]) { if (!v) p.delete(k); }
+    Array.from(p.entries()).forEach(([k, v]) => { if (!v) p.delete(k); });
     return `/admin/transactions?${p.toString()}`;
   }
 
@@ -160,9 +169,9 @@ export default async function AdminTransactionsPage({
             </thead>
             <tbody>
               {filtered.map((tx) => {
-                const buyer  = tx.buyer  as { username: string } | null;
-                const seller = tx.seller as { username: string } | null;
-                const card   = tx.card   as { name: string; game: string } | null;
+                const buyer  = tx.buyer;
+                const seller = tx.seller;
+                const card   = tx.card;
                 return (
                   <tr key={tx.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                     <td className="px-4 py-2.5 text-text-primary truncate max-w-[160px]">

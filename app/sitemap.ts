@@ -4,7 +4,7 @@ import { createAdminClient }  from "@/lib/supabase/admin";
 export const revalidate = 3600; // rebuild sitemap hourly
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://singles.ar";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://cardstash.ar";
 
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [

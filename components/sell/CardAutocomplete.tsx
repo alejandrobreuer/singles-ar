@@ -174,7 +174,7 @@ export function CardAutocomplete({ onSelect, disabled, className }: CardAutocomp
         >
           {results.length === 0 ? (
             <li className="px-4 py-8 text-center text-sm text-text-muted font-sans">
-              Sin resultados para "{query}"
+              Sin resultados para {'"'}{query}{'"'}
             </li>
           ) : (
             results.map((card, i) => (
