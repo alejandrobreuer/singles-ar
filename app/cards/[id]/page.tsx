@@ -1,11 +1,10 @@
-import * as React from "react";
+﻿import * as React from "react";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { subDays } from "date-fns";
 import {
-  Tag, ChevronRight, ShoppingCart, Heart, TrendingUp, Info, Plus,
+  ChevronRight, ShoppingCart, Heart, TrendingUp, Info, Plus,
 } from "lucide-react";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
@@ -14,10 +13,10 @@ import { fantasyName }        from "@/lib/fantasy-name";
 import { Badge }              from "@/components/ui/badge";
 import { Button }             from "@/components/ui/button";
 import { Divider }            from "@/components/ui/divider";
-import { Topbar }             from "@/components/layout/Topbar";
 import { BuyListingSection }  from "@/components/cards/BuyListingSection";
 import { BuyOrdersSection }   from "@/components/buyorders/BuyOrdersSection";
 import { WishlistButton }     from "@/components/cards/WishlistButton";
+import { CardImageZoom }      from "@/components/cards/CardImageZoom";
 
 const PriceChart = dynamic(
   () => import("@/components/cards/PriceChart").then((m) => ({ default: m.PriceChart })),
@@ -197,11 +196,10 @@ export default async function CardDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="min-h-screen bg-background">
-      <Topbar />
 
       {/* ── Breadcrumb ────────────────────────────────────────────────────── */}
       <div className="border-b border-border bg-surface">
-        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-10 flex items-center gap-1.5 text-xs text-text-muted font-sans">
+        <nav className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 h-10 flex items-center gap-1.5 text-xs text-text-muted font-sans">
           <Link href="/cards" className="hover:text-text-primary transition-colors no-underline">
             Explorar
           </Link>
@@ -215,7 +213,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
       </div>
 
       {/* ── Main layout ───────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
 
           {/* ════════════════════════════════════════════════════════════════
@@ -227,22 +225,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
             <div className="flex gap-6 items-start">
               {/* Image */}
               <div className="shrink-0 w-44 sm:w-52">
-                <div className="relative rounded-xl overflow-hidden shadow-card-lg border border-border aspect-[2.5/3.5] bg-secondary">
-                  {card.image_url ? (
-                    <Image
-                      src={card.image_url}
-                      alt={card.name}
-                      fill
-                      sizes="(max-width: 640px) 176px, 208px"
-                      className="object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Tag size={36} className="text-border" />
-                    </div>
-                  )}
-                </div>
+                <CardImageZoom src={card.image_url ?? null} alt={card.name} />
               </div>
 
               {/* Metadata */}

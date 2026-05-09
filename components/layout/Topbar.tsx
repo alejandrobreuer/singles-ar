@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -46,9 +46,9 @@ function Logo() {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/CardStashLogo.png"
+        src="/images/CardStashBlackText.png"
         alt="Card Stash"
-        className="h-12 w-auto object-contain"
+        className="h-10 w-auto object-contain"
       />
     </Link>
   );
@@ -410,7 +410,7 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-surface/95 backdrop-blur-sm border-b border-border">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-20 items-center">
 
           {/* Left: Logo — pinned far left */}

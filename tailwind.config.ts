@@ -88,6 +88,10 @@ const config: Config = {
         "gold":    "0 0 0 2px rgba(181,134,42,0.35)",
       },
 
+      maxWidth: {
+        site: "var(--site-max-w)",
+      },
+
       borderRadius: {
         "4xl": "2rem",
       },

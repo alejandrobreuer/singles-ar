@@ -1,12 +1,10 @@
-import * as React from "react";
+﻿import * as React from "react";
 import Link from "next/link";
-import { Topbar } from "@/components/layout/Topbar";
 import { Search } from "lucide-react";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Topbar />
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <p className="text-8xl font-serif font-semibold text-primary/20 mb-4 leading-none">

@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -6,7 +6,6 @@ import { Star, ShieldAlert, Award } from "lucide-react";
 import { createAdminClient }  from "@/lib/supabase/admin";
 import { Avatar }             from "@/components/ui/avatar";
 import { Badge }              from "@/components/ui/badge";
-import { Topbar }             from "@/components/layout/Topbar";
 import type { ListingWithCard, ReviewWithReviewer, Game } from "@/types/database";
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
@@ -118,7 +117,6 @@ export default async function PublicProfilePage({
 
   return (
     <div className="min-h-screen bg-background">
-      <Topbar />
 
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
 

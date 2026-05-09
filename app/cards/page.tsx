@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -12,7 +12,6 @@ export const metadata: Metadata = {
 import { Sparkles } from "lucide-react";
 import { createAdminClient }              from "@/lib/supabase/admin";
 import { createClient }                   from "@/lib/supabase/server";
-import { Topbar }                         from "@/components/layout/Topbar";
 import { CardTile }                       from "@/components/cards/CardTile";
 import { CardSearchBar }                  from "@/components/cards/CardSearchBar";
 import { ExploreFilters }                 from "@/components/cards/ExploreFilters";
@@ -113,7 +112,6 @@ export default async function ExplorePage({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Topbar />
 
       <main className="flex-1">
 
@@ -136,7 +134,7 @@ export default async function ExplorePage({
         </section>
 
         {/* ── Content: sidebar + grid ────────────────────────────────────── */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row gap-8 items-start">
 
             {/* ── Left sidebar ──────────────────────────────────────────── */}
@@ -196,7 +194,7 @@ export default async function ExplorePage({
                 <EmptyState q={q} />
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
                     {cards.map((card) => (
                       <CardTile key={card.id} card={card} />
                     ))}
@@ -218,7 +216,7 @@ export default async function ExplorePage({
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer className="border-t border-border mt-auto">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <Link href="/" className="no-underline inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element */}

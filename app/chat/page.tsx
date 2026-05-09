@@ -1,11 +1,10 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle, Tag } from "lucide-react";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
-import { Topbar }             from "@/components/layout/Topbar";
 import { Avatar }             from "@/components/ui/avatar";
 import { Badge }              from "@/components/ui/badge";
 import { formatARS }          from "@/lib/formatting";
@@ -181,7 +180,6 @@ export default async function ChatListPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Topbar />
 
       <div className="mx-auto max-w-2xl px-0 sm:px-4 py-0 sm:py-6">
         {/* Header */}

@@ -1,8 +1,7 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { redirect } from "next/navigation";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Topbar }            from "@/components/layout/Topbar";
 import { ProfileClient }     from "@/components/profile/ProfileClient";
 import type {
   Profile, ListingWithCard, BuyOrder, WishlistWithCard, Game,
@@ -149,8 +148,7 @@ export default async function MyProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Topbar />
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <ProfileClient
           profile={profile}
           currentUserId={user.id}

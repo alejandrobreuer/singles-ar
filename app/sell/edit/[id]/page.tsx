@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
 import { MessageSquare, Camera, ShoppingBag, Repeat2, Tag, MapPin, Info } from "lucide-react";
 import { cn }                    from "@/lib/utils";
-import { Topbar }                from "@/components/layout/Topbar";
 import { Button }                from "@/components/ui/button";
 import { Input }                 from "@/components/ui/input";
 import { Divider }               from "@/components/ui/divider";
@@ -146,7 +145,6 @@ export default function EditListingPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <Topbar />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
         </div>
@@ -157,7 +155,6 @@ export default function EditListingPage() {
   if (notFound) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <Topbar />
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-text-muted">
           <Tag size={32} />
           <p className="font-sans text-sm">Publicación no encontrada o sin permisos.</p>
@@ -171,7 +168,6 @@ export default function EditListingPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Topbar />
 
       <main className="flex-1">
         {/* Header */}
@@ -388,7 +384,7 @@ export default function EditListingPage() {
                 Lugar de entrega — Tiendas
               </label>
               <p className="text-xs text-text-muted font-sans -mt-1">
-                Seleccioná las tiendas donde podés encontrarte con el comprador.
+                Seleccioná las tiendas o zonas donde podés encontrarte con el comprador.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
                 {storeOptions.map((store) => {

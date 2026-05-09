@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
-import { Topbar } from "@/components/layout/Topbar";
 
 export const metadata: Metadata = {
   title: "Card Stash — Marketplace de cartas TCG en Argentina",
@@ -18,7 +17,6 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Topbar />
 
       <main className="flex-1">
         <HeroSection />
@@ -61,9 +59,11 @@ function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 sm:px-12 py-20 sm:py-24">
         {/* Hero logo */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center items-center gap-5 mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/CardStashLogo.png" alt="Card Stash" className="h-24 sm:h-32 w-auto object-contain" />
+          <img src="/images/LogoLight.png" alt="" className="h-24 sm:h-32 w-auto object-contain" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/CardStashWhiteText.png" alt="Card Stash" className="h-12 sm:h-16 w-auto object-contain" />
         </div>
 
         {/* Eyebrow */}
@@ -154,7 +154,7 @@ function GamePill({ color, label }: { color: string; label: string }) {
 function HowItWorksSection() {
   return (
     <section className="bg-background px-6 sm:px-12 py-20">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <SectionEyebrow>Cómo funciona</SectionEyebrow>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-snug mb-3">
           Simple para compradores.<br />Simple para vendedores.
@@ -289,7 +289,7 @@ const FEATURES = [
 function FeaturesSection() {
   return (
     <section className="bg-surface px-6 sm:px-12 py-20">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <SectionEyebrow>Por qué Card Stash</SectionEyebrow>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-snug">
           Todo lo que necesitás<br />en un solo lugar.
@@ -319,7 +319,7 @@ function FeaturesSection() {
 function BuyOrdersSection() {
   return (
     <section className="bg-background px-6 sm:px-12 py-20">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <SectionEyebrow>Funcionalidad exclusiva</SectionEyebrow>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-snug mb-3">
           Buy Orders: comprá<br />al precio que querés.
@@ -409,7 +409,7 @@ function BuyOrdersSection() {
 function CommissionSection() {
   return (
     <section className="bg-surface px-6 sm:px-12 py-20">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <SectionEyebrow>Transparencia total</SectionEyebrow>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-snug mb-3">
           Sin costos escondidos.
@@ -495,7 +495,7 @@ const TRUST_ITEMS = [
 function TrustSection() {
   return (
     <section className="bg-background px-6 sm:px-12 py-20">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <SectionEyebrow>Seguridad</SectionEyebrow>
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-snug">
           Diseñado para que confíes.

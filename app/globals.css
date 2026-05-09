@@ -11,6 +11,9 @@
   --foreground: #1a2030;
   --surface:    #ffffff;
   --border:     #d8dde8;
+
+  /* Site max-width — change this one value to resize all main containers */
+  --site-max-w: 1536px;
 }
 
 /* ─── Base reset ─────────────────────────────────────────────────── */

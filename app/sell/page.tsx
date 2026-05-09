@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,6 @@ import {
   MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Topbar }               from "@/components/layout/Topbar";
 import { StepIndicator }        from "@/components/auth/StepIndicator";
 import { PriceValidator }       from "@/components/sell/PriceValidator";
 import { CommissionBreakdown }  from "@/components/sell/CommissionBreakdown";
@@ -263,7 +262,6 @@ export default function SellPage() {
   if (userLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <Topbar />
         <div className="flex-1 flex items-center justify-center">
           <Spinner size="lg" />
         </div>
@@ -279,7 +277,6 @@ export default function SellPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Topbar />
 
       <main className="flex-1">
         {/* ── Page header ───────────────────────────────────────────────── */}
@@ -694,7 +691,7 @@ export default function SellPage() {
                     Lugar de entrega — Tiendas
                   </label>
                   <p className="text-xs text-text-muted font-sans -mt-1">
-                    Seleccioná las tiendas donde podés encontrarte con el comprador.
+                    Seleccioná las tiendas o zonas donde podés encontrarte con el comprador.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
                     {storeOptions.map((store) => {
