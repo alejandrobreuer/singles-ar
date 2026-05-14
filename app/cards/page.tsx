@@ -12,10 +12,12 @@ export const metadata: Metadata = {
 import { Sparkles } from "lucide-react";
 import { createAdminClient }              from "@/lib/supabase/admin";
 import { createClient }                   from "@/lib/supabase/server";
-import { CardTile }                       from "@/components/cards/CardTile";
-import { CardSearchBar }                  from "@/components/cards/CardSearchBar";
-import { ExploreFilters }                 from "@/components/cards/ExploreFilters";
-import type { FilterOptions }             from "@/components/cards/ExploreFilters";
+import { CardTile }                        from "@/components/cards/CardTile";
+import { CardSearchBar }                   from "@/components/cards/CardSearchBar";
+import { ExploreFilters }                  from "@/components/cards/ExploreFilters";
+import type { FilterOptions }              from "@/components/cards/ExploreFilters";
+import { ExploreTransitionProvider }       from "@/components/cards/ExploreTransitionProvider";
+import { ExploreGridShell }                from "@/components/cards/ExploreGridShell";
 import type { CardWithListingStats, Game } from "@/types/database";
 
 const PAGE_SIZE = 24;
@@ -135,6 +137,7 @@ export default async function ExplorePage({
 
         {/* ── Content: sidebar + grid ────────────────────────────────────── */}
         <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 py-8">
+          <ExploreTransitionProvider>
           <div className="flex flex-col lg:flex-row gap-8 items-start">
 
             {/* ── Left sidebar ──────────────────────────────────────────── */}
@@ -157,7 +160,7 @@ export default async function ExplorePage({
             </aside>
 
             {/* ── Card grid ─────────────────────────────────────────────── */}
-            <div className="flex-1 min-w-0">
+            <ExploreGridShell>
 
               {/* Section header */}
               <div className="flex items-center justify-between mb-6">
@@ -209,8 +212,9 @@ export default async function ExplorePage({
                   )}
                 </>
               )}
-            </div>
+            </ExploreGridShell>
           </div>
+          </ExploreTransitionProvider>
         </div>
       </main>
 

@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { X, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useExploreNavigation } from "./ExploreTransitionProvider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ const RARITY_LABELS: Record<string, string> = {
   UC:  "Uncommon",
   R:   "Rare",
   M:   "Mythic Rare",
-  TR:  "Trainer Rare",
+  TR:  "Treasure Rare",
   PR:  "Promo",
   SR:  "Super Rare",
   SEC: "Secret Rare",
@@ -82,7 +82,7 @@ export function ExploreFilters({
   currentGame, currentSet, currentRarities, currentColors, currentQ,
   currentSort, currentInStock, filterOptions,
 }: ExploreFiltersProps) {
-  const router = useRouter();
+  const { navigate } = useExploreNavigation();
 
   function buildUrl(overrides: {
     game?:     string;
@@ -119,7 +119,7 @@ export function ExploreFilters({
     if (game)                                    params.set("game",    game);
     if (currentSort && currentSort !== "recent") params.set("sort",    currentSort);
     if (currentInStock)                          params.set("instock", "1");
-    router.push(`/cards?${params.toString()}`);
+    navigate(`/cards?${params.toString()}`);
   }
 
   const activeSort    = currentSort || "recent";
@@ -139,7 +139,7 @@ export function ExploreFilters({
             <button
               key={opt.value}
               type="button"
-              onClick={() => router.push(buildUrl({ sort: opt.value }))}
+              onClick={() => navigate(buildUrl({ sort: opt.value }))}
               className={cn(
                 "flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-sans transition-all text-left",
                 active
@@ -158,7 +158,7 @@ export function ExploreFilters({
       <FilterGroup label="Disponibilidad">
         <button
           type="button"
-          onClick={() => router.push(buildUrl({ instock: !currentInStock }))}
+          onClick={() => navigate(buildUrl({ instock: !currentInStock }))}
           className={cn(
             "flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs font-sans transition-all text-left",
             currentInStock
@@ -214,7 +214,7 @@ export function ExploreFilters({
               <OptionList
                 options={filterOptions.sets.map((s) => ({ value: s.code, label: `${s.code} ${s.name}` }))}
                 selected={currentSet}
-                onSelect={(v) => router.push(buildUrl({ set: v === currentSet ? "" : v }))}
+                onSelect={(v) => navigate(buildUrl({ set: v === currentSet ? "" : v }))}
                 searchable
               />
             </FilterGroup>
@@ -229,7 +229,7 @@ export function ExploreFilters({
                   const next = currentRarities.includes(v)
                     ? currentRarities.filter((r) => r !== v)
                     : [...currentRarities, v];
-                  router.push(buildUrl({ rarities: next }));
+                  navigate(buildUrl({ rarities: next }));
                 }}
               />
             </FilterGroup>
@@ -244,8 +244,9 @@ export function ExploreFilters({
                   const next = currentColors.includes(v)
                     ? currentColors.filter((c) => c !== v)
                     : [...currentColors, v];
-                  router.push(buildUrl({ colors: next }));
+                  navigate(buildUrl({ colors: next }));
                 }}
+                colorized
               />
             </FilterGroup>
           )}
@@ -256,7 +257,7 @@ export function ExploreFilters({
       {hasAnyFilter && (
         <button
           type="button"
-          onClick={() => router.push("/cards")}
+          onClick={() => navigate("/cards")}
           className="flex items-center gap-1.5 text-xs text-text-muted hover:text-error font-sans transition-colors mt-1"
         >
           <X size={12} />
@@ -302,32 +303,70 @@ function FilterGroup({
   );
 }
 
+// ─── Color map ────────────────────────────────────────────────────────────────
+
+const COLOR_DOT: Record<string, string> = {
+  // One Piece / Magic shared
+  red:       "#dc2626",
+  blue:      "#2563eb",
+  green:     "#16a34a",
+  yellow:    "#ca8a04",
+  purple:    "#9333ea",
+  black:     "#292524",
+  white:     "#e7e5e4",
+  // Magic extras
+  colorless: "#a8a29e",
+  // Pokémon types
+  fire:      "#f97316",
+  water:     "#0ea5e9",
+  grass:     "#22c55e",
+  lightning: "#eab308",
+  psychic:   "#e879f9",
+  fighting:  "#a16207",
+  darkness:  "#374151",
+  metal:     "#94a3b8",
+  dragon:    "#7c3aed",
+  fairy:     "#f472b6",
+};
+
+function colorDotFor(value: string): string | null {
+  return COLOR_DOT[value.toLowerCase()] ?? null;
+}
+
 // ─── PillList ─────────────────────────────────────────────────────────────────
 
 function PillList({
-  options, selected, onSelect,
+  options, selected, onSelect, colorized = false,
 }: {
-  options:  { value: string; label: string }[];
-  selected: string[];
-  onSelect: (v: string) => void;
+  options:    { value: string; label: string }[];
+  selected:   string[];
+  onSelect:   (v: string) => void;
+  colorized?: boolean;
 }) {
   return (
     <div className="grid grid-cols-3 gap-1.5 px-0.5">
       {options.map((opt) => {
-        const active = selected.includes(opt.value);
+        const active  = selected.includes(opt.value);
+        const dotColor = colorized ? colorDotFor(opt.value) : null;
         return (
           <button
             key={opt.value}
             type="button"
             onClick={() => onSelect(opt.value)}
             className={cn(
-              "px-2.5 py-1 rounded-full text-2xs font-sans font-medium transition-all",
+              "flex items-center justify-center gap-1 px-2 py-1 rounded-full text-2xs font-sans font-medium transition-all",
               active
                 ? "bg-primary text-white"
                 : "bg-background border border-border text-text-secondary hover:border-primary/40 hover:text-text-primary"
             )}
           >
-            {opt.label}
+            {dotColor && (
+              <span
+                className="shrink-0 size-2.5 rounded-full border border-black/10"
+                style={{ backgroundColor: dotColor }}
+              />
+            )}
+            <span className="truncate">{opt.label}</span>
           </button>
         );
       })}
