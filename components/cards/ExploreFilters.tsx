@@ -84,6 +84,18 @@ export function ExploreFilters({
 }: ExploreFiltersProps) {
   const { navigate } = useExploreNavigation();
 
+  // Staged selections — only applied when the user clicks "Buscar"
+  const [pendingRarities, setPendingRarities] = React.useState<string[]>(currentRarities);
+  const [pendingColors,   setPendingColors]   = React.useState<string[]>(currentColors);
+
+  // Sync pending state when URL params change (e.g. after navigation or game switch)
+  React.useEffect(() => { setPendingRarities(currentRarities); }, [currentRarities.join(",")]);
+  React.useEffect(() => { setPendingColors(currentColors);     }, [currentColors.join(",")]);
+
+  const hasPendingChanges =
+    pendingRarities.join(",") !== currentRarities.join(",") ||
+    pendingColors.join(",")   !== currentColors.join(",");
+
   function buildUrl(overrides: {
     game?:     string;
     set?:      string;
@@ -114,6 +126,8 @@ export function ExploreFilters({
   }
 
   function handleGameChange(game: string) {
+    setPendingRarities([]);
+    setPendingColors([]);
     const params = new URLSearchParams();
     if (currentQ)                                params.set("q",       currentQ);
     if (game)                                    params.set("game",    game);
@@ -224,12 +238,11 @@ export function ExploreFilters({
             <FilterGroup label="Rareza">
               <PillList
                 options={currentGame === "pokemon" ? POKEMON_RARITIES : sortAndLabelRarities(filterOptions.rarities)}
-                selected={currentRarities}
+                selected={pendingRarities}
                 onSelect={(v) => {
-                  const next = currentRarities.includes(v)
-                    ? currentRarities.filter((r) => r !== v)
-                    : [...currentRarities, v];
-                  navigate(buildUrl({ rarities: next }));
+                  setPendingRarities((prev) =>
+                    prev.includes(v) ? prev.filter((r) => r !== v) : [...prev, v]
+                  );
                 }}
               />
             </FilterGroup>
@@ -239,16 +252,31 @@ export function ExploreFilters({
             <FilterGroup label={currentGame === "pokemon" ? "Tipos" : "Color"}>
               <PillList
                 options={filterOptions.colors.filter((c) => c !== "Character").map((c) => ({ value: c, label: c }))}
-                selected={currentColors}
+                selected={pendingColors}
                 onSelect={(v) => {
-                  const next = currentColors.includes(v)
-                    ? currentColors.filter((c) => c !== v)
-                    : [...currentColors, v];
-                  navigate(buildUrl({ colors: next }));
+                  setPendingColors((prev) =>
+                    prev.includes(v) ? prev.filter((c) => c !== v) : [...prev, v]
+                  );
                 }}
                 colorized
               />
             </FilterGroup>
+          )}
+
+          {(filterOptions.rarities.length > 0 || currentGame === "pokemon" || filterOptions.colors.length > 0) && (
+            <button
+              type="button"
+              onClick={() => navigate(buildUrl({ rarities: pendingRarities, colors: pendingColors }))}
+              className={cn(
+                "flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-sans font-semibold transition-all",
+                hasPendingChanges
+                  ? "bg-primary text-white hover:bg-primary/90 shadow-sm"
+                  : "bg-primary/10 text-primary hover:bg-primary/20"
+              )}
+            >
+              <Search size={14} />
+              Buscar
+            </button>
           )}
         </>
       )}
