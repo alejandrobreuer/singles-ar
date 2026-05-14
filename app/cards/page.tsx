@@ -141,7 +141,7 @@ export default async function ExplorePage({
           <div className="flex flex-col lg:flex-row gap-8 items-start">
 
             {/* ── Left sidebar ──────────────────────────────────────────── */}
-            <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-6">
+            <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-24">
               <div className="surface-raised p-4">
                 <p className="text-sm font-semibold font-serif text-text-primary mb-4">
                   Filtros

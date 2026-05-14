@@ -288,17 +288,25 @@ function FilterGroup({
         onClick={collapsible ? () => setOpen((v) => !v) : undefined}
         onKeyDown={collapsible ? (e) => { if (e.key === "Enter" || e.key === " ") setOpen((v) => !v); } : undefined}
         className={cn(
-          "flex items-center justify-between text-2xs font-semibold font-sans text-white uppercase tracking-widest mb-2 px-2.5 py-1 rounded-md bg-primary",
-          collapsible && "cursor-pointer select-none"
+          "flex items-center justify-between font-semibold font-sans text-white uppercase tracking-widest mb-2 rounded-lg bg-primary transition-colors",
+          collapsible
+            ? "text-xs px-3 py-2.5 cursor-pointer select-none hover:bg-primary/80"
+            : "text-xs px-2.5 py-1.5 justify-center rounded-md"
         )}
       >
         <span>{label}</span>
         {collapsible && (open
-          ? <ChevronUp size={11} className="shrink-0" />
-          : <ChevronDown size={11} className="shrink-0" />
+          ? <ChevronUp size={15} className="shrink-0 opacity-80" />
+          : <ChevronDown size={15} className="shrink-0 opacity-80" />
         )}
       </div>
-      {(!collapsible || open) && children}
+      {(!collapsible || open) && (
+        collapsible ? (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 shadow-md p-2 mt-1">
+            {children}
+          </div>
+        ) : children
+      )}
     </div>
   );
 }
@@ -433,7 +441,7 @@ function OptionList({
 
       <div className={cn(
         "flex flex-col gap-0.5",
-        searchable && "max-h-[200px] overflow-y-auto pr-0.5"
+        searchable && "min-h-[200px] max-h-[260px] overflow-y-auto pr-0.5"
       )}>
         {visible.length === 0 ? (
           <p className="text-xs text-text-muted font-sans px-3 py-2">Sin resultados.</p>

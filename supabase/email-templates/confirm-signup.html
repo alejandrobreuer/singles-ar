@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirmá tu cuenta — Card Stash</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+  </noscript>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#f1f3f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+  <!-- Outer wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f3f8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+
+        <!-- Card container -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(26,39,68,0.12);">
+
+          <!-- ── Header ────────────────────────────────── -->
+          <tr>
+            <td align="center" style="background-color:#1a2744;padding:32px 40px 28px;">
+              <img
+                src="https://cardstash.ar/images/CardStashWhiteText.png"
+                alt="Card Stash"
+                width="160"
+                style="display:block;height:auto;max-width:160px;"
+              />
+              <p style="margin:16px 0 0;color:#c9a84c;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;">
+                Marketplace de singles TCG en Argentina
+              </p>
+            </td>
+          </tr>
+
+          <!-- ── Body ─────────────────────────────────── -->
+          <tr>
+            <td style="background-color:#ffffff;padding:40px 40px 32px;">
+
+              <!-- Greeting -->
+              <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a2030;line-height:1.3;">
+                ¡Bienvenido/a a Card Stash!
+              </h1>
+              <p style="margin:0 0 24px;font-size:15px;color:#4a5578;line-height:1.6;">
+                Gracias por registrarte. Para activar tu cuenta y comenzar a comprar y vender singles, confirmá tu dirección de email haciendo clic en el botón de abajo.
+              </p>
+
+              <!-- CTA button -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;">
+                <tr>
+                  <td align="center" style="background-color:#b5862a;border-radius:8px;">
+                    <a
+                      href="{{ .ConfirmationURL }}"
+                      target="_blank"
+                      style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.02em;border-radius:8px;"
+                    >
+                      Confirmar mi cuenta
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Fallback link -->
+              <p style="margin:0 0 8px;font-size:13px;color:#8a96b0;line-height:1.5;">
+                Si el botón no funciona, copiá y pegá este enlace en tu navegador:
+              </p>
+              <p style="margin:0 0 28px;font-size:12px;word-break:break-all;">
+                <a href="{{ .ConfirmationURL }}" style="color:#b5862a;text-decoration:underline;">
+                  {{ .ConfirmationURL }}
+                </a>
+              </p>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="border-top:1px solid #e8eaf0;"></td>
+                </tr>
+              </table>
+
+              <!-- Disclaimer -->
+              <p style="margin:0;font-size:13px;color:#8a96b0;line-height:1.5;">
+                Si no creaste una cuenta en Card Stash podés ignorar este email. El enlace de confirmación expira en 24 horas.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- ── Footer ────────────────────────────────── -->
+          <tr>
+            <td align="center" style="background-color:#1a2744;padding:20px 40px;">
+              <p style="margin:0 0 4px;font-size:12px;color:#788cc5;">
+                © 2025 Card Stash · Magic · Pokémon · One Piece
+              </p>
+              <p style="margin:0;">
+                <a href="https://cardstash.ar" style="font-size:12px;color:#c9a84c;text-decoration:none;">
+                  cardstash.ar
+                </a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card container -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
