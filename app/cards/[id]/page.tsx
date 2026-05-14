@@ -401,7 +401,18 @@ export default async function CardDetailPage({
                 <p className="text-sm font-semibold text-text-primary font-sans">
                   ¿Tenés esta carta?
                 </p>
-                <Link href="/sell">
+                <Link href={`/sell?${new URLSearchParams({
+                  card_id:     card.id,
+                  name:        card.name,
+                  game:        card.game,
+                  external_id: card.external_id ?? "",
+                  image_url:   card.image_override_url ?? card.image_url ?? "",
+                  set_name:    card.set_name   ?? "",
+                  set_code:    card.set_code   ?? "",
+                  card_number: card.card_number ?? "",
+                  rarity:      card.rarity     ?? "",
+                  color:       card.color      ?? "",
+                })}`}>
                   <Button variant="secondary" size="md" className="w-full" leftIcon={<TrendingUp size={15} />}>
                     Publicar listing de venta
                   </Button>

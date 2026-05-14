@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ShoppingBag, Repeat2, ChevronRight, ChevronDown,
   MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info,
@@ -58,6 +58,7 @@ interface FilterOptions {
 
 export default function SellPage() {
   const router        = useRouter();
+  const searchParams  = useSearchParams();
   const { user, profile, loading: userLoading } = useUser();
 
   // ── Step state ────────────────────────────────────────────────────────────
@@ -115,6 +116,50 @@ export default function SellPage() {
       .then((json) => setStoreOptions((json.data ?? []).map((s: { name: string }) => s.name)))
       .catch(() => {});
   }, []);
+
+  // ── Auto-select card when navigating from a card page ────────────────────
+  // Build CardSearchResult from URL params to avoid an extra fetch.
+  // Falls back to GET /api/cards/:id only when name/game are missing.
+  React.useEffect(() => {
+    const cardId = searchParams.get("card_id");
+    if (!cardId || userLoading || selectedCard) return;
+
+    const name  = searchParams.get("name");
+    const game  = searchParams.get("game") as Game | null;
+
+    async function autoSelect() {
+      let card: CardSearchResult;
+
+      if (name && game) {
+        // All data already in the URL — no fetch needed
+        card = {
+          id:          cardId!,
+          name,
+          game,
+          external_id: searchParams.get("external_id") ?? "",
+          image_url:   searchParams.get("image_url")   || null,
+          set_name:    searchParams.get("set_name")    || null,
+          set_code:    searchParams.get("set_code")    || null,
+          card_number: searchParams.get("card_number") || null,
+          rarity:      searchParams.get("rarity")      || null,
+          color:       searchParams.get("color")       || null,
+        };
+      } else {
+        // Fallback: only card_id was passed
+        const res = await fetch(`/api/cards/${cardId}`);
+        if (!res.ok) return;
+        const json = await res.json() as { data: CardSearchResult };
+        card = json.data;
+      }
+
+      setSelectedGame(card.game);
+      await handleCardSelect(card);
+    }
+
+    void autoSelect();
+  // handleCardSelect omitted intentionally — changes every render but is stable in practice
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLoading, searchParams]);
 
   // ── Load filter options when game is selected ─────────────────────────────
   async function handleGameSelect(game: Game) {
