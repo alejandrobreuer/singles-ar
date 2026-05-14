@@ -13,6 +13,7 @@ interface BuyOrdersSectionProps {
   currentUserId?:     string | null;
   currentUserHasMp?:  boolean;
   cardId:             string;
+  highlightOrderId?:  string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ export function BuyOrdersSection({
   currentUserId,
   currentUserHasMp,
   cardId,
+  highlightOrderId,
 }: BuyOrdersSectionProps) {
   const router = useRouter();
   const [orders, setOrders] = React.useState<BuyOrderWithBuyer[]>(initialOrders);
@@ -73,6 +75,7 @@ export function BuyOrdersSection({
           currentUserId={currentUserId}
           currentUserHasMp={currentUserHasMp}
           onAccept={handleAccept}
+          highlighted={order.id === highlightOrderId}
         />
       ))}
     </div>

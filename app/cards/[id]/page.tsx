@@ -101,7 +101,13 @@ function formatARS(price: number) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function CardDetailPage({ params }: { params: { id: string } }) {
+export default async function CardDetailPage({
+  params,
+  searchParams,
+}: {
+  params:       { id: string };
+  searchParams: { highlight?: string };
+}) {
   const supabase  = createClient();
   const thirtyAgo = subDays(new Date(), 30).toISOString();
 
@@ -301,7 +307,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
             <Divider />
 
             {/* ── Buy orders section ─────────────────────────────────────── */}
-            <section>
+            <section id="buy-orders">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-serif font-semibold text-text-primary">
@@ -325,6 +331,7 @@ export default async function CardDetailPage({ params }: { params: { id: string 
                 currentUserId={user?.id ?? null}
                 currentUserHasMp={currentUserHasMp}
                 cardId={card.id}
+                highlightOrderId={searchParams.highlight}
               />
             </section>
 

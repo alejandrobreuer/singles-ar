@@ -4,7 +4,10 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(winget upgrade *)"
+      "Bash(winget upgrade *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\santi\\\\singles-ar\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npx tsc *)"
     ]
   }
 }

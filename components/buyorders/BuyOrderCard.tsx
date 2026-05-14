@@ -18,6 +18,7 @@ interface BuyOrderCardProps {
   currentUserId?:     string | null;
   currentUserHasMp?:  boolean;
   onAccept:           (orderId: string) => Promise<void>;
+  highlighted?:       boolean;
 }
 
 // ─── Expiry helper ────────────────────────────────────────────────────────────
@@ -71,9 +72,17 @@ export function BuyOrderCard({
   currentUserId,
   currentUserHasMp,
   onAccept,
+  highlighted = false,
 }: BuyOrderCardProps) {
   const [accepting, setAccepting] = React.useState(false);
   const [error,     setError]     = React.useState<string | null>(null);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (highlighted && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlighted]);
 
   const buyer         = order.profiles;
   const alias         = fantasyName(order.id);
@@ -96,8 +105,10 @@ export function BuyOrderCard({
 
   return (
     <div
+      ref={ref}
       className={[
         "rounded-xl border bg-surface p-4 flex flex-col gap-3 transition-shadow",
+        highlighted    ? "border-primary ring-2 ring-primary/30 shadow-card" :
         isExpiringSoon ? "border-warning/40" : "border-border",
         "hover:shadow-card",
       ].join(" ")}
