@@ -76,7 +76,7 @@ export default function TermsPage() {
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 py-10">
 
         <p className="text-sm font-sans text-text-secondary leading-relaxed mb-8 surface-raised p-5">
-          El presente documento establece los Términos y Condiciones de Uso ("Términos") que regulan el acceso y uso de la plataforma CardStash.ar ("la Plataforma"), operada desde la República Argentina. Al registrarse o utilizar CardStash.ar, el usuario declara haber leído, comprendido y aceptado en su totalidad estos Términos.
+          El presente documento establece los Términos y Condiciones de Uso (&ldquo;Términos&rdquo;) que regulan el acceso y uso de la plataforma CardStash.ar (&ldquo;la Plataforma&rdquo;), operada desde la República Argentina. Al registrarse o utilizar CardStash.ar, el usuario declara haber leído, comprendido y aceptado en su totalidad estos Términos.
         </p>
 
         <Section number="1" title="Definiciones">
@@ -117,7 +117,7 @@ export default function TermsPage() {
 
         <Section number="3" title="Registro y Cuenta de Usuario">
           <SubSection title="3.1 Requisitos de registro">
-            <p>Para utilizar las funcionalidades de la Plataforma, el Usuario deberá crear una cuenta proporcionando una dirección de correo electrónico válida y una contraseña. El Usuario elegirá un apodo público ("username") que será el único identificador visible para otros Usuarios. Los datos personales del Usuario, incluyendo su dirección de correo electrónico, nunca serán visibles para terceros dentro de la Plataforma.</p>
+            <p>Para utilizar las funcionalidades de la Plataforma, el Usuario deberá crear una cuenta proporcionando una dirección de correo electrónico válida y una contraseña. El Usuario elegirá un apodo público (&ldquo;username&rdquo;) que será el único identificador visible para otros Usuarios. Los datos personales del Usuario, incluyendo su dirección de correo electrónico, nunca serán visibles para terceros dentro de la Plataforma.</p>
           </SubSection>
           <SubSection title="3.2 Responsabilidad sobre la cuenta">
             <p>El Usuario es el único responsable de mantener la confidencialidad de sus credenciales de acceso y de todas las actividades realizadas desde su cuenta. Ante cualquier acceso no autorizado, deberá notificarlo inmediatamente al Operador. CardStash.ar no será responsable por daños o pérdidas derivadas del uso no autorizado de credenciales por negligencia del Usuario.</p>
@@ -160,7 +160,7 @@ export default function TermsPage() {
         </Section>
 
         <Section number="6" title="Buy Orders">
-          <p>Los Usuarios podrán publicar ofertas de compra ("Buy Orders") indicando el precio máximo que están dispuestos a pagar por una carta determinada. Los Buy Orders tienen vigencia temporal limitada y se eliminan automáticamente al vencimiento del plazo seleccionado.</p>
+          <p>Los Usuarios podrán publicar ofertas de compra (&ldquo;Buy Orders&rdquo;) indicando el precio máximo que están dispuestos a pagar por una carta determinada. Los Buy Orders tienen vigencia temporal limitada y se eliminan automáticamente al vencimiento del plazo seleccionado.</p>
           <p>El Usuario que cancele un Buy Order previamente aceptado por un Vendedor sin causa justificada podrá recibir una penalización en su reputación. La reiteración de cancelaciones injustificadas podrá resultar en la suspensión temporal o permanente de la cuenta.</p>
         </Section>
 
@@ -220,7 +220,7 @@ export default function TermsPage() {
         </Section>
 
         <Section number="12" title="Chargebacks y Disputas de Pago">
-          <p>En caso de que un Comprador inicie un contracargo ("chargeback") o disputa de pago, el Operador colaborará con el Proveedor de Servicios de Pago en la medida de sus posibilidades, pero no garantiza la resolución favorable para ninguna de las partes.</p>
+          <p>En caso de que un Comprador inicie un contracargo (&ldquo;chargeback&rdquo;) o disputa de pago, el Operador colaborará con el Proveedor de Servicios de Pago en la medida de sus posibilidades, pero no garantiza la resolución favorable para ninguna de las partes.</p>
           <p>El Usuario que inicie un chargeback de forma fraudulenta habiendo recibido el producto y confirmado la entrega podrá ser suspendido de forma permanente, y el Operador se reserva el derecho de ejercer las acciones legales correspondientes.</p>
         </Section>
 
