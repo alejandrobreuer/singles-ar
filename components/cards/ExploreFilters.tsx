@@ -84,62 +84,56 @@ export function ExploreFilters({
 }: ExploreFiltersProps) {
   const { navigate } = useExploreNavigation();
 
-  // Staged selections — only applied when the user clicks "Buscar"
+  // All staged — only applied when the user clicks "Buscar"
+  const [pendingSort,     setPendingSort]     = React.useState(currentSort || "recent");
+  const [pendingInStock,  setPendingInStock]  = React.useState(currentInStock);
+  const [pendingSet,      setPendingSet]      = React.useState(currentSet);
   const [pendingRarities, setPendingRarities] = React.useState<string[]>(currentRarities);
   const [pendingColors,   setPendingColors]   = React.useState<string[]>(currentColors);
 
-  // Sync pending state when URL params change (e.g. after navigation or game switch)
-  React.useEffect(() => { setPendingRarities(currentRarities); }, [currentRarities.join(",")]);
-  React.useEffect(() => { setPendingColors(currentColors);     }, [currentColors.join(",")]);
+  // Sync pending state when URL params change (e.g. after game switch or external navigation)
+  React.useEffect(() => { setPendingSort(currentSort || "recent"); }, [currentSort]);
+  React.useEffect(() => { setPendingInStock(currentInStock);       }, [currentInStock]);
+  React.useEffect(() => { setPendingSet(currentSet);               }, [currentSet]);
+  React.useEffect(() => { setPendingRarities(currentRarities);     }, [currentRarities.join(",")]);
+  React.useEffect(() => { setPendingColors(currentColors);         }, [currentColors.join(",")]);
 
   const hasPendingChanges =
+    pendingSort    !== (currentSort || "recent")          ||
+    pendingInStock !== currentInStock                     ||
+    pendingSet     !== currentSet                         ||
     pendingRarities.join(",") !== currentRarities.join(",") ||
     pendingColors.join(",")   !== currentColors.join(",");
 
-  function buildUrl(overrides: {
-    game?:     string;
-    set?:      string;
-    rarities?: string[];
-    colors?:   string[];
-    q?:        string;
-    sort?:     string;
-    instock?:  boolean;
-  }) {
-    const merged = {
-      q:        overrides.q        ?? currentQ,
-      game:     overrides.game     ?? currentGame,
-      set:      overrides.set      !== undefined ? overrides.set      : currentSet,
-      rarities: overrides.rarities !== undefined ? overrides.rarities : currentRarities,
-      colors:   overrides.colors   !== undefined ? overrides.colors   : currentColors,
-      sort:     overrides.sort     !== undefined ? overrides.sort     : currentSort,
-      instock:  overrides.instock  !== undefined ? overrides.instock  : currentInStock,
-    };
+  function buildUrl() {
     const params = new URLSearchParams();
-    if (merged.q)                                params.set("q",       merged.q);
-    if (merged.game)                             params.set("game",    merged.game);
-    if (merged.set)                              params.set("set",     merged.set);
-    if (merged.rarities.length)                  params.set("rarity",  merged.rarities.join(","));
-    if (merged.colors.length)                    params.set("color",   merged.colors.join(","));
-    if (merged.sort && merged.sort !== "recent") params.set("sort",    merged.sort);
-    if (merged.instock)                          params.set("instock", "1");
+    if (currentQ)                                    params.set("q",       currentQ);
+    if (currentGame)                                 params.set("game",    currentGame);
+    if (pendingSet)                                  params.set("set",     pendingSet);
+    if (pendingRarities.length)                      params.set("rarity",  pendingRarities.join(","));
+    if (pendingColors.length)                        params.set("color",   pendingColors.join(","));
+    if (pendingSort && pendingSort !== "recent")     params.set("sort",    pendingSort);
+    if (!pendingInStock)                             params.set("instock", "0");
     return `/cards?${params.toString()}`;
   }
 
+  // Game is still applied immediately — it controls which sub-filter options load
   function handleGameChange(game: string) {
+    setPendingSet("");
     setPendingRarities([]);
     setPendingColors([]);
     const params = new URLSearchParams();
-    if (currentQ)                                params.set("q",       currentQ);
-    if (game)                                    params.set("game",    game);
-    if (currentSort && currentSort !== "recent") params.set("sort",    currentSort);
-    if (currentInStock)                          params.set("instock", "1");
+    if (currentQ)                                params.set("q",    currentQ);
+    if (game)                                    params.set("game", game);
+    if (pendingSort && pendingSort !== "recent") params.set("sort", pendingSort);
+    if (!pendingInStock)                         params.set("instock", "0");
     navigate(`/cards?${params.toString()}`);
   }
 
-  const activeSort    = currentSort || "recent";
-  const hasAnyFilter  = Boolean(
+  // A filter is "active" when it deviates from its default value
+  const hasAnyFilter = Boolean(
     currentGame || currentSet || currentRarities.length || currentColors.length || currentQ ||
-    (activeSort !== "recent") || currentInStock
+    (currentSort && currentSort !== "recent") || !currentInStock
   );
 
   return (
@@ -148,12 +142,12 @@ export function ExploreFilters({
       {/* ── Ordenar ─────────────────────────────────────────────────── */}
       <FilterGroup label="Ordenar">
         {SORT_OPTIONS.map((opt) => {
-          const active = activeSort === opt.value;
+          const active = pendingSort === opt.value;
           return (
             <button
               key={opt.value}
               type="button"
-              onClick={() => navigate(buildUrl({ sort: opt.value }))}
+              onClick={() => setPendingSort(opt.value)}
               className={cn(
                 "flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs font-sans transition-all text-left",
                 active
@@ -172,10 +166,10 @@ export function ExploreFilters({
       <FilterGroup label="Disponibilidad">
         <button
           type="button"
-          onClick={() => navigate(buildUrl({ instock: !currentInStock }))}
+          onClick={() => setPendingInStock((v) => !v)}
           className={cn(
             "flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs font-sans transition-all text-left",
-            currentInStock
+            pendingInStock
               ? "bg-primary/10 text-primary font-semibold"
               : "text-text-secondary hover:bg-secondary hover:text-text-primary"
           )}
@@ -183,11 +177,11 @@ export function ExploreFilters({
           <span>Solo con stock</span>
           <div className={cn(
             "w-8 h-4 rounded-full transition-colors relative shrink-0",
-            currentInStock ? "bg-primary" : "bg-border"
+            pendingInStock ? "bg-primary" : "bg-border"
           )}>
             <div className={cn(
               "absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform",
-              currentInStock ? "translate-x-4" : "translate-x-0.5"
+              pendingInStock ? "translate-x-4" : "translate-x-0.5"
             )} />
           </div>
         </button>
@@ -227,8 +221,8 @@ export function ExploreFilters({
             <FilterGroup label="Set" collapsible defaultOpen={Boolean(currentSet)}>
               <OptionList
                 options={filterOptions.sets.map((s) => ({ value: s.code, label: `${s.code} ${s.name}` }))}
-                selected={currentSet}
-                onSelect={(v) => navigate(buildUrl({ set: v === currentSet ? "" : v }))}
+                selected={pendingSet}
+                onSelect={(v) => setPendingSet(v === pendingSet ? "" : v)}
                 searchable
               />
             </FilterGroup>
@@ -262,24 +256,23 @@ export function ExploreFilters({
               />
             </FilterGroup>
           )}
-
-          {(filterOptions.rarities.length > 0 || currentGame === "pokemon" || filterOptions.colors.length > 0) && (
-            <button
-              type="button"
-              onClick={() => navigate(buildUrl({ rarities: pendingRarities, colors: pendingColors }))}
-              className={cn(
-                "flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-sans font-semibold transition-all",
-                hasPendingChanges
-                  ? "bg-primary text-white hover:bg-primary/90 shadow-sm"
-                  : "bg-primary/10 text-primary hover:bg-primary/20"
-              )}
-            >
-              <Search size={14} />
-              Buscar
-            </button>
-          )}
         </>
       )}
+
+      {/* ── Buscar — always visible ───────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => navigate(buildUrl())}
+        className={cn(
+          "flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-sans font-semibold transition-all",
+          hasPendingChanges
+            ? "bg-primary text-white hover:bg-primary/90 shadow-sm"
+            : "bg-primary/10 text-primary hover:bg-primary/20"
+        )}
+      >
+        <Search size={14} />
+        Buscar
+      </button>
 
       {/* ── Clear all ──────────────────────────────────────────────── */}
       {hasAnyFilter && (

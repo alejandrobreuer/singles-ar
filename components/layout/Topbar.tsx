@@ -29,11 +29,12 @@ interface TopbarUser {
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/",        label: "Inicio"    },
-  { href: "/cards",   label: "Explorar"  },
-  { href: "/market",  label: "Mercado"   },
-  { href: "/sell",    label: "Vender"    },
-  { href: "/chat",    label: "Mis chats" },
+  { href: "/",         label: "Inicio"      },
+  { href: "/cards",    label: "Explorar"    },
+  { href: "/trends",   label: "Tendencias"  },
+  { href: "/market",   label: "Mercado"     },
+  { href: "/sell",     label: "Vender"      },
+  { href: "/chat",     label: "Mis chats"   },
 ];
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────

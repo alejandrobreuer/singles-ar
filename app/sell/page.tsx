@@ -298,12 +298,6 @@ export default function SellPage() {
     }
   }
 
-  // ── Redirect if not logged in ─────────────────────────────────────────────
-  if (!userLoading && !user) {
-    router.replace("/login?next=/sell");
-    return null;
-  }
-
   if (userLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">

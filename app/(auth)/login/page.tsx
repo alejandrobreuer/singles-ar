@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
@@ -23,7 +23,6 @@ type FieldErrors = Partial<Record<keyof LoginFields, string>>;
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function LoginPage() {
-  const router       = useRouter();
   const searchParams = useSearchParams();
   const nextPath     = searchParams.get("next") ?? "/";
 
@@ -73,8 +72,7 @@ function LoginPage() {
         return;
       }
 
-      router.push(nextPath);
-      router.refresh();
+      window.location.href = nextPath;
     } catch (err) {
       setGlobalError(mapAuthError(err));
     } finally {

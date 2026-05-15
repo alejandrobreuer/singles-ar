@@ -59,9 +59,9 @@ function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 sm:px-12 py-20 sm:py-24">
         {/* Hero logo */}
-        <div className="flex justify-center items-center gap-5 mb-10">
+        <div className="flex justify-start items-center gap-5 mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/LogoLight.png" alt="" className="h-24 sm:h-32 w-auto object-contain" />
+          <img src="/images/LogoLight.png" alt="" className="h-24 sm:h-32 w-auto object-contain" style={{ marginLeft: "-2rem" }} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/CardStashWhiteText.png" alt="Card Stash" className="h-12 sm:h-16 w-auto object-contain" />
         </div>

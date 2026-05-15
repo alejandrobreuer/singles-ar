@@ -101,7 +101,7 @@ export default async function ExplorePage({
   const rarities = (searchParams.rarity ?? "").split(",").filter(Boolean);
   const colors   = (searchParams.color  ?? "").split(",").filter(Boolean);
   const sort    = searchParams.sort    ?? "recent";
-  const instock = searchParams.instock === "1";
+  const instock = searchParams.instock !== "0";
   const page    = Math.max(1, parseInt(searchParams.page ?? "1", 10));
 
   const [{ cards, total }, filterOptions] = await Promise.all([
@@ -110,7 +110,7 @@ export default async function ExplorePage({
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const hasFilter  = Boolean(q || game || set || rarities.length || colors.length || (sort && sort !== "recent") || instock);
+  const hasFilter  = Boolean(q || game || set || rarities.length || colors.length || (sort && sort !== "recent") || !instock);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
