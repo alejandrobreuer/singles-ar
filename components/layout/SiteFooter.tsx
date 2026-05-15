@@ -17,6 +17,12 @@ export function SiteFooter({ variant = "light" }: Props) {
         </Link>
 
         <div className="flex items-center gap-5 flex-wrap">
+          <Link href="/terms" className="text-xs font-sans no-underline transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Términos
+          </Link>
+          <Link href="/privacy" className="text-xs font-sans no-underline transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Privacidad
+          </Link>
           <Link href="/contact" className="text-xs font-sans no-underline transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
             Contacto
           </Link>
@@ -38,6 +44,18 @@ export function SiteFooter({ variant = "light" }: Props) {
           </Link>
 
           <div className="flex items-center gap-5 flex-wrap">
+            <Link
+              href="/terms"
+              className="text-xs text-text-muted hover:text-text-primary font-sans no-underline transition-colors"
+            >
+              Términos
+            </Link>
+            <Link
+              href="/privacy"
+              className="text-xs text-text-muted hover:text-text-primary font-sans no-underline transition-colors"
+            >
+              Privacidad
+            </Link>
             <Link
               href="/contact"
               className="text-xs text-text-muted hover:text-text-primary font-sans no-underline transition-colors"

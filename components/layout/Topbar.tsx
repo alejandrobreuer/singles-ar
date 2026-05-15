@@ -51,7 +51,7 @@ function Logo() {
       <img
         src="/images/CardStashBlackText.png"
         alt="Card Stash"
-        className="h-10 w-auto object-contain"
+        className="h-9 w-auto object-contain"
       />
     </Link>
   );

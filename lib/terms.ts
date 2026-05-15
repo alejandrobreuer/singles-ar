@@ -12,7 +12,7 @@ export const TERMS: TermItem[] = [
     highlight: true,
     text:      "Leí y acepto los ",
     linkText:  "Términos y Condiciones de Singles.ar",
-    linkHref:  "/terminos-y-condiciones",
+    linkHref:  "/terms",
   },
   {
     id:   "intermediary",
