@@ -4,7 +4,7 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={`bg-secondary animate-pulse rounded ${className ?? ""}`} />;
 }
 
-function SectionShell({ children, label }: { children: React.ReactNode; label: string }) {
+function SectionShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-12">
       <div className="mb-4">

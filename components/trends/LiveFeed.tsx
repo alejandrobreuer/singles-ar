@@ -4,18 +4,15 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { formatARS } from "@/lib/formatting";
 import { formatRelativeTime } from "@/lib/trendsFormat";
-import { GameBadge } from "@/components/trends/GameBadge";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 import type { LiveFeedItem } from "@/lib/trends";
-import type { Game } from "@/types/database";
 
 interface Props {
   initialItems: LiveFeedItem[];
   game:         string;
 }
 
-export function LiveFeed({ initialItems, game }: Props) {
+export function LiveFeed({ initialItems }: Props) {
   const router   = useRouter();
   const [items, setItems] = React.useState<LiveFeedItem[]>(initialItems);
 

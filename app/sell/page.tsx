@@ -59,7 +59,7 @@ interface FilterOptions {
 export default function SellPage() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
-  const { user, profile, loading: userLoading } = useUser();
+  const { profile, loading: userLoading } = useUser();
 
   // ── Step state ────────────────────────────────────────────────────────────
   const [step,         setStep]         = React.useState<1 | 2 | 3>(1);

@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { formatARS } from "@/lib/formatting";
-import { formatChangePct, formatCompact } from "@/lib/trendsFormat";
+import { formatChangePct } from "@/lib/trendsFormat";
 import { cn } from "@/lib/utils";
 import type { PriceMoversData, PriceMoverItem } from "@/lib/trends";
 

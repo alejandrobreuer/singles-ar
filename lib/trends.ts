@@ -61,7 +61,7 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
     const [curRes, prevRes, buyRes, listRes, newListRes] = await Promise.all([
       // Current period completed transactions
       admin.from("transactions")
-        .select("price, card_id, cards!card_id(game)")
+        .select("price, card_id, seller_id, cards!card_id(game)")
         .eq("status", "completed")
         .gte("completed_at", curFrom),
 
@@ -89,7 +89,7 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
         .gte("created_at", curFrom),
     ]);
 
-    type TxRow  = { price: number; card_id: string; cards: { game: string } | null };
+    type TxRow  = { price: number; card_id: string; seller_id: string; cards: { game: string } | null };
     type ObjRow = { card_id: string; cards: { game: string } | null };
 
     function filterByGame<T extends { cards: { game: string } | null }>(rows: T[]): T[] {
@@ -123,7 +123,7 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
     }
 
     // Avg reputation of active sellers in period
-    const sellerIds = [...new Set(curTx.map((t) => (t as any).seller_id).filter(Boolean))];
+    const sellerIds = [...new Set(curTx.map((t) => t.seller_id).filter(Boolean))];
     let avgReputation: number | null = null;
     if (sellerIds.length) {
       const { data: repData } = await admin.from("profiles")

@@ -246,6 +246,7 @@ function BuyOrdersContent({ orders }: { orders: ActiveBuyOrder[] }) {
 
 // ─── Coming soon ──────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ComingSoon() {
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-3 border border-dashed border-border rounded-xl bg-background/50">

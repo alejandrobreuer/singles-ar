@@ -1,6 +1,5 @@
 import * as React from "react";
 import { formatCompact } from "@/lib/trendsFormat";
-import { formatARS } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 import type { MarketPulseData } from "@/lib/trends";
 
