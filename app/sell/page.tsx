@@ -56,7 +56,7 @@ interface FilterOptions {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SellPage() {
+function SellPageInner() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
   const { profile, loading: userLoading } = useUser();
@@ -1007,4 +1007,8 @@ function SelectedCardRecap({
       </button>
     </div>
   );
+}
+
+export default function SellPage() {
+  return <React.Suspense><SellPageInner /></React.Suspense>;
 }
