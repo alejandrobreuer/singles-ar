@@ -91,12 +91,18 @@ export function ExploreFilters({
   const [pendingRarities, setPendingRarities] = React.useState<string[]>(currentRarities);
   const [pendingColors,   setPendingColors]   = React.useState<string[]>(currentColors);
 
+  // Stable string keys for array deps — avoids referential instability on every render
+  const currentRaritiesKey = currentRarities.join(",");
+  const currentColorsKey   = currentColors.join(",");
+
   // Sync pending state when URL params change (e.g. after game switch or external navigation)
   React.useEffect(() => { setPendingSort(currentSort || "recent"); }, [currentSort]);
   React.useEffect(() => { setPendingInStock(currentInStock);       }, [currentInStock]);
   React.useEffect(() => { setPendingSet(currentSet);               }, [currentSet]);
-  React.useEffect(() => { setPendingRarities(currentRarities);     }, [currentRarities.join(",")]);
-  React.useEffect(() => { setPendingColors(currentColors);         }, [currentColors.join(",")]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => { setPendingRarities(currentRarities);     }, [currentRaritiesKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => { setPendingColors(currentColors);         }, [currentColorsKey]);
 
   const hasPendingChanges =
     pendingSort    !== (currentSort || "recent")          ||
