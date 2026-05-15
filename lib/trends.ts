@@ -123,7 +123,7 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
     }
 
     // Avg reputation of active sellers in period
-    const sellerIds = [...new Set(curTx.map((t) => t.seller_id).filter(Boolean))];
+    const sellerIds = Array.from(new Set(curTx.map((t) => t.seller_id).filter(Boolean)));
     let avgReputation: number | null = null;
     if (sellerIds.length) {
       const { data: repData } = await admin.from("profiles")
@@ -526,7 +526,7 @@ export async function getRecentTransactions(game: Game | "all", limit = 10): Pro
 
     if (!sliced.length) return [];
 
-    const sellerIds = [...new Set(sliced.map((r) => r.seller_id))];
+    const sellerIds = Array.from(new Set(sliced.map((r) => r.seller_id)));
     const { data: profiles } = await admin.from("profiles")
       .select("id, username")
       .in("id", sellerIds);
