@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Card Stash — Marketplace de cartas TCG en Argentina",
@@ -29,15 +30,7 @@ export default function LandingPage() {
         <CTASection />
       </main>
 
-      <footer className="bg-[#111827] py-5 px-6 sm:px-12 flex flex-wrap items-center justify-between gap-3">
-        <Link href="/" className="no-underline">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/CardStashWhiteText.png" alt="Card Stash" className="h-6 w-auto object-contain opacity-60" />
-        </Link>
-        <p className="text-xs font-sans" style={{ color: "rgba(255,255,255,0.3)" }}>
-          © {new Date().getFullYear()} Card Stash · Marketplace TCG Argentina
-        </p>
-      </footer>
+      <SiteFooter variant="dark" />
     </div>
   );
 }

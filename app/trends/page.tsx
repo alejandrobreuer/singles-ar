@@ -23,6 +23,7 @@ import {
 } from "@/lib/trends";
 import type { Game } from "@/types/database";
 
+import { SiteFooter }            from "@/components/layout/SiteFooter";
 import { FilterBar, PeriodTabs } from "@/components/trends/FilterBar";
 import { MarketPulse }           from "@/components/trends/MarketPulse";
 import { TopSales }              from "@/components/trends/TopSales";
@@ -205,20 +206,7 @@ export default async function TrendsPage({
 
       </div>
 
-      {/* ── Footer ────────────────────────────────────────────────────── */}
-      <footer className="border-t border-border mt-auto">
-        <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <Link href="/" className="no-underline inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/CardStashBlackText.png" alt="Card Stash" className="h-7 w-auto object-contain" />
-            </Link>
-            <p className="text-xs text-text-muted font-sans">
-              © {new Date().getFullYear()} Card Stash — Todos los derechos reservados
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -35,6 +35,7 @@ const NAV_LINKS: NavLink[] = [
   { href: "/market",   label: "Mercado"     },
   { href: "/sell",     label: "Vender"      },
   { href: "/chat",     label: "Mis chats"   },
+  { href: "/contact",  label: "Contacto"    },
 ];
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
