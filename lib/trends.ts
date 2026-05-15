@@ -92,10 +92,10 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
     type TxRow  = { price: number; card_id: string; seller_id: string; cards: { game: string } | null };
     type ObjRow = { card_id: string; cards: { game: string } | null };
 
-    function filterByGame<T extends { cards: { game: string } | null }>(rows: T[]): T[] {
+    const filterByGame = <T extends { cards: { game: string } | null }>(rows: T[]): T[] => {
       if (game === "all") return rows;
       return rows.filter((r) => r.cards?.game === game);
-    }
+    };
 
     const curTx  = filterByGame((curRes.data  ?? []) as TxRow[]);
     const prevTx = filterByGame((prevRes.data ?? []) as TxRow[]);
