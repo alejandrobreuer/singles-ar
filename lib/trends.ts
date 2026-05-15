@@ -419,15 +419,15 @@ export async function getPriceMovers(period: TrendPeriod, game: Game | "all", li
 
     // Compute % change for cards with data in both periods (min 3 sales each)
     const movers: (PriceMoverItem & { abs: number })[] = [];
-    for (const [card_id, { prices, card }] of curMap) {
+    Array.from(curMap.entries()).forEach(([card_id, { prices, card }]) => {
       const prevPrices = prevMap.get(card_id);
-      if (!prevPrices || prices.length < 3 || prevPrices.length < 3) continue;
+      if (!prevPrices || prices.length < 3 || prevPrices.length < 3) return;
       const curr = medianOf(prices);
       const prev = medianOf(prevPrices);
-      if (prev === 0) continue;
+      if (prev === 0) return;
       const changePct = ((curr - prev) / prev) * 100;
       movers.push({ rank: 0, card, prevPrice: prev, currPrice: curr, changePct, abs: Math.abs(changePct) });
-    }
+    });
 
     movers.sort((a, b) => b.abs - a.abs);
 
