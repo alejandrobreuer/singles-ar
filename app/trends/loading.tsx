@@ -33,7 +33,7 @@ export default function TrendsLoading() {
 
       <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8 py-8">
         {/* Market Pulse */}
-        <SectionShell label="">
+        <SectionShell>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="surface-raised p-5 text-center space-y-2">
@@ -47,7 +47,7 @@ export default function TrendsLoading() {
         </SectionShell>
 
         {/* Top Sales */}
-        <SectionShell label="Top ventas">
+        <SectionShell>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="surface-raised overflow-hidden">
@@ -73,7 +73,7 @@ export default function TrendsLoading() {
         </SectionShell>
 
         {/* Most Wanted */}
-        <SectionShell label="Más buscadas">
+        <SectionShell>
           <div className="surface-raised divide-y divide-border">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
@@ -94,7 +94,7 @@ export default function TrendsLoading() {
         </SectionShell>
 
         {/* Price Movers */}
-        <SectionShell label="Movimientos de precio">
+        <SectionShell>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
             {[0, 1].map((i) => (
               <div key={i} className="surface-raised overflow-hidden">
