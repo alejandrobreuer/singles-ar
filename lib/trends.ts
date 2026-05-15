@@ -97,8 +97,8 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
       return rows.filter((r) => r.cards?.game === game);
     };
 
-    const curTx  = filterByGame((curRes.data  ?? []) as TxRow[]);
-    const prevTx = filterByGame((prevRes.data ?? []) as TxRow[]);
+    const curTx  = filterByGame((curRes.data  ?? []) as unknown as TxRow[]);
+    const prevTx = filterByGame((prevRes.data ?? []) as unknown as TxRow[]);
 
     const curVolume  = curTx.reduce((s, r)  => s + (r.price ?? 0), 0);
     const prevVolume = prevTx.reduce((s, r) => s + (r.price ?? 0), 0);
@@ -117,9 +117,9 @@ export async function getMarketPulse(period: TrendPeriod, game: Game | "all"): P
       activeListings  = listRes.count  ?? 0;
       newListings     = newListRes.count ?? 0;
     } else {
-      activeBuyOrders = filterByGame((buyRes.data    ?? []) as ObjRow[]).length;
-      activeListings  = filterByGame((listRes.data   ?? []) as ObjRow[]).length;
-      newListings     = filterByGame((newListRes.data ?? []) as ObjRow[]).length;
+      activeBuyOrders = filterByGame((buyRes.data    ?? []) as unknown as ObjRow[]).length;
+      activeListings  = filterByGame((listRes.data   ?? []) as unknown as ObjRow[]).length;
+      newListings     = filterByGame((newListRes.data ?? []) as unknown as ObjRow[]).length;
     }
 
     // Avg reputation of active sellers in period
@@ -173,7 +173,7 @@ export async function getTopSales(period: TrendPeriod, game: Game | "all", limit
     ]);
 
     type CurRow = { price: number; card_id: string; cards: { id: string; name: string; set_name: string | null; set_code: string | null; game: string; image_url: string | null; image_override_url: string | null } | null };
-    const rows = (curRes.data ?? []) as CurRow[];
+    const rows = (curRes.data ?? []) as unknown as CurRow[];
     const filtered = game === "all" ? rows : rows.filter((r) => r.cards?.game === game);
 
     // Group by card_id
@@ -264,7 +264,7 @@ export async function getMostWanted(game: Game | "all", limit = 5): Promise<Want
       .eq("status", "active");
 
     type Row = { card_id: string; price: number; cards: { id: string; name: string; set_name: string | null; set_code: string | null; game: string; image_url: string | null; image_override_url: string | null } | null };
-    const rows = (data ?? []) as Row[];
+    const rows = (data ?? []) as unknown as Row[];
     const filtered = game === "all" ? rows : rows.filter((r) => r.cards?.game === game);
 
     const grouped = new Map<string, { prices: number[]; card: TrendCard }>();
@@ -326,7 +326,7 @@ export async function getBackInStock(game: Game | "all", limit = 8): Promise<Bac
       .order("created_at", { ascending: false });
 
     type Row = { card_id: string; price: number | null; created_at: string; cards: { id: string; name: string; set_name: string | null; set_code: string | null; game: string; image_url: string | null; image_override_url: string | null } | null };
-    const rows = (data ?? []) as Row[];
+    const rows = (data ?? []) as unknown as Row[];
     const filtered = game === "all" ? rows : rows.filter((r) => r.cards?.game === game);
 
     // One entry per card (first/most recent listing)
@@ -394,7 +394,7 @@ export async function getPriceMovers(period: TrendPeriod, game: Game | "all", li
     ]);
 
     type CurRow = { price: number; card_id: string; cards: { id: string; name: string; set_name: string | null; set_code: string | null; game: string; image_url: string | null; image_override_url: string | null } | null };
-    const curRows = (curRes.data ?? []) as CurRow[];
+    const curRows = (curRes.data ?? []) as unknown as CurRow[];
     const filtered = game === "all" ? curRows : curRows.filter((r) => r.cards?.game === game);
 
     // Group current period by card_id
@@ -465,7 +465,7 @@ export async function getTopSellers(period: TrendPeriod, game: Game | "all", lim
       .gte("completed_at", curFrom);
 
     type Row = { seller_id: string; cards: { game: string } | null };
-    const rows = (data ?? []) as Row[];
+    const rows = (data ?? []) as unknown as Row[];
     const filtered = game === "all" ? rows : rows.filter((r) => r.cards?.game === game);
 
     const counts = new Map<string, number>();
@@ -520,7 +520,7 @@ export async function getRecentTransactions(game: Game | "all", limit = 10): Pro
       .limit(game === "all" ? limit : limit * 3);
 
     type Row = { id: string; completed_at: string | null; price: number; buy_order_id: string | null; seller_id: string; cards: { name: string; game: string; set_name: string | null } | null };
-    const rows = (data ?? []) as Row[];
+    const rows = (data ?? []) as unknown as Row[];
     const filtered = game === "all" ? rows : rows.filter((r) => r.cards?.game === game);
     const sliced   = filtered.slice(0, limit);
 
