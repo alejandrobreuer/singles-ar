@@ -32,7 +32,7 @@ function resolveImageUrl(card: { image_url?: string | null; image_override_url?:
 
 function medianOf(values: number[]): number {
   if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = values.slice().sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
@@ -197,7 +197,7 @@ export async function getTopSales(period: TrendPeriod, game: Game | "all", limit
     }
 
     // Sort by count desc
-    const ranked = [...grouped.entries()]
+    const ranked = Array.from(grouped.entries())
       .map(([card_id, { prices, card }]) => ({ card_id, card, prices }))
       .sort((a, b) => b.prices.length - a.prices.length)
       .slice(0, limit);
@@ -207,7 +207,7 @@ export async function getTopSales(period: TrendPeriod, game: Game | "all", limit
     for (const r of (prevRes.data ?? []) as { card_id: string }[]) {
       prevCounts.set(r.card_id, (prevCounts.get(r.card_id) ?? 0) + 1);
     }
-    const prevRanked = [...prevCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const prevRanked = Array.from(prevCounts.entries()).sort((a, b) => b[1] - a[1]);
     const prevRankMap = new Map(prevRanked.map(([id], i) => [id, i + 1]));
 
     // Fetch active listing counts for ranked cards
@@ -286,7 +286,7 @@ export async function getMostWanted(game: Game | "all", limit = 5): Promise<Want
       grouped.get(r.card_id)!.prices.push(r.price ?? 0);
     }
 
-    const sorted = [...grouped.entries()]
+    const sorted = Array.from(grouped.entries())
       .map(([, { prices, card }]) => ({ card, orderCount: prices.length, bestOffer: Math.max(...prices) }))
       .sort((a, b) => b.orderCount - a.orderCount)
       .slice(0, limit);
@@ -352,7 +352,7 @@ export async function getBackInStock(game: Game | "all", limit = 8): Promise<Bac
       }
     }
 
-    return [...seen.values()].slice(0, limit);
+    return Array.from(seen.values()).slice(0, limit);
   } catch {
     return [];
   }
@@ -473,7 +473,7 @@ export async function getTopSellers(period: TrendPeriod, game: Game | "all", lim
       counts.set(r.seller_id, (counts.get(r.seller_id) ?? 0) + 1);
     }
 
-    const topSellerIds = [...counts.entries()]
+    const topSellerIds = Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([id]) => id);
