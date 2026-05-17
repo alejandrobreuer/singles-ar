@@ -62,20 +62,6 @@ export async function GET(req: NextRequest) {
   try {
     const token = await exchangeCodeForToken(code);
 
-    // Fetch MP user info to get a human-readable nickname
-    let mpNickname: string | null = null;
-    try {
-      const meRes = await fetch("https://api.mercadopago.com/users/me", {
-        headers: { Authorization: `Bearer ${token.access_token}` },
-      });
-      if (meRes.ok) {
-        const me = await meRes.json() as { nickname?: string; first_name?: string; last_name?: string };
-        mpNickname = me.nickname ?? [me.first_name, me.last_name].filter(Boolean).join(" ") ?? null;
-      }
-    } catch {
-      // Non-fatal — nickname is optional
-    }
-
     // Persist the tokens via admin client (bypasses RLS)
     const admin = createAdminClient();
     const { error: upsertError } = await admin
@@ -85,7 +71,6 @@ export async function GET(req: NextRequest) {
         mercadopago_refresh_token: token.refresh_token,
         mercadopago_user_id:       String(token.user_id),
         mercadopago_connected_at:  new Date().toISOString(),
-        mercadopago_nickname:      mpNickname,
       })
       .eq("id", user.id);
 
