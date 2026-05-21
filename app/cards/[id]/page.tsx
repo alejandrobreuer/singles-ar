@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { subDays } from "date-fns";
 import {
-  ChevronRight, ShoppingCart, Heart, TrendingUp, Info, Plus,
+  ChevronRight, ShoppingCart, Heart, TrendingUp, Info,
 } from "lucide-react";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
