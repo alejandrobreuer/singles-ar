@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertCircle, ChevronLeft, Clock, ShieldAlert, Tag } from "lucide-react";
+import { AlertCircle, ChevronLeft, Clock, MapPin, ShieldAlert, Tag } from "lucide-react";
 import { Button }            from "@/components/ui/button";
 import { Input }             from "@/components/ui/input";
 import { Spinner }           from "@/components/ui/spinner";
@@ -104,7 +104,9 @@ function NewBuyOrderPage() {
   const [condition,  setCondition]  = React.useState<Condition | null>(null);
   const [quantity,   setQuantity]   = React.useState(1);
   const [duration,   setDuration]   = React.useState(30);
-  const [notes,      setNotes]      = React.useState("");
+  const [notes,           setNotes]           = React.useState("");
+  const [deliveryStores,  setDeliveryStores]  = React.useState<string[]>([]);
+  const [storeOptions,    setStoreOptions]    = React.useState<string[]>([]);
 
   const [submitting,  setSubmitting]  = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -119,6 +121,13 @@ function NewBuyOrderPage() {
       setPriceLoading(false);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Fetch delivery store options ───────────────────────────────────────────
+  React.useEffect(() => {
+    fetch("/api/delivery-stores")
+      .then((r) => r.json())
+      .then((json) => setStoreOptions((json.data ?? []).map((s: { name: string }) => s.name)));
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -142,19 +151,21 @@ function NewBuyOrderPage() {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({
-        card_id:       card.id,
-        price:         priceNum,
-        condition:     condition ?? null,
+        card_id:         card.id,
+        price:           priceNum,
+        condition:       condition ?? null,
         quantity,
-        duration_days: duration,
-        notes:         notes.trim() || null,
+        duration_days:   duration,
+        notes:           notes.trim() || null,
+        delivery_stores: deliveryStores.length > 0 ? deliveryStores : null,
       }),
     });
 
     const json = await res.json();
 
     if (!res.ok) {
-      setSubmitError(json.error ?? "Error al crear la orden.");
+      const detail = json.detail ? ` — ${json.detail}` : "";
+      setSubmitError((json.error ?? "Error al crear la orden.") + detail);
       setSubmitting(false);
       return;
     }
@@ -366,6 +377,43 @@ function NewBuyOrderPage() {
                 {notes.length}/300
               </p>
             </div>
+
+            {/* Delivery stores */}
+            {storeOptions.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-sm font-medium text-text-primary font-sans flex items-center gap-1.5">
+                    <MapPin size={14} className="text-text-muted" />
+                    Lugar de encuentro — Tiendas
+                  </label>
+                  <p className="text-xs text-text-muted font-sans mt-1">
+                    Seleccioná las tiendas o zonas donde podés encontrarte con el vendedor.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                  {storeOptions.map((store) => {
+                    const checked = deliveryStores.includes(store);
+                    return (
+                      <label key={store} className="flex items-center gap-2.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            setDeliveryStores((prev) =>
+                              checked ? prev.filter((s) => s !== store) : [...prev, store]
+                            )
+                          }
+                          className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                        />
+                        <span className="text-sm font-sans text-text-secondary group-hover:text-text-primary transition-colors">
+                          {store}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <Divider />
 

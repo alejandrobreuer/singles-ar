@@ -143,8 +143,9 @@ CREATE TABLE IF NOT EXISTS public.buy_orders (
   quantity    integer     NOT NULL DEFAULT 1 CHECK (quantity >= 1),
   status      text        NOT NULL DEFAULT 'active'
                           CHECK (status IN ('active', 'reserved', 'filled', 'cancelled', 'expired')),
-  notes       text,
-  expires_at  timestamptz NOT NULL DEFAULT (now() + interval '30 days'),
+  notes            text,
+  delivery_stores  text[],
+  expires_at       timestamptz NOT NULL DEFAULT (now() + interval '30 days'),
   accepted_by uuid        REFERENCES public.profiles,         -- seller who accepted
   created_at  timestamptz DEFAULT now() NOT NULL,
   updated_at  timestamptz DEFAULT now() NOT NULL

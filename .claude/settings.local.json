@@ -7,7 +7,8 @@
       "Bash(winget upgrade *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\santi\\\\singles-ar\" -Directory)",
       "Bash(Select-Object Name)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(dir C:\\\\Users\\\\santi\\\\singles-ar\\\\app\\\\sell *)"
     ]
   }
 }

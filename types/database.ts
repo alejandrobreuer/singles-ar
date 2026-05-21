@@ -148,9 +148,10 @@ export interface BuyOrder {
   condition:   Condition | null;
   quantity:    number;
   status:      BuyOrderStatus;
-  notes:       string | null;
-  expires_at:  string;
-  accepted_by: string | null;   // profile id of seller who accepted
+  notes:            string | null;
+  delivery_stores:  string[] | null;
+  expires_at:       string;
+  accepted_by:      string | null;   // profile id of seller who accepted
   created_at:  string;
   updated_at:  string;
 }
