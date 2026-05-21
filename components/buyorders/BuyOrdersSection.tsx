@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Plus } from "lucide-react";
 import { BuyOrderCard } from "@/components/buyorders/BuyOrderCard";
-import type { BuyOrderWithBuyer } from "@/types/database";
+import type { BuyOrderWithBuyer, Card } from "@/types/database";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ interface BuyOrdersSectionProps {
   currentUserId?:     string | null;
   currentUserHasMp?:  boolean;
   cardId:             string;
+  card?:              Card;
   highlightOrderId?:  string;
 }
 
@@ -23,6 +24,7 @@ export function BuyOrdersSection({
   currentUserId,
   currentUserHasMp,
   cardId,
+  card,
   highlightOrderId,
 }: BuyOrdersSectionProps) {
   const router = useRouter();
@@ -55,12 +57,17 @@ export function BuyOrdersSection({
           Nadie está buscando esta carta activamente.
         </p>
         {currentUserId && (
-          <a
-            href={`/buy-orders/new?card_id=${cardId}`}
-            className="mt-1 text-xs text-primary hover:underline font-sans"
-          >
-            Crear una orden de compra
-          </a>
+          <div className="mt-1">
+            <a href={card
+              ? `/buy-orders/new?card_id=${card.id}&card_name=${encodeURIComponent(card.name)}&card_set=${encodeURIComponent(card.set_name ?? "")}&card_image=${encodeURIComponent(card.image_url ?? "")}&card_game=${card.game}`
+              : `/buy-orders/new?card_id=${cardId}`
+            }>
+              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium font-sans hover:bg-primary/90 transition-colors">
+                <Plus size={13} />
+                Crear una orden de compra
+              </button>
+            </a>
+          </div>
         )}
       </div>
     );

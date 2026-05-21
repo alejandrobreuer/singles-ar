@@ -38,7 +38,18 @@ export function BuyListingSection({ listings, card, currentUserId }: BuyListingS
         <p className="text-xs text-text-muted font-sans max-w-xs">Nadie está vendiendo esta carta en este momento.</p>
         {currentUserId && (
           <div className="mt-1">
-            <Link href="/sell">
+            <Link href={`/sell?${new URLSearchParams({
+              card_id:     card.id,
+              name:        card.name,
+              game:        card.game,
+              external_id: card.external_id ?? "",
+              image_url:   card.image_override_url ?? card.image_url ?? "",
+              set_name:    card.set_name    ?? "",
+              set_code:    card.set_code    ?? "",
+              card_number: card.card_number ?? "",
+              rarity:      card.rarity      ?? "",
+              color:       card.color       ?? "",
+            })}`}>
               <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium font-sans hover:bg-primary/90 transition-colors">
                 <Plus size={13} />
                 Sé el primero en vender esta carta

@@ -317,13 +317,6 @@ export default async function CardDetailPage({
                     {buyOrders.length} {buyOrders.length === 1 ? "comprador buscando esta carta" : "compradores buscando esta carta"}
                   </p>
                 </div>
-                {user && (
-                  <Link href={`/buy-orders/new?card_id=${card.id}&card_name=${encodeURIComponent(card.name)}&card_set=${encodeURIComponent(card.set_name ?? "")}&card_image=${encodeURIComponent(card.image_url ?? "")}&card_game=${card.game}`}>
-                    <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />}>
-                      Crear orden
-                    </Button>
-                  </Link>
-                )}
               </div>
 
               <BuyOrdersSection
@@ -331,6 +324,7 @@ export default async function CardDetailPage({
                 currentUserId={user?.id ?? null}
                 currentUserHasMp={currentUserHasMp}
                 cardId={card.id}
+                card={card}
                 highlightOrderId={searchParams.highlight}
               />
             </section>
