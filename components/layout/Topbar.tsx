@@ -32,7 +32,8 @@ const NAV_LINKS: NavLink[] = [
   { href: "/",         label: "Inicio"      },
   { href: "/cards",    label: "Explorar"    },
   { href: "/trends",   label: "Tendencias"  },
-{ href: "/sell",     label: "Vender"      },
+  { href: "/market",   label: "Mercado"     },
+  { href: "/sell",     label: "Vender"      },
   { href: "/chat",     label: "Mis chats"   },
   { href: "/contact",  label: "Contacto"    },
 ];
