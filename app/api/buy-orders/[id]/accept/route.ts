@@ -3,7 +3,7 @@ import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify }            from "@/lib/notifications";
 import {
-  unauthorized, notFound, validationError, dbError,
+  unauthorized, notFound, dbError,
 } from "@/lib/api-error";
 
 // ─── POST /api/buy-orders/[id]/accept ────────────────────────────────────────
