@@ -56,12 +56,13 @@ const LISTING_STATUS_LABEL: Record<string, { label: string; variant: React.Compo
 };
 
 const TX_STATUS_LABEL: Record<string, { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }> = {
-  in_chat:         { label: "En chat",        variant: "blue"  },
-  payment_pending: { label: "Pago pendiente", variant: "amber" },
-  paid:            { label: "Pagado",         variant: "green" },
-  completed:       { label: "Completado",     variant: "green" },
-  cancelled:       { label: "Cancelado",      variant: "slate" },
-  disputed:        { label: "En disputa",     variant: "red"   },
+  pending_buyer_confirmation: { label: "Confirmar pago", variant: "amber" },
+  in_chat:                    { label: "En chat",        variant: "blue"  },
+  payment_pending:            { label: "Pago pendiente", variant: "amber" },
+  paid:                       { label: "Pagado",         variant: "green" },
+  completed:                  { label: "Completado",     variant: "green" },
+  cancelled:                  { label: "Cancelado",      variant: "slate" },
+  disputed:                   { label: "En disputa",     variant: "red"   },
 };
 
 // ─── Stars ────────────────────────────────────────────────────────────────────
@@ -114,6 +115,7 @@ interface ProfileClientProps {
   buyOrders:      (BuyOrder & { cards: { id: string; name: string; image_url: string | null; game: Game } })[];
   wishlist:       WishlistRowWithStats[];
   transactions:   TransactionHistoryRow[];
+  reservedOrderTransactions: Record<string, string>; // buyOrderId → transactionId
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -125,6 +127,7 @@ export function ProfileClient({
   buyOrders:      initialBuyOrders,
   wishlist:       initialWishlist,
   transactions,
+  reservedOrderTransactions,
 }: ProfileClientProps) {
   const router = useRouter();
   const [tab,       setTab]       = React.useState<TabKey>("listings");
@@ -388,14 +391,21 @@ export function ProfileClient({
                   </thead>
                   <tbody className="divide-y divide-border">
                     {buyOrders.map((order) => {
-                      const card = order.cards as { id: string; name: string; image_url: string | null; game: Game } | null;
+                      const card        = order.cards as { id: string; name: string; image_url: string | null; game: Game } | null;
                       const daysLeft    = differenceInDays(new Date(order.expires_at), new Date());
-                      const isExpiring  = daysLeft <= 3 && ["active", "reserved"].includes(order.status);
+                      const isExpiring  = daysLeft <= 3 && order.status === "active";
                       const canRenew    = ["active", "expired"].includes(order.status);
-                      const canCancel   = ["active", "reserved"].includes(order.status);
+                      const canCancel   = order.status === "active";
+                      const pendingTxId = order.status === "reserved"
+                        ? reservedOrderTransactions[order.id]
+                        : undefined;
 
                       return (
-                        <tr key={order.id} className={["hover:bg-secondary/30 transition-colors", isExpiring ? "bg-warning/5" : ""].join(" ")}>
+                        <tr key={order.id} className={[
+                          "hover:bg-secondary/30 transition-colors",
+                          isExpiring  ? "bg-warning/5" : "",
+                          pendingTxId ? "bg-amber-50/50" : "",
+                        ].join(" ")}>
                           {/* Carta */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
@@ -424,33 +434,49 @@ export function ProfileClient({
                           </td>
                           {/* Estado */}
                           <td className="px-4 py-3">
-                            <Badge variant={
-                              order.status === "active"    ? "green"  :
-                              order.status === "reserved"  ? "amber"  :
-                              order.status === "filled"    ? "navy"   :
-                              order.status === "expired"   ? "red"    : "slate"
-                            } size="sm">
-                              {{ active: "Activo", reserved: "Reservado", filled: "Completado", cancelled: "Cancelado", expired: "Vencido" }[order.status] ?? order.status}
-                            </Badge>
+                            {pendingTxId ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold font-sans px-2 py-0.5 rounded-full border border-amber-400/60 bg-amber-100 text-amber-700 animate-pulse">
+                                ⚡ Requiere tu confirmación
+                              </span>
+                            ) : (
+                              <Badge variant={
+                                order.status === "active"   ? "green" :
+                                order.status === "reserved" ? "amber" :
+                                order.status === "filled"   ? "navy"  :
+                                order.status === "expired"  ? "red"   : "slate"
+                              } size="sm">
+                                {{ active: "Activo", reserved: "Reservado", filled: "Completado", cancelled: "Cancelado", expired: "Vencido" }[order.status] ?? order.status}
+                              </Badge>
+                            )}
                           </td>
                           {/* Acciones */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1.5">
-                              {canRenew && (
-                                <button
-                                  onClick={() => renewBuyOrder(order.id, 30)}
-                                  className="p-1.5 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
-                                  title="Renovar 30 días"
-                                >
-                                  <RefreshCw size={14} />
-                                </button>
-                              )}
-                              {canCancel && (
-                                <ConfirmAction title="Cancelar orden" onConfirm={() => cancelBuyOrder(order.id)}>
-                                  <button className="p-1.5 rounded-md text-text-muted hover:text-error hover:bg-error-subtle transition-colors" title="Cancelar">
-                                    <Trash2 size={14} />
-                                  </button>
-                                </ConfirmAction>
+                              {pendingTxId ? (
+                                <Link href={`/chat/${pendingTxId}`}>
+                                  <Button variant="primary" size="sm" rightIcon={<ChevronRight size={12} />}>
+                                    Ir al chat
+                                  </Button>
+                                </Link>
+                              ) : (
+                                <>
+                                  {canRenew && (
+                                    <button
+                                      onClick={() => renewBuyOrder(order.id, 30)}
+                                      className="p-1.5 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
+                                      title="Renovar 30 días"
+                                    >
+                                      <RefreshCw size={14} />
+                                    </button>
+                                  )}
+                                  {canCancel && (
+                                    <ConfirmAction title="Cancelar orden" onConfirm={() => cancelBuyOrder(order.id)}>
+                                      <button className="p-1.5 rounded-md text-text-muted hover:text-error hover:bg-error-subtle transition-colors" title="Cancelar">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </ConfirmAction>
+                                  )}
+                                </>
                               )}
                             </div>
                           </td>

@@ -13,6 +13,7 @@ export type ListingType     = "sale" | "trade";
 export type ListingStatus   = "active" | "reserved" | "sold" | "cancelled";
 export type BuyOrderStatus  = "active" | "reserved" | "filled" | "cancelled" | "expired";
 export type TransactionStatus =
+  | "pending_buyer_confirmation"  // seller accepted buy order, waiting for buyer to pay (24h window)
   | "in_chat"          // chat opened (pre-payment OR post-payment with mp_payment_id set)
   | "payment_pending"  // MP preference created, awaiting payment
   | "paid"             // legacy — kept for existing rows only

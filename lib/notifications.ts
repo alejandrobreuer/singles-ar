@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type NotificationType = "card_sold" | "card_bought" | "new_message" | "wishlist_stock";
+export type NotificationType = "card_sold" | "card_bought" | "new_message" | "wishlist_stock" | "buy_order_accepted";
 
 export interface NotificationInput {
   user_id: string;

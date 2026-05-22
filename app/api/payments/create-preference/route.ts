@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(resp, { status: 403 });
   }
 
-  if (tx.status !== "in_chat" && tx.status !== "payment_pending") {
+  const PAYABLE_STATUSES = ["pending_buyer_confirmation", "in_chat", "payment_pending"];
+  if (!PAYABLE_STATUSES.includes(tx.status)) {
     const resp = { error: "La transacción no puede procesarse en su estado actual.", status: tx.status };
     console.log("[create-preference] RETURNING 422 (bad status):", resp);
     return NextResponse.json(resp, { status: 422 });
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
       updated_at:       new Date().toISOString(),
     })
     .eq("id", transactionId)
-    .in("status", ["in_chat", "payment_pending"]);
+    .in("status", ["pending_buyer_confirmation", "in_chat", "payment_pending"]);
 
   if (updateError) console.error("[create-preference] DB update error:", updateError);
 

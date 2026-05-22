@@ -111,6 +111,22 @@ export default async function MyProfilePage() {
   const wishlistRaw = (wishlistResult.data    ?? []) as unknown as WishlistWithCard[];
   const txRaw       = (transactionsResult.data ?? []) as unknown as TransactionHistoryRow[];
 
+  // For reserved buy orders, look up the pending transaction to get the chat URL
+  const reservedIds = buyOrders.filter((o) => o.status === "reserved").map((o) => o.id);
+  let reservedOrderTransactions: Record<string, string> = {};
+  if (reservedIds.length > 0) {
+    const { data: pendingTxs } = await admin
+      .from("transactions")
+      .select("id, buy_order_id")
+      .in("buy_order_id", reservedIds)
+      .eq("status", "pending_buyer_confirmation");
+    reservedOrderTransactions = Object.fromEntries(
+      (pendingTxs ?? [])
+        .filter((t) => t.buy_order_id != null)
+        .map((t) => [t.buy_order_id as string, t.id]),
+    );
+  }
+
   // ── Enrich wishlist with listing stats ────────────────────────────────────
   let wishlist: WishlistRowWithStats[] = wishlistRaw.map((w) => ({
     ...w,
@@ -156,6 +172,7 @@ export default async function MyProfilePage() {
           buyOrders={buyOrders}
           wishlist={wishlist}
           transactions={transactions}
+          reservedOrderTransactions={reservedOrderTransactions}
         />
       </div>
     </div>

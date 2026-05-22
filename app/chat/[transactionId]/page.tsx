@@ -17,12 +17,13 @@ import type {
 // ─── Status label map ─────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }> = {
-  in_chat:         { label: "En conversación",   variant: "blue"  },
-  payment_pending: { label: "Pago pendiente",    variant: "amber" },
-  paid:            { label: "Pago confirmado",   variant: "green" },
-  completed:       { label: "Completado",        variant: "green" },
-  cancelled:       { label: "Cancelado",         variant: "red"   },
-  disputed:        { label: "En disputa",        variant: "red"   },
+  pending_buyer_confirmation: { label: "Confirmar pago",     variant: "amber" },
+  in_chat:                    { label: "En conversación",    variant: "blue"  },
+  payment_pending:            { label: "Pago pendiente",     variant: "amber" },
+  paid:                       { label: "Pago confirmado",    variant: "green" },
+  completed:                  { label: "Completado",         variant: "green" },
+  cancelled:                  { label: "Cancelado",          variant: "red"   },
+  disputed:                   { label: "En disputa",         variant: "red"   },
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

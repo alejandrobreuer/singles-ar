@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/expire-buy-orders",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/auto-cancel-buy-orders",
+      "schedule": "0 * * * *"
     }
   ]
 }

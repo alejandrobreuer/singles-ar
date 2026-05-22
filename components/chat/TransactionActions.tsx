@@ -4,9 +4,10 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle, XCircle, Clock, AlertCircle,
-  PackageCheck, CreditCard, Loader2, ShieldAlert,
+  PackageCheck, CreditCard, Loader2, ShieldAlert, Zap,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button }    from "@/components/ui/button";
+import { formatARS } from "@/lib/formatting";
 import type { TransactionWithDetails } from "@/types/database";
 
 interface TransactionActionsProps {
@@ -112,12 +113,110 @@ export function TransactionActions({
     return Math.max(0, Math.floor(ms / (1000 * 60 * 60)));
   }
 
+  async function handleReject() {
+    if (!transaction.buy_order_id) return;
+    setError(null);
+    setCancelBusy(true);
+    try {
+      const res  = await fetch(`/api/buy-orders/${transaction.buy_order_id}/cancel-acceptance`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error al rechazar.");
+      onStatusChange?.("cancelled");
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
   const errNode = error && (
     <div className="flex items-center gap-1.5 text-xs text-error font-sans">
       <AlertCircle size={12} />
       {error}
     </div>
   );
+
+  // ── pending_buyer_confirmation — seller accepted, buyer must pay within 24h ──
+  if (status === "pending_buyer_confirmation") {
+    const deadline  = new Date(new Date(transaction.created_at).getTime() + 24 * 60 * 60 * 1000);
+    const msLeft    = Math.max(0, deadline.getTime() - Date.now());
+    const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+    const minsLeft  = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const pct       = (msLeft / (24 * 60 * 60 * 1000)) * 100;
+
+    return (
+      <div className="flex flex-col gap-2.5">
+        {isBuyer ? (
+          <div className="rounded-xl border border-accent/40 bg-accent/5 p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-sm font-semibold font-sans text-text-primary">
+              <Zap size={15} className="text-accent shrink-0" />
+              {transaction.seller.username} quiere venderte esta carta
+            </div>
+
+            {/* Price breakdown */}
+            <div className="flex flex-col gap-1.5 text-sm font-sans border border-border rounded-lg px-3 py-2.5 bg-surface">
+              <div className="flex justify-between">
+                <span className="text-text-muted truncate mr-2">{transaction.card.name}</span>
+                <span className="font-price text-text-primary shrink-0">{formatARS(transaction.price)}</span>
+              </div>
+              {transaction.platform_fee != null && transaction.platform_fee > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-text-muted">Comisión CardStash ({Math.round((transaction.platform_fee / transaction.price) * 100)}%)</span>
+                  <span className="text-text-muted shrink-0">−{formatARS(transaction.platform_fee)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-border pt-1.5 mt-0.5">
+                <span className="font-semibold text-text-primary text-xs">Tu pago total</span>
+                <span className="font-price font-semibold text-text-primary shrink-0">{formatARS(transaction.price)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <Button
+                variant="primary" size="sm" className="flex-1"
+                leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                onClick={handlePay} disabled={busy || cancelBusy}
+              >
+                {busy ? "Iniciando pago…" : `Confirmar y pagar ${formatARS(transaction.price)}`}
+              </Button>
+              <Button
+                variant="ghost" size="sm"
+                leftIcon={cancelBusy ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                onClick={handleReject} disabled={busy || cancelBusy}
+                className="text-error hover:bg-error-subtle hover:text-error shrink-0"
+              >
+                Rechazar
+              </Button>
+            </div>
+
+            {/* 24h countdown */}
+            <div className="flex flex-col gap-1">
+              <span className="flex items-center gap-1 text-xs text-text-muted font-sans">
+                <Clock size={11} />
+                Tenés {hoursLeft}h {minsLeft}m para confirmar
+              </span>
+              <div className="h-1 rounded-full bg-secondary overflow-hidden">
+                <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-text-muted text-xs font-sans">
+              <Clock size={13} />
+              Esperando confirmación del comprador. Tiene {hoursLeft}h {minsLeft}m para pagar.
+            </div>
+            <div className="h-1 rounded-full bg-secondary overflow-hidden">
+              <div className="h-full rounded-full bg-primary/40 transition-all" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        )}
+        {errNode}
+      </div>
+    );
+  }
 
   // ── in_chat — awaiting payment (no mp_payment_id yet) ────────────────────────
   if (status === "in_chat" && !transaction.mp_payment_id) {

@@ -8,7 +8,10 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\santi\\\\singles-ar\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(npx tsc *)",
-      "Bash(dir C:\\\\Users\\\\santi\\\\singles-ar\\\\app\\\\sell *)"
+      "PowerShell(git *)",
+      "PowerShell(auth *)",
+      "Bash(git -C /c/Users/aleja/singles-ar add \"app/\\(auth\\)/register/page.tsx\" lib/terms.ts)",
+      "Bash(git -C /c/Users/aleja/singles-ar status --short)"
     ]
   }
 }
