@@ -11,12 +11,12 @@ export const TERMS: TermItem[] = [
     id:        "main",
     highlight: true,
     text:      "Leí y acepto los ",
-    linkText:  "Términos y Condiciones de Singles.ar",
+    linkText:  "Términos y Condiciones de CardStash.ar",
     linkHref:  "/terms",
   },
   {
     id:   "intermediary",
-    text: "Entiendo que Singles.ar es una plataforma intermediaria. Las transacciones ocurren entre usuarios particulares — Singles.ar no verifica la autenticidad de las cartas ni garantiza el resultado de ninguna transacción.",
+    text: "Entiendo que CardStash.ar es una plataforma intermediaria. Las transacciones ocurren entre usuarios particulares — CardStash.ar no verifica la autenticidad de las cartas ni garantiza el resultado de ninguna transacción.",
   },
   {
     id:   "contact",

@@ -402,7 +402,7 @@ export default function RegisterPage() {
             <div className="flex gap-3 rounded-lg bg-primary/5 border border-primary/10 px-4 py-3">
               <Info size={16} className="shrink-0 mt-0.5 text-primary/60" />
               <p className="text-xs font-sans text-text-secondary">
-                Leé y aceptá todos los puntos para crear tu cuenta. Estos términos aplican a todos los usuarios de Singles.ar.
+                Leé y aceptá todos los puntos para crear tu cuenta. Estos términos aplican a todos los usuarios de CardStash.ar.
               </p>
             </div>
 
