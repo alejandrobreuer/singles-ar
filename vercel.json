@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/auto-cancel-buy-orders",
-      "schedule": "0 4 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }
