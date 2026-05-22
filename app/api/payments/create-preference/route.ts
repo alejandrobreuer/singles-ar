@@ -130,6 +130,16 @@ export async function POST(req: NextRequest) {
       pending: `${appUrl}/payment/pending`,
     },
     ...(appUrl.startsWith("https://") && { auto_return: "approved" }),
+    // Eliminate pending state — payments are instantly approved or rejected
+    binary_mode: true,
+    // Force single payment (no installments) and exclude slow-to-accredit methods
+    payment_methods: {
+      excluded_payment_types: [
+        { id: "ticket" },  // cash (Rapipago, Pago Fácil) — takes 1-3 days
+        { id: "atm" },     // ATM payments
+      ],
+      installments: 1,
+    },
     external_reference: transactionId,
     notification_url:   `${appUrl}/api/payments/webhook`,
     metadata:           { transaction_id: transactionId },
