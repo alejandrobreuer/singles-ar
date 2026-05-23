@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { randomBytes }       from "crypto";
 
 // ─── GET /api/auth/mercadopago — start OAuth flow ────────────────────────────
-// Builds the MP authorization URL and redirects the browser to it.
+// Builds the MP Marketplace authorization URL and redirects the browser to it.
+// The `state` parameter is required for Marketplace apps so that the seller
+// token returned by MP is linked to the marketplace (enabling marketplace_fee).
 
 export async function GET() {
   const clientId    = process.env.MP_CLIENT_ID;
@@ -16,10 +19,13 @@ export async function GET() {
     );
   }
 
+  const state = randomBytes(16).toString("hex");
+
   const url = new URL("https://auth.mercadopago.com.ar/authorization");
   url.searchParams.set("client_id",     clientId);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("platform_id",   "mp");
+  url.searchParams.set("state",         state);
   url.searchParams.set("redirect_uri",  redirectUri);
 
   return NextResponse.redirect(url.toString());
