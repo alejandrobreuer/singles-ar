@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { Eye, EyeOff, Mail, Lock, AtSign, CheckCircle2, XCircle, Loader2, Info, Check, RefreshCw, MailCheck } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
@@ -49,8 +49,6 @@ type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
-  const router = useRouter();
-
   // ── Stepper
   const [step, setStep] = React.useState(0);
 
