@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock, AtSign, CheckCircle2, XCircle, Loader2, Info, Check } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AtSign, CheckCircle2, XCircle, Loader2, Info, Check, RefreshCw, MailCheck } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/errors";
@@ -73,8 +73,10 @@ export default function RegisterPage() {
   const allChecked = checkedTerms.every(Boolean);
 
   // ── Global
-  const [globalError, setGlobalError] = React.useState<string | null>(null);
-  const [loading,     setLoading]     = React.useState(false);
+  const [globalError,   setGlobalError]   = React.useState<string | null>(null);
+  const [loading,       setLoading]       = React.useState(false);
+  const [registeredEmail, setRegisteredEmail] = React.useState<string | null>(null);
+  const [resendState,   setResendState]   = React.useState<"idle" | "loading" | "sent" | "error">("idle");
 
   function toggleTerm(i: number) {
     setCheckedTerms((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
@@ -162,7 +164,7 @@ export default function RegisterPage() {
         email:    s1.email,
         password: s1.password,
         options:  {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=/onboarding/username`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=/onboarding/mercadopago`,
         },
       });
 
@@ -191,11 +193,30 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/onboarding/mercadopago");
+      setRegisteredEmail(s1.email);
     } catch (err) {
       setGlobalError(mapAuthError(err));
     } finally {
       setLoading(false);
+    }
+  }
+
+  // ─── Resend confirmation email
+  async function handleResend() {
+    if (!registeredEmail) return;
+    setResendState("loading");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type:  "signup",
+        email: registeredEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/onboarding/mercadopago`,
+        },
+      });
+      setResendState(error ? "error" : "sent");
+    } catch {
+      setResendState("error");
     }
   }
 
@@ -230,6 +251,53 @@ export default function RegisterPage() {
       : undefined;
 
   // ─── Render
+  if (registeredEmail) {
+    return (
+      <div className="animate-fade-in text-center">
+        <div className="mb-6 flex justify-center">
+          <div className="size-16 rounded-full bg-success/10 border border-success/20 flex items-center justify-center">
+            <MailCheck size={28} className="text-success" />
+          </div>
+        </div>
+        <h1 className="text-2xl font-serif font-semibold text-text-primary mb-2">
+          Revisá tu correo
+        </h1>
+        <p className="text-sm text-text-secondary font-sans mb-1">
+          Te enviamos un enlace de confirmación a
+        </p>
+        <p className="text-sm font-semibold text-text-primary font-sans mb-8">
+          {registeredEmail}
+        </p>
+        <div className="surface-raised p-6 text-left mb-6">
+          <p className="text-sm text-text-secondary font-sans leading-relaxed">
+            Hacé clic en el enlace del correo para activar tu cuenta y continuar con la configuración de MercadoPago. El enlace expira en 24 horas.
+          </p>
+        </div>
+        {resendState === "sent" ? (
+          <div className="flex items-center justify-center gap-2 text-sm text-success font-sans">
+            <CheckCircle2 size={15} />
+            Correo reenviado. Revisá tu bandeja de entrada.
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resendState === "loading"}
+            className="flex items-center gap-1.5 mx-auto text-sm font-medium text-text-muted hover:text-primary font-sans transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={resendState === "loading" ? "animate-spin" : ""} />
+            {resendState === "loading" ? "Enviando…" : "Reenviar correo de confirmación"}
+          </button>
+        )}
+        {resendState === "error" && (
+          <p className="mt-2 text-xs text-error font-sans">
+            No pudimos reenviar el correo. Intentá de nuevo en un momento.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       {/* Header */}

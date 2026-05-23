@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, RefreshCw, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { mapAuthError } from "@/lib/auth/errors";
@@ -38,21 +38,42 @@ function LoginPage() {
   const [globalError, setGlobalError] = React.useState<string | null>(urlErrorMsg);
   const [loading,     setLoading]     = React.useState(false);
   const [showPwd,     setShowPwd]     = React.useState(false);
+  const [showResend,  setShowResend]  = React.useState(urlError === "confirmation_failed" || urlError === "invalid_confirmation_link");
+  const [resendState, setResendState] = React.useState<"idle" | "loading" | "sent" | "error">("idle");
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
-    // Clear field error on change
     if (fieldErrors[name as keyof LoginFields]) {
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     }
     setGlobalError(null);
   }
 
+  async function handleResend() {
+    if (!fields.email) {
+      setFieldErrors((prev) => ({ ...prev, email: "Ingresá tu correo para reenviar la confirmación." }));
+      return;
+    }
+    setResendState("loading");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type:  "signup",
+        email: fields.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/onboarding/username`,
+        },
+      });
+      setResendState(error ? "error" : "sent");
+    } catch {
+      setResendState("error");
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Client-side validation
     const result = loginSchema.safeParse(fields);
     if (!result.success) {
       const errs: FieldErrors = {};
@@ -66,6 +87,7 @@ function LoginPage() {
 
     setLoading(true);
     setGlobalError(null);
+    setShowResend(false);
 
     try {
       const supabase = createClient();
@@ -75,7 +97,9 @@ function LoginPage() {
       });
 
       if (error) {
-        setGlobalError(mapAuthError(error));
+        const mapped = mapAuthError(error);
+        setGlobalError(mapped);
+        if (error.message.includes("Email not confirmed")) setShowResend(true);
         return;
       }
 
@@ -106,12 +130,32 @@ function LoginPage() {
           {globalError && (
             <div
               role="alert"
-              className="flex items-start gap-2.5 rounded-lg bg-error-subtle border border-error/20 px-4 py-3"
+              className="rounded-lg bg-error-subtle border border-error/20 px-4 py-3 flex flex-col gap-2.5"
             >
-              <span className="mt-0.5 size-4 shrink-0 rounded-full bg-error/15 text-error flex items-center justify-center text-xs font-bold">
-                !
-              </span>
-              <p className="text-sm text-error font-sans">{globalError}</p>
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 size-4 shrink-0 rounded-full bg-error/15 text-error flex items-center justify-center text-xs font-bold">
+                  !
+                </span>
+                <p className="text-sm text-error font-sans">{globalError}</p>
+              </div>
+              {showResend && (
+                resendState === "sent" ? (
+                  <div className="flex items-center gap-2 text-sm text-success font-sans pl-6">
+                    <CheckCircle2 size={14} className="shrink-0" />
+                    Correo reenviado. Revisá tu bandeja de entrada.
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resendState === "loading"}
+                    className="flex items-center gap-1.5 pl-6 text-sm font-medium text-primary hover:text-accent font-sans transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw size={13} className={resendState === "loading" ? "animate-spin" : ""} />
+                    {resendState === "loading" ? "Enviando…" : "Reenviar correo de confirmación"}
+                  </button>
+                )
+              )}
             </div>
           )}
 
