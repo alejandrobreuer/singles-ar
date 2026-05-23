@@ -26,15 +26,3 @@ export function validateUsername(value: string): string | null {
     return "Solo se permiten letras, números y guiones bajos (_).";
   return null;
 }
-
-/** Build the MercadoPago OAuth authorization URL */
-export function buildMPAuthUrl(): string {
-  const base    = "https://auth.mercadopago.com/authorization";
-  const params  = new URLSearchParams({
-    client_id:    process.env.NEXT_PUBLIC_MP_CLIENT_ID ?? process.env.MP_CLIENT_ID ?? "",
-    response_type: "code",
-    platform_id:   "mp",
-    redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/mercadopago-callback`,
-  });
-  return `${base}?${params.toString()}`;
-}

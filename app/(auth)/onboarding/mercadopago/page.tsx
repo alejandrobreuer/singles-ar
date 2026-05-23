@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, CreditCard, ArrowRight, ExternalLink, CheckCircle2 } from "lucide-react";
-import { buildMPAuthUrl } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { StepIndicator } from "@/components/auth/StepIndicator";
@@ -44,9 +43,7 @@ export default function MercadoPagoOnboardingPage() {
 
   function handleConnect() {
     setLoading(true);
-    // Build URL client-side so it works from the browser env variables
-    const url = buildMPAuthUrl();
-    window.location.href = url;
+    window.location.href = "/api/auth/mercadopago";
   }
 
   return (
@@ -75,7 +72,7 @@ export default function MercadoPagoOnboardingPage() {
           </div>
           <span className="text-text-muted text-sm font-sans">×</span>
           <span className="font-serif font-semibold text-text-primary text-xl">
-            Singles<span className="text-accent">.</span>ar
+            CardStash<span className="text-accent">.</span>ar
           </span>
         </div>
 
