@@ -26,9 +26,16 @@ function LoginPage() {
   const searchParams = useSearchParams();
   const nextPath     = searchParams.get("next") ?? "/";
 
+  const urlError = searchParams.get("error");
+  const urlErrorMsg = urlError === "confirmation_failed"
+    ? "El enlace de confirmación expiró o no es válido. Intentá registrarte nuevamente."
+    : urlError === "invalid_confirmation_link"
+    ? "El enlace de confirmación es inválido. Revisá tu correo o registrate de nuevo."
+    : null;
+
   const [fields,      setFields]      = React.useState<LoginFields>({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
-  const [globalError, setGlobalError] = React.useState<string | null>(null);
+  const [globalError, setGlobalError] = React.useState<string | null>(urlErrorMsg);
   const [loading,     setLoading]     = React.useState(false);
   const [showPwd,     setShowPwd]     = React.useState(false);
 
