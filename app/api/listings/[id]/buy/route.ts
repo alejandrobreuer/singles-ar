@@ -49,20 +49,31 @@ export async function POST(
     return NextResponse.json({ data: { transactionId: existing.id } });
   }
 
+  // ── Platform commission ────────────────────────────────────────────────────
+  const { data: setting } = await admin
+    .from("admin_settings")
+    .select("value")
+    .eq("key", "platform_commission_percent")
+    .single();
+  const commissionPct = setting ? parseFloat(String(setting.value)) : 5;
+  const price         = Number(listing.price);
+  const platformFee   = Math.round(price * (commissionPct / 100) * 100) / 100;
+
   const now = new Date().toISOString();
 
   const { data: tx, error: txErr } = await admin
     .from("transactions")
     .insert({
-      listing_id: listing.id,
-      card_id:    listing.card_id,
-      buyer_id:   user.id,
-      seller_id:  listing.seller_id,
-      price:      listing.price,
-      currency:   "ARS",
-      status:     "in_chat",
-      created_at: now,
-      updated_at: now,
+      listing_id:   listing.id,
+      card_id:      listing.card_id,
+      buyer_id:     user.id,
+      seller_id:    listing.seller_id,
+      price:        listing.price,
+      currency:     "ARS",
+      platform_fee: platformFee,
+      status:       "in_chat",
+      created_at:   now,
+      updated_at:   now,
     })
     .select("id")
     .single();

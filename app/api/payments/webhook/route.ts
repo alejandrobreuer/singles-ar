@@ -118,7 +118,12 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString();
 
   // ── Compute settlement figures ───────────────────────────────────────────────
-  const mpFee = (payment.fee_details ?? []).reduce((sum, fee) => sum + (fee.amount ?? 0), 0);
+  // fee_details includes both MercadoPago's own fee ("mercadopago_fee") and the
+  // marketplace split ("application_fee", i.e. our platform_fee) — only the
+  // former is MP's actual cut.
+  const mpFee = (payment.fee_details ?? [])
+    .filter((fee) => fee.type === "mercadopago_fee")
+    .reduce((sum, fee) => sum + (fee.amount ?? 0), 0);
   const sellerNet = tx.platform_fee != null
     ? Number(tx.price) - Number(tx.platform_fee) - mpFee
     : null;
