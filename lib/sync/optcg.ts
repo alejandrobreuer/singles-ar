@@ -82,7 +82,7 @@ export async function fetchAndSyncOPTCG(): Promise<OPTCGSyncResult> {
   const [setCards, stCards, promoCards] = await Promise.all([
     fetchEndpoint(`${BASE}/allSetCards/`).catch((e)  => { console.error("[optcg] allSetCards error:",  e.message); return [] as OPTCGCard[]; }),
     fetchEndpoint(`${BASE}/allSTCards/`).catch((e)   => { console.error("[optcg] allSTCards error:",   e.message); return [] as OPTCGCard[]; }),
-    fetchEndpoint(`${BASE}/allPromoCards/`).catch((e) => { console.error("[optcg] allPromoCards error:", e.message); return [] as OPTCGCard[]; }),
+    fetchEndpoint(`${BASE}/allPromos`).catch((e) => { console.error("[optcg] allPromos error:", e.message); return [] as OPTCGCard[]; }),
   ]);
 
   const allCards = [...setCards, ...stCards, ...promoCards];
