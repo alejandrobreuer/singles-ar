@@ -303,7 +303,6 @@ export default function EditListingPage() {
                     <CommissionBreakdown
                       priceARS={priceARS}
                       platformFeePercent={settings.platform_commission_percent}
-                      mpFeePercent={settings.mp_fee_percent}
                     />
                   </>
                 )}

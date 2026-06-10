@@ -21,7 +21,6 @@ interface ListingPreviewProps {
   priceDiff:          number | null;
   sellerUsername:     string;
   platformFeePercent: number;
-  mpFeePercent:       number;
   className?:         string;
 }
 
@@ -45,7 +44,6 @@ export function ListingPreview({
   priceDiff,
   sellerUsername,
   platformFeePercent,
-  mpFeePercent,
   className,
 }: ListingPreviewProps) {
   return (
@@ -147,7 +145,6 @@ export function ListingPreview({
         <CommissionBreakdown
           priceARS={price}
           platformFeePercent={platformFeePercent}
-          mpFeePercent={mpFeePercent}
         />
       )}
     </div>

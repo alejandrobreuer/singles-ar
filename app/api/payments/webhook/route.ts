@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { MercadoPagoConfig, Payment } from "mercadopago";
 import { mpPayment }         from "@/lib/mercadopago/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -38,9 +39,10 @@ export async function POST(req: NextRequest) {
   try { rawBody = await req.json(); }
   catch { return NextResponse.json({ ok: true }); } // malformed — ack anyway
 
-  const { type, data } = rawBody as {
+  const { type, data, user_id } = rawBody as {
     type?: string;
     data?: { id?: string };
+    user_id?: string | number;
   };
 
   // We only care about approved payment events
@@ -56,10 +58,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
+  const admin = createAdminClient();
+
   // ── Fetch full payment details from MP ──────────────────────────────────────
+  // Marketplace split payments are collected by the SELLER's MP account, so the
+  // platform's MP_ACCESS_TOKEN can't see them — the notification's `user_id` is
+  // the seller's MP user ID, used to look up their stored access token.
+  let paymentClient = mpPayment;
+  if (user_id != null) {
+    const { data: sellerProfile } = await admin
+      .from("profiles")
+      .select("mercadopago_access_token")
+      .eq("mercadopago_user_id", String(user_id))
+      .single();
+
+    if (sellerProfile?.mercadopago_access_token) {
+      paymentClient = new Payment(new MercadoPagoConfig({ accessToken: sellerProfile.mercadopago_access_token }));
+    }
+  }
+
   let payment: Awaited<ReturnType<typeof mpPayment.get>>;
   try {
-    payment = await mpPayment.get({ id: paymentId });
+    payment = await paymentClient.get({ id: paymentId });
   } catch (err) {
     console.error("[webhook] failed to fetch payment:", err);
     return NextResponse.json({ ok: true }); // ack to stop retries for this specific issue
@@ -77,8 +97,6 @@ export async function POST(req: NextRequest) {
     console.warn("[webhook] payment has no external_reference:", paymentId);
     return NextResponse.json({ ok: true });
   }
-
-  const admin = createAdminClient();
 
   // ── Fetch transaction ────────────────────────────────────────────────────────
   const { data: tx } = await admin

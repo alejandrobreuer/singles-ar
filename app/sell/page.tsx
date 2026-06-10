@@ -652,7 +652,6 @@ function SellPageInner() {
                       <CommissionBreakdown
                         priceARS={priceARS}
                         platformFeePercent={settings.platform_commission_percent}
-                        mpFeePercent={settings.mp_fee_percent}
                       />
                     )}
                   </div>
@@ -805,7 +804,6 @@ function SellPageInner() {
                 priceDiff={priceDiffNum}
                 sellerUsername={profile?.username ?? "vos"}
                 platformFeePercent={settings.platform_commission_percent}
-                mpFeePercent={settings.mp_fee_percent}
               />
 
               {submitError && (

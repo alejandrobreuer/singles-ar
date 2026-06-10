@@ -434,9 +434,9 @@ function CommissionSection() {
             </div>
             <div className="bg-background border border-border rounded-xl p-5">
               {[
-                { label: "Precio de venta publicado", val: "$2.000",  style: "neutral" },
-                { label: "Comisión Card Stash (~5%)",  val: "− $100", style: "red"     },
-                { label: "Comisión MercadoPago (~4%)", val: "− $80",  style: "red"     },
+                { label: "Precio de venta publicado",     val: "$2.000",          style: "neutral" },
+                { label: "Comisión Card Stash (~3.4%)",    val: "− $68",           style: "red"     },
+                { label: "Comisión MercadoPago (4-8%)",    val: "− $80 a − $160",  style: "red"     },
               ].map(({ label, val, style }) => (
                 <div key={label} className="flex justify-between items-center py-2 border-b border-border text-sm font-sans">
                   <span className="text-text-secondary">{label}</span>
@@ -447,11 +447,11 @@ function CommissionSection() {
               ))}
               <div className="flex justify-between items-center mt-3 pt-3 border-t-2 border-primary">
                 <span className="text-sm font-semibold font-sans text-primary">Recibís en tu MP</span>
-                <span className="font-price text-xl font-bold text-success">$1.820</span>
+                <span className="font-price text-xl font-bold text-success">$1.772 – $1.852</span>
               </div>
             </div>
             <p className="text-2xs font-sans text-text-muted mt-2.5">
-              * Los porcentajes exactos se muestran al crear cada listing y pueden variar.
+              * Los porcentajes exactos se muestran al crear cada listing y pueden variar. La comisión de MercadoPago depende de tu cuenta — en cuentas nuevas las primeras ventas pueden demorar hasta 20 días en acreditarse, y ese plazo se reduce (con una comisión algo mayor) a medida que tu cuenta tiene más historial.
             </p>
           </div>
         </div>
