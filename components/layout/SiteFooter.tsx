@@ -1,8 +1,27 @@
 import * as React from "react";
 import Link from "next/link";
-import { Instagram } from "lucide-react";
 
 const INSTAGRAM_URL = "https://www.instagram.com/cardstash.ar/";
+
+function InstagramIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
 
 interface Props {
   variant?: "light" | "dark";
@@ -40,7 +59,7 @@ export function SiteFooter({ variant = "light" }: Props) {
             className="transition-colors"
             style={{ color: "rgba(255,255,255,0.35)" }}
           >
-            <Instagram size={15} />
+            <InstagramIcon />
           </a>
           <p className="text-xs font-sans" style={{ color: "rgba(255,255,255,0.3)" }}>
             © {year} Card Stash · Marketplace TCG Argentina
@@ -91,7 +110,7 @@ export function SiteFooter({ variant = "light" }: Props) {
               aria-label="Instagram"
               className="text-text-muted hover:text-text-primary transition-colors"
             >
-              <Instagram size={15} />
+              <InstagramIcon />
             </a>
             <p className="text-xs text-text-muted font-sans">
               © {year} Card Stash — Todos los derechos reservados
