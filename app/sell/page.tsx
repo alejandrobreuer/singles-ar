@@ -6,7 +6,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ShoppingBag, Repeat2, ChevronRight, ChevronDown,
-  MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info,
+  MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info, Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StepIndicator }        from "@/components/auth/StepIndicator";
@@ -29,6 +29,8 @@ import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
 import type { CardSearchResult, Condition, ListingType, AdminSettings, Game } from "@/types/database";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const SELLER_INFORMED_KEY = "cardstash_seller_informed";
 
 const STEPS = [
   { label: "Carta",    sublabel: "Elegí qué vendés" },
@@ -103,6 +105,17 @@ function SellPageInner() {
   // ── Condition guide + confirmation ────────────────────────────────────────
   const [conditionGuideOpen, setConditionGuideOpen] = React.useState(false);
   const [pendingCondition,   setPendingCondition]   = React.useState<Condition | null>(null);
+
+  // ── First-time seller info modal ──────────────────────────────────────────
+  const [sellerInfoOpen, setSellerInfoOpen] = React.useState(false);
+  React.useEffect(() => {
+    if (!localStorage.getItem(SELLER_INFORMED_KEY)) setSellerInfoOpen(true);
+  }, []);
+
+  function dismissSellerInfo() {
+    localStorage.setItem(SELLER_INFORMED_KEY, "true");
+    setSellerInfoOpen(false);
+  }
 
   // ── Fetch settings + store options once ──────────────────────────────────
   React.useEffect(() => {
@@ -843,6 +856,68 @@ function SellPageInner() {
           onCancel={() => setPendingCondition(null)}
         />
       )}
+      {sellerInfoOpen && (
+        <SellerInfoModal onClose={dismissSellerInfo} />
+      )}
+    </div>
+  );
+}
+
+// ─── First-time seller info modal ─────────────────────────────────────────────
+
+function SellerInfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 overflow-y-auto p-4 py-8"
+      onClick={onClose}
+    >
+      <div
+        className="bg-background rounded-2xl border border-border w-full max-w-md shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 flex flex-col gap-4">
+          <h2 className="font-serif text-xl font-semibold text-text-primary">
+            Antes de publicar tu primera carta
+          </h2>
+
+          <p className="text-sm font-sans text-text-secondary leading-relaxed">
+            CardStash.ar es una plataforma nueva y estamos aprendiendo junto a nuestra comunidad.
+          </p>
+
+          <div className="surface-raised p-4">
+            <p className="text-sm font-semibold font-sans text-text-primary mb-2">
+              Sobre las comisiones:
+            </p>
+            <ul className="space-y-1.5 text-sm font-sans text-text-secondary">
+              <li className="flex items-start gap-2">
+                <span className="mt-2 shrink-0 size-1.5 rounded-full bg-accent" />
+                <span>La comisión de MercadoPago varía según tu provincia, el método de pago del comprador y el historial de tu cuenta de MP</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-2 shrink-0 size-1.5 rounded-full bg-accent" />
+                <span>Los montos mostrados en el preview son estimaciones basadas en transacciones reales pero pueden diferir</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-2 shrink-0 size-1.5 rounded-full bg-accent" />
+                <span>La comisión de CardStash.ar es fija al 5% — esa sí es exacta</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-2 shrink-0 size-1.5 rounded-full bg-accent" />
+                <span>Las primeras ventas en cuentas nuevas de MP pueden demorar hasta 20 días en acreditarse</span>
+              </li>
+            </ul>
+          </div>
+
+          <p className="text-xs text-text-muted font-sans flex items-center gap-1.5">
+            <Mail size={12} />
+            ¿Preguntas? Escribinos a soporte@cardstash.ar
+          </p>
+
+          <Button variant="primary" size="lg" onClick={onClose} rightIcon={<ChevronRight size={16} />}>
+            Entendido, continuar
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

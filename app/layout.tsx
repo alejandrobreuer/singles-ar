@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { TopbarGuard } from "@/components/layout/TopbarGuard";
+import { BetaBanner } from "@/components/layout/BetaBanner";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${playfair.variable} ${dmSans.variable}`}>
       <body className="antialiased">
+        <BetaBanner />
         <TopbarGuard />
         {children}
         <Toaster

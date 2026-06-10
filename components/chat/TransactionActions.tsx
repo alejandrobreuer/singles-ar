@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle, XCircle, Clock, AlertCircle,
-  PackageCheck, CreditCard, Loader2, ShieldAlert, Zap,
+  PackageCheck, CreditCard, Loader2, ShieldAlert, Zap, Info,
 } from "lucide-react";
 import { Button }    from "@/components/ui/button";
 import { formatARS } from "@/lib/formatting";
@@ -170,6 +170,14 @@ export function TransactionActions({
                 <span className="font-semibold text-text-primary text-xs">Tu pago total</span>
                 <span className="font-price font-semibold text-text-primary shrink-0">{formatARS(transaction.price)}</span>
               </div>
+            </div>
+
+            {/* Pre-payment notice */}
+            <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+              <Info size={13} className="shrink-0 mt-0.5 text-blue-500" />
+              <p className="text-xs text-blue-700 font-sans leading-relaxed">
+                Los tiempos de acreditación y el monto exacto de la comisión de MercadoPago los define MP según tu cuenta y provincia. El detalle real aparece en tu actividad de MercadoPago.
+              </p>
             </div>
 
             {/* Actions */}

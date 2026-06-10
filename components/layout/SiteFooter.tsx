@@ -26,6 +26,9 @@ export function SiteFooter({ variant = "light" }: Props) {
           <Link href="/contact" className="text-xs font-sans no-underline transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
             Contacto
           </Link>
+          <Link href="/ayuda" className="text-xs font-sans no-underline transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Centro de ayuda
+          </Link>
           <p className="text-xs font-sans" style={{ color: "rgba(255,255,255,0.3)" }}>
             © {year} Card Stash · Marketplace TCG Argentina
           </p>
@@ -61,6 +64,12 @@ export function SiteFooter({ variant = "light" }: Props) {
               className="text-xs text-text-muted hover:text-text-primary font-sans no-underline transition-colors"
             >
               Contacto
+            </Link>
+            <Link
+              href="/ayuda"
+              className="text-xs text-text-muted hover:text-text-primary font-sans no-underline transition-colors"
+            >
+              Centro de ayuda
             </Link>
             <p className="text-xs text-text-muted font-sans">
               © {year} Card Stash — Todos los derechos reservados
