@@ -117,7 +117,7 @@ export default async function AdminTransactionDetailPage({
     admin
       .from("transactions")
       .select(
-        "id, price, platform_fee, status, currency, mp_preference_id, mp_payment_id, " +
+        "id, price, platform_fee, mp_fee, seller_net, mp_settlement_date, status, currency, mp_preference_id, mp_payment_id, " +
         "delivered_at, release_at, dispute_resolved_at, dispute_resolution, " +
         "created_at, updated_at, " +
         "buyer:profiles!buyer_id(id, username, email, reputation_score, total_sales), " +
@@ -136,6 +136,7 @@ export default async function AdminTransactionDetailPage({
 
   type TxDetail = {
     id: string; price: number; platform_fee: number | null; status: string; currency: string;
+    mp_fee: number | null; seller_net: number | null; mp_settlement_date: string | null;
     mp_preference_id: string | null; mp_payment_id: string | null;
     delivered_at: string | null; release_at: string | null;
     dispute_resolved_at: string | null; dispute_resolution: string | null;
@@ -202,7 +203,17 @@ export default async function AdminTransactionDetailPage({
           <p className="text-lg font-price text-text-primary">{formatARS(tx.price)}</p>
           {tx.platform_fee != null && (
             <p className="text-xs text-text-muted font-sans mt-0.5">
-              Comisión: {formatARS(tx.platform_fee)}
+              Comisión plataforma: {formatARS(tx.platform_fee)}
+            </p>
+          )}
+          {tx.mp_fee != null && (
+            <p className="text-xs text-text-muted font-sans mt-0.5">
+              Comisión MP: {formatARS(tx.mp_fee)}
+            </p>
+          )}
+          {tx.seller_net != null && (
+            <p className="text-xs text-text-muted font-sans mt-0.5">
+              Neto vendedor: {formatARS(tx.seller_net)}
             </p>
           )}
         </div>
@@ -254,6 +265,13 @@ export default async function AdminTransactionDetailPage({
           {tx.mp_payment_id && (
             <p className="text-xs font-sans text-text-secondary">
               Payment ID: <span className="text-text-primary font-mono">{tx.mp_payment_id}</span>
+            </p>
+          )}
+          {tx.mp_settlement_date && (
+            <p className="text-xs font-sans text-text-secondary">
+              Liberación de fondos: <span className="text-text-primary">
+                {format(new Date(tx.mp_settlement_date), "d 'de' MMMM yyyy, HH:mm", { locale: es })}
+              </span>
             </p>
           )}
         </div>

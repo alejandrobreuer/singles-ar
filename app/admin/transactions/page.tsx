@@ -38,7 +38,7 @@ export default async function AdminTransactionsPage({
   let query = admin
     .from("transactions")
     .select(
-      "id, price, platform_fee, status, currency, created_at, " +
+      "id, price, platform_fee, mp_fee, mp_payment_id, status, currency, created_at, " +
       "buyer:profiles!buyer_id(username), " +
       "seller:profiles!seller_id(username), " +
       "card:cards!card_id(name, game)",
@@ -57,7 +57,8 @@ export default async function AdminTransactionsPage({
   const { data: rawTxs, count } = await query;
 
   type TxRow = {
-    id: string; price: number; platform_fee: number | null;
+    id: string; price: number; platform_fee: number | null; mp_fee: number | null;
+    mp_payment_id: string | null;
     status: string; currency: string; created_at: string;
     buyer: { username: string } | null;
     seller: { username: string } | null;
@@ -161,7 +162,9 @@ export default async function AdminTransactionsPage({
                 <th className="text-left px-4 py-2.5 font-medium">Comprador</th>
                 <th className="text-left px-4 py-2.5 font-medium">Vendedor</th>
                 <th className="text-right px-4 py-2.5 font-medium">Monto</th>
-                <th className="text-right px-4 py-2.5 font-medium">Comisión</th>
+                <th className="text-right px-4 py-2.5 font-medium">Comisión plataforma</th>
+                <th className="text-right px-4 py-2.5 font-medium">Comisión MP</th>
+                <th className="text-left px-4 py-2.5 font-medium">N° operación</th>
                 <th className="text-left px-4 py-2.5 font-medium">Estado</th>
                 <th className="text-left px-4 py-2.5 font-medium">Fecha</th>
                 <th className="px-4 py-2.5" />
@@ -189,6 +192,12 @@ export default async function AdminTransactionsPage({
                     <td className="px-4 py-2.5 text-right font-price text-text-secondary">
                       {tx.platform_fee != null ? formatARS(tx.platform_fee) : "—"}
                     </td>
+                    <td className="px-4 py-2.5 text-right font-price text-text-secondary">
+                      {tx.mp_fee != null ? formatARS(tx.mp_fee) : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-text-secondary font-mono text-xs">
+                      {tx.mp_payment_id ?? "—"}
+                    </td>
                     <td className="px-4 py-2.5">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[tx.status] ?? ""}`}>
                         {STATUS_LABELS[tx.status] ?? tx.status}
@@ -210,7 +219,7 @@ export default async function AdminTransactionsPage({
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-text-muted">
+                  <td colSpan={10} className="px-4 py-8 text-center text-text-muted">
                     No se encontraron transacciones.
                   </td>
                 </tr>

@@ -97,7 +97,7 @@ export default async function ChatPage({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-[calc(100dvh-5rem)] bg-background">
 
       {/* ── Chat header ───────────────────────────────────────────────────── */}
       <header className="shrink-0 bg-surface border-b border-border">
