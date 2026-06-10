@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   // ── Fetch transaction ────────────────────────────────────────────────────────
   const { data: tx } = await admin
     .from("transactions")
-    .select("id, buyer_id, seller_id, card_id, buy_order_id, listing_id, status, price")
+    .select("id, buyer_id, seller_id, card_id, buy_order_id, listing_id, status, price, platform_fee")
     .eq("id", transactionId)
     .single();
 
@@ -99,15 +99,28 @@ export async function POST(req: NextRequest) {
 
   const now = new Date().toISOString();
 
+  // ── Compute settlement figures ───────────────────────────────────────────────
+  const mpFee = (payment.fee_details ?? []).reduce((sum, fee) => sum + (fee.amount ?? 0), 0);
+  const sellerNet = tx.platform_fee != null
+    ? Number(tx.price) - Number(tx.platform_fee) - mpFee
+    : null;
+
   // ── Run all side-effects in parallel ────────────────────────────────────────
   // NOTE: MP already transferred funds to the seller's account at this point.
   // We open the chat so both parties can coordinate delivery.
   const ops: PromiseLike<unknown>[] = [
 
-    // 1. Update transaction → in_chat (chat opens), save MP payment ID
+    // 1. Update transaction → in_chat (chat opens), save MP payment ID + settlement info
     admin
       .from("transactions")
-      .update({ status: "in_chat", mp_payment_id: paymentId, updated_at: now })
+      .update({
+        status:             "in_chat",
+        mp_payment_id:      paymentId,
+        mp_fee:             mpFee,
+        mp_settlement_date: payment.money_release_date ?? null,
+        seller_net:         sellerNet,
+        updated_at:         now,
+      })
       .eq("id", transactionId),
 
     // 2. System message — chat is now open

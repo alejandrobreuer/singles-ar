@@ -181,6 +181,7 @@ export interface Transaction {
   currency:         string;
   platform_fee:     number | null;  // Singles.ar commission
   mp_fee:           number | null;  // MercadoPago processing fee
+  mp_settlement_date: string | null; // MP funds release date (money_release_date)
   seller_net:       number | null;  // price - platform_fee - mp_fee
 
   // MercadoPago references

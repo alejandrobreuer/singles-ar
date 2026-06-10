@@ -171,6 +171,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   currency            text        NOT NULL DEFAULT 'ARS',
   platform_fee        numeric,                                 -- commission kept by Singles.ar
   mp_fee              numeric,                                 -- MercadoPago processing fee
+  mp_settlement_date  timestamptz,                             -- MP funds release date (money_release_date)
   seller_net          numeric,                                 -- price - platform_fee - mp_fee
 
   -- MercadoPago
