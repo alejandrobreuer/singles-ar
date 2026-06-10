@@ -3,6 +3,7 @@ import { Playfair_Display, DM_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { TopbarGuard } from "@/components/layout/TopbarGuard";
 import { BetaBanner } from "@/components/layout/BetaBanner";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -34,6 +35,7 @@ export default function RootLayout({
         <BetaBanner />
         <TopbarGuard />
         {children}
+        <WhatsAppButton />
         <Toaster
           position="bottom-right"
           toastOptions={{

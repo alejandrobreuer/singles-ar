@@ -271,7 +271,7 @@ export default function ContactPage() {
             <InfoCard
               icon={<Mail size={18} />}
               title="Correo directo"
-              body="hola@cardstash.ar"
+              body="cardstash.ar@gmail.com"
             />
             <InfoCard
               icon={<MessageSquare size={18} />}

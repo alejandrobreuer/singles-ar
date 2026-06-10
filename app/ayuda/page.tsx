@@ -26,7 +26,7 @@ const FAQS: { question: string; answer: string }[] = [
   {
     question: "¿Qué hago si algo no funciona correctamente?",
     answer:
-      "Escribinos a soporte@cardstash.ar o por WhatsApp al [número de soporte]. Somos un equipo pequeño y respondemos a la brevedad. Si encontrás un bug, más detalle = más rápido lo resolvemos.",
+      "Escribinos a cardstash.ar@gmail.com o por WhatsApp al +54 9 11 2713-5655. Somos un equipo pequeño y respondemos a la brevedad. Si encontrás un bug, más detalle = más rápido lo resolvemos.",
   },
   {
     question: "¿Es seguro pagar en CardStash.ar?",
@@ -109,7 +109,7 @@ export default function AyudaPage() {
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a
-              href="mailto:soporte@cardstash.ar"
+              href="mailto:cardstash.ar@gmail.com"
               className="inline-flex items-center gap-2 text-sm font-sans font-medium text-primary hover:text-accent transition-colors"
             >
               <Mail size={15} />
@@ -117,7 +117,7 @@ export default function AyudaPage() {
             </a>
             <span className="text-border">·</span>
             <a
-              href="https://wa.me/"
+              href="https://wa.me/5491127135655"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-sans font-medium text-primary hover:text-accent transition-colors"
