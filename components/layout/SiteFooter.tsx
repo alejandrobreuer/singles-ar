@@ -1,5 +1,8 @@
 import * as React from "react";
 import Link from "next/link";
+import { Instagram } from "lucide-react";
+
+const INSTAGRAM_URL = "https://www.instagram.com/cardstash.ar/";
 
 interface Props {
   variant?: "light" | "dark";
@@ -29,6 +32,16 @@ export function SiteFooter({ variant = "light" }: Props) {
           <Link href="/ayuda" className="text-xs font-sans no-underline transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
             Centro de ayuda
           </Link>
+          <a
+            href={INSTAGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="transition-colors"
+            style={{ color: "rgba(255,255,255,0.35)" }}
+          >
+            <Instagram size={15} />
+          </a>
           <p className="text-xs font-sans" style={{ color: "rgba(255,255,255,0.3)" }}>
             © {year} Card Stash · Marketplace TCG Argentina
           </p>
@@ -71,6 +84,15 @@ export function SiteFooter({ variant = "light" }: Props) {
             >
               Centro de ayuda
             </Link>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="text-text-muted hover:text-text-primary transition-colors"
+            >
+              <Instagram size={15} />
+            </a>
             <p className="text-xs text-text-muted font-sans">
               © {year} Card Stash — Todos los derechos reservados
             </p>
