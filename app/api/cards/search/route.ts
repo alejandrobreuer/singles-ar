@@ -7,17 +7,19 @@ import type { Game } from "@/types/database";
 //   q      — search term (name / set)
 //   game   — filter by game ('magic' | 'pokemon' | 'onepiece')
 //   set    — filter by set_code
+//   rarity — comma-separated list of rarities (OR'd together)
+//   color  — comma-separated list of colors/types (OR'd together)
 //   page   — page number (1-indexed, default 1)
 //   limit  — results per page (default 20, max 50)
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
 
-  const q      = searchParams.get("q")?.trim()    ?? "";
-  const game   = searchParams.get("game")         ?? "";
-  const set    = searchParams.get("set")          ?? "";
-  const rarity = searchParams.get("rarity")       ?? "";
-  const color  = searchParams.get("color")        ?? "";
+  const q        = searchParams.get("q")?.trim()    ?? "";
+  const game     = searchParams.get("game")         ?? "";
+  const set      = searchParams.get("set")          ?? "";
+  const rarities = (searchParams.get("rarity") ?? "").split(",").filter(Boolean);
+  const colors   = (searchParams.get("color")  ?? "").split(",").filter(Boolean);
   const page   = Math.max(1, parseInt(searchParams.get("page")  ?? "1", 10));
   const limit  = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
   const from   = (page - 1) * limit;
@@ -44,12 +46,12 @@ export async function GET(req: NextRequest) {
     query = query.ilike("set_code", set);
   }
 
-  if (rarity) {
-    query = query.ilike("rarity", rarity);
+  if (rarities.length) {
+    query = query.or(rarities.map((r) => `rarity.ilike.${r}`).join(","));
   }
 
-  if (color) {
-    query = query.ilike("color", `%${color}%`);
+  if (colors.length) {
+    query = query.or(colors.map((c) => `color.ilike.%${c}%`).join(","));
   }
 
   const { data, count, error } = await query;

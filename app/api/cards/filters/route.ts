@@ -29,7 +29,12 @@ export async function GET(req: NextRequest) {
     code: r.set_code, name: r.set_name ?? r.set_code,
   }));
   const rarities = (raritiesRes.data ?? []).map((r: { rarity: string }) => r.rarity);
-  const colors   = (colorsRes.data   ?? []).map((r: { color:  string }) => r.color);
+  // Split multi-color values ("Blue Black" → ["Blue", "Black"]) and deduplicate
+  const colors = Array.from(new Set<string>(
+    (colorsRes.data ?? [])
+      .flatMap((r: { color: string }) => r.color.split(/[\s,/]+/))
+      .filter((v: string) => Boolean(v))
+  )).sort();
 
   return NextResponse.json({ sets, rarities, colors });
 }

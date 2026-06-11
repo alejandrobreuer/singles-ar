@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ShoppingBag, Repeat2, ChevronRight, ChevronDown,
-  MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info, Mail,
+  ShoppingBag, Repeat2, ChevronRight,
+  MessageSquare, Camera, Check, Search, Loader2, Tag, MapPin, Info, Mail,
   AlertTriangle, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,13 +14,13 @@ import { StepIndicator }        from "@/components/auth/StepIndicator";
 import { PriceValidator }       from "@/components/sell/PriceValidator";
 import { CommissionBreakdown }  from "@/components/sell/CommissionBreakdown";
 import { ListingPreview }       from "@/components/sell/ListingPreview";
+import { SellFilterSidebar }    from "@/components/sell/SellFilterSidebar";
 import { Button }               from "@/components/ui/button";
 import { Input }                from "@/components/ui/input";
 import { Divider }              from "@/components/ui/divider";
 import { Spinner }              from "@/components/ui/spinner";
 import { Badge }                from "@/components/ui/badge";
 import { HoverTooltip }         from "@/components/ui/HoverTooltip";
-import { SearchableSelect }     from "@/components/ui/SearchableSelect";
 import { CONDITIONS, CONDITION_DETAILS, ConditionGuideModal, ConditionConfirmModal } from "@/components/sell/ConditionModals";
 import { toast }               from "sonner";
 import { RARITY_DESCRIPTIONS, COLOR_DESCRIPTIONS } from "@/lib/cardAttributes";
@@ -73,8 +73,8 @@ function SellPageInner() {
   const [filterOptions,   setFilterOptions]   = React.useState<FilterOptions | null>(null);
   const [filtersLoading,  setFiltersLoading]  = React.useState(false);
   const [filterSet,       setFilterSet]       = React.useState("");
-  const [filterRarity,    setFilterRarity]    = React.useState("");
-  const [filterColor,     setFilterColor]     = React.useState("");
+  const [filterRarities,  setFilterRarities]  = React.useState<string[]>([]);
+  const [filterColors,    setFilterColors]    = React.useState<string[]>([]);
   const [searchQuery,     setSearchQuery]     = React.useState("");
   const [cardResults,     setCardResults]     = React.useState<CardSearchResult[]>([]);
   const [resultsMeta,     setResultsMeta]     = React.useState<{ total: number; pages: number; page: number } | null>(null);
@@ -185,8 +185,8 @@ function SellPageInner() {
   async function handleGameSelect(game: Game) {
     setSelectedGame(game);
     setFilterSet("");
-    setFilterRarity("");
-    setFilterColor("");
+    setFilterRarities([]);
+    setFilterColors([]);
     setSearchQuery("");
     setCardResults([]);
     setHasSearched(false);
@@ -211,10 +211,10 @@ function SellPageInner() {
     setSearchError(null);
     try {
       const params = new URLSearchParams({ game: selectedGame, page: String(page), limit: "24" });
-      if (searchQuery.trim()) params.set("q", searchQuery.trim());
-      if (filterSet)          params.set("set", filterSet);
-      if (filterRarity)       params.set("rarity", filterRarity);
-      if (filterColor)        params.set("color", filterColor);
+      if (searchQuery.trim())   params.set("q", searchQuery.trim());
+      if (filterSet)            params.set("set", filterSet);
+      if (filterRarities.length) params.set("rarity", filterRarities.join(","));
+      if (filterColors.length)   params.set("color", filterColors.join(","));
 
       const res  = await fetch(`/api/cards/search?${params}`);
       const data = await res.json() as { data?: CardSearchResult[]; error?: string; meta?: { total: number; pages: number; page: number } };
@@ -351,7 +351,7 @@ function SellPageInner() {
         </div>
 
         {/* ── Content ───────────────────────────────────────────────────── */}
-        <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
+        <div className={cn("mx-auto px-4 sm:px-6 py-8", step === 1 && selectedGame ? "max-w-5xl" : "max-w-2xl")}>
           <StepIndicator steps={STEPS} currentStep={step - 1} className="mb-8" />
 
           {/* ════════════════════════════════════════════════════
@@ -359,38 +359,65 @@ function SellPageInner() {
           ════════════════════════════════════════════════════ */}
           {step === 1 && (
             <div className="animate-fade-in flex flex-col gap-5">
-              <div className="surface-raised p-6">
 
-                {/* ── 1a: Game picker ─────────────────────────────────── */}
-                {!selectedGame ? (
-                  <>
-                    <h2 className="text-base font-semibold font-sans text-text-primary mb-1">
-                      ¿Qué tipo de carta querés publicar?
-                    </h2>
-                    <p className="text-sm text-text-muted font-sans mb-5">
-                      Elegí el juego para ver los filtros disponibles.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {GAME_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.game}
-                          type="button"
-                          onClick={() => handleGameSelect(opt.game)}
-                          className={cn(
-                            "rounded-xl border-2 px-4 py-5 text-center transition-all duration-150 flex flex-col items-center gap-1",
-                            opt.accent
-                          )}
-                        >
-                          <Badge variant={opt.badge} size="sm" className="mb-1" />
-                          <span className="text-sm font-semibold font-sans">{opt.label}</span>
-                          <span className="text-xs font-sans opacity-60">{opt.sublabel}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  /* ── 1b: Filters + search ──────────────────────────── */
-                  <>
+              {/* ── 1a: Game picker ─────────────────────────────────── */}
+              {!selectedGame ? (
+                <div className="surface-raised p-6">
+                  <h2 className="text-base font-semibold font-sans text-text-primary mb-1">
+                    ¿Qué tipo de carta querés publicar?
+                  </h2>
+                  <p className="text-sm text-text-muted font-sans mb-5">
+                    Elegí el juego para ver los filtros disponibles.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {GAME_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.game}
+                        type="button"
+                        onClick={() => handleGameSelect(opt.game)}
+                        className={cn(
+                          "rounded-xl border-2 px-4 py-5 text-center transition-all duration-150 flex flex-col items-center gap-1",
+                          opt.accent
+                        )}
+                      >
+                        <Badge variant={opt.badge} size="sm" className="mb-1" />
+                        <span className="text-sm font-semibold font-sans">{opt.label}</span>
+                        <span className="text-xs font-sans opacity-60">{opt.sublabel}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* ── 1b: Filters + search ──────────────────────────── */
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
+
+                  {/* Left sidebar — filters */}
+                  <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-24">
+                    {filtersLoading ? (
+                      <div className="surface-raised p-4 flex items-center gap-2 text-sm text-text-muted font-sans">
+                        <Spinner size="xs" /> Cargando filtros…
+                      </div>
+                    ) : filterOptions && (
+                      filterOptions.sets.length > 0 ||
+                      filterOptions.rarities.length > 0 ||
+                      filterOptions.colors.length > 0 ||
+                      selectedGame === "pokemon"
+                    ) && (
+                      <SellFilterSidebar
+                        game={selectedGame}
+                        filterOptions={filterOptions}
+                        selectedSet={filterSet}
+                        onSetChange={setFilterSet}
+                        selectedRarities={filterRarities}
+                        onRaritiesChange={setFilterRarities}
+                        selectedColors={filterColors}
+                        onColorsChange={setFilterColors}
+                      />
+                    )}
+                  </aside>
+
+                  {/* Main — search + results */}
+                  <div className="surface-raised p-6 flex-1 min-w-0">
                     {/* Game indicator */}
                     <div className="flex items-center justify-between mb-5">
                       <div className="flex items-center gap-2">
@@ -410,45 +437,6 @@ function SellPageInner() {
                         Cambiar juego
                       </button>
                     </div>
-
-                    {/* Filters row */}
-                    {filtersLoading ? (
-                      <div className="flex items-center gap-2 text-sm text-text-muted font-sans py-3 mb-4">
-                        <Spinner size="xs" /> Cargando filtros…
-                      </div>
-                    ) : filterOptions && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {/* Set filter */}
-                        {filterOptions.sets.length > 0 && (
-                          <SearchableSelect
-                            label="Set"
-                            value={filterSet}
-                            onChange={setFilterSet}
-                            options={filterOptions.sets.map((s) => ({ value: s.code, label: `${s.code} ${s.name}` }))}
-                          />
-                        )}
-
-                        {/* Rarity filter */}
-                        {filterOptions.rarities.length > 0 && (
-                          <FilterSelect
-                            label="Rareza"
-                            value={filterRarity}
-                            onChange={setFilterRarity}
-                            options={filterOptions.rarities.map((r) => ({ value: r, label: r }))}
-                          />
-                        )}
-
-                        {/* Color filter (One Piece only) */}
-                        {selectedGame === "onepiece" && filterOptions.colors.length > 0 && (
-                          <FilterSelect
-                            label="Color"
-                            value={filterColor}
-                            onChange={setFilterColor}
-                            options={filterOptions.colors.map((c) => ({ value: c, label: c }))}
-                          />
-                        )}
-                      </div>
-                    )}
 
                     {/* Search bar */}
                     <form onSubmit={handleSearch} className="flex gap-2">
@@ -517,9 +505,9 @@ function SellPageInner() {
                         )}
                       </div>
                     )}
-                  </>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
 
               {!selectedGame && (
                 <p className="text-xs text-text-muted font-sans text-center">
@@ -1042,57 +1030,6 @@ function CardTile({ card, onClick }: { card: CardSearchResult; onClick: () => vo
         </div>
       )}
     </button>
-  );
-}
-
-// ─── Filter select ────────────────────────────────────────────────────────────
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label:    string;
-  value:    string;
-  onChange: (v: string) => void;
-  options:  { value: string; label: string }[];
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "appearance-none h-8 pl-3 pr-7 rounded-lg border border-border bg-surface",
-          "font-sans text-xs text-text-primary transition-colors cursor-pointer",
-          "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
-          "hover:border-primary/30",
-          !value && "text-text-muted"
-        )}
-      >
-        <option value="">{label}</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={12}
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
-      />
-      {value && (
-        <button
-          type="button"
-          onClick={() => onChange("")}
-          className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
-          aria-label={`Limpiar filtro ${label}`}
-        >
-          <X size={11} />
-        </button>
-      )}
-    </div>
   );
 }
 
