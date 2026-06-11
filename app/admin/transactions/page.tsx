@@ -24,12 +24,13 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function AdminTransactionsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; game?: string; from?: string; to?: string; page?: string };
+  searchParams: { status?: string; game?: string; from?: string; to?: string; page?: string; user_id?: string };
 }) {
   const status = searchParams.status ?? "";
   const game   = searchParams.game   ?? "";
   const from   = searchParams.from   ?? "";
   const to     = searchParams.to     ?? "";
+  const userId = searchParams.user_id ?? "";
   const page   = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const limit  = 30;
   const offset = (page - 1) * limit;
@@ -53,8 +54,16 @@ export default async function AdminTransactionsPage({
   if (from)   query = (query as any).gte("created_at", from);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (to)     query = (query as any).lte("created_at", to + "T23:59:59Z");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (userId) query = (query as any).or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
 
   const { data: rawTxs, count } = await query;
+
+  let filteredUser: { username: string } | null = null;
+  if (userId) {
+    const { data } = await admin.from("profiles").select("username").eq("id", userId).single();
+    filteredUser = data;
+  }
 
   type TxRow = {
     id: string; price: number; platform_fee: number | null; mp_fee: number | null;
@@ -80,7 +89,7 @@ export default async function AdminTransactionsPage({
   }
 
   // Build filter URL helper
-  const currentParams = { status, game, from, to };
+  const currentParams = { status, game, from, to, user_id: userId };
   function filterUrl(overrides: Record<string, string>) {
     const p = new URLSearchParams({ ...currentParams, page: "1", ...overrides });
     // Remove empty
@@ -94,6 +103,24 @@ export default async function AdminTransactionsPage({
       <p className="text-sm text-text-muted font-sans mb-6">
         {count ?? 0} transacciones totales
       </p>
+
+      {/* User filter banner */}
+      {userId && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-sm font-sans">
+          <span className="text-text-secondary">
+            Mostrando historial de{" "}
+            <span className="font-semibold text-text-primary">
+              @{filteredUser?.username ?? userId}
+            </span>
+          </span>
+          <a
+            href={filterUrl({ user_id: "" })}
+            className="ml-auto text-xs text-primary hover:underline"
+          >
+            Quitar filtro
+          </a>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">

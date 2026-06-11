@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { ShieldOff, ShieldCheck, Flag } from "lucide-react";
+import { ShieldOff, ShieldCheck, Flag, History } from "lucide-react";
 
 interface AdminUser {
   id:               string;
@@ -18,6 +19,7 @@ interface AdminUser {
   created_at:       string;
   suspended_at:     string | null;
   suspend_reason:   string | null;
+  mercadopago_access_token: string | null;
 }
 
 interface Props {
@@ -138,6 +140,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                 <th className="text-right px-4 py-2.5 font-medium">Rep.</th>
                 <th className="text-right px-4 py-2.5 font-medium">Ventas</th>
                 <th className="text-right px-4 py-2.5 font-medium">Cancels</th>
+                <th className="text-left px-4 py-2.5 font-medium">MP</th>
                 <th className="text-left px-4 py-2.5 font-medium">Estado</th>
                 <th className="text-left px-4 py-2.5 font-medium">Registro</th>
                 <th className="text-left px-4 py-2.5 font-medium">Acciones</th>
@@ -161,6 +164,17 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                   <td className="px-4 py-2.5 text-right text-text-secondary">{u.total_sales}</td>
                   <td className="px-4 py-2.5 text-right text-text-secondary">{u.cancel_count}</td>
                   <td className="px-4 py-2.5">
+                    {u.mercadopago_access_token ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
+                        Vinculado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-text-muted">
+                        No vinculado
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5">
                     {u.suspended_at ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400">
                         Suspendido
@@ -176,6 +190,13 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/admin/transactions?user_id=${u.id}`}
+                        title="Ver historial"
+                        className="p-1 rounded hover:bg-primary/10 text-primary transition-colors"
+                      >
+                        <History size={14} />
+                      </Link>
                       {u.suspended_at ? (
                         <button
                           onClick={() => openConfirm(u.id, "unsuspend")}
@@ -208,7 +229,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-text-muted">
+                  <td colSpan={9} className="px-4 py-8 text-center text-text-muted">
                     No se encontraron usuarios.
                   </td>
                 </tr>
