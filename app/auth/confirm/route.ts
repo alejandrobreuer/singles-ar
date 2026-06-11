@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[auth/confirm] verifyOtp error:", error.message);
-    return NextResponse.redirect(`${appUrl}/login?error=confirmation_failed`);
+    // Most likely cause: the link was already used (e.g. an email security
+    // scanner pre-visited it), so the account is probably already confirmed.
+    return NextResponse.redirect(`${appUrl}/login?error=link_already_used`);
   }
 
   return NextResponse.redirect(`${appUrl}${next}`);

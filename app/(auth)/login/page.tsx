@@ -27,11 +27,15 @@ function LoginPage() {
   const nextPath     = searchParams.get("next") ?? "/";
 
   const urlError = searchParams.get("error");
-  const urlErrorMsg = urlError === "confirmation_failed"
+  const urlErrorMsg = urlError === "link_already_used"
+    ? "Este enlace de confirmación ya fue utilizado o expiró. Si ya creaste tu cuenta, probablemente ya esté confirmada — iniciá sesión normalmente."
+    : urlError === "confirmation_failed"
     ? "El enlace de confirmación expiró o no es válido. Intentá registrarte nuevamente."
     : urlError === "invalid_confirmation_link"
     ? "El enlace de confirmación es inválido. Revisá tu correo o registrate de nuevo."
     : null;
+
+  const isInfoMessage = urlError === "link_already_used";
 
   const [fields,      setFields]      = React.useState<LoginFields>({ email: "", password: "" });
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
@@ -126,17 +130,27 @@ function LoginPage() {
       {/* Card */}
       <div className="surface-raised p-6 sm:p-8">
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-          {/* Global error */}
+          {/* Global error / info */}
           {globalError && (
             <div
               role="alert"
-              className="rounded-lg bg-error-subtle border border-error/20 px-4 py-3 flex flex-col gap-2.5"
+              className={
+                isInfoMessage
+                  ? "rounded-lg bg-primary/5 border border-primary/20 px-4 py-3 flex flex-col gap-2.5"
+                  : "rounded-lg bg-error-subtle border border-error/20 px-4 py-3 flex flex-col gap-2.5"
+              }
             >
               <div className="flex items-start gap-2.5">
-                <span className="mt-0.5 size-4 shrink-0 rounded-full bg-error/15 text-error flex items-center justify-center text-xs font-bold">
-                  !
+                <span className={
+                  isInfoMessage
+                    ? "mt-0.5 size-4 shrink-0 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold"
+                    : "mt-0.5 size-4 shrink-0 rounded-full bg-error/15 text-error flex items-center justify-center text-xs font-bold"
+                }>
+                  {isInfoMessage ? "i" : "!"}
                 </span>
-                <p className="text-sm text-error font-sans">{globalError}</p>
+                <p className={isInfoMessage ? "text-sm text-text-secondary font-sans" : "text-sm text-error font-sans"}>
+                  {globalError}
+                </p>
               </div>
               {showResend && (
                 resendState === "sent" ? (
