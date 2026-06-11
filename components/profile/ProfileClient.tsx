@@ -132,7 +132,7 @@ export function ProfileClient({
   const router = useRouter();
   const [tab,       setTab]       = React.useState<TabKey>("listings");
 
-  // Handle OAuth return params (?mp_success / ?mp_error)
+  // Handle OAuth return params (?mp_success / ?mp_error) and direct tab links (?tab=)
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -149,6 +149,9 @@ export function ProfileClient({
         "Error al conectar MercadoPago."
       );
       window.history.replaceState({}, "", "/profile");
+    } else {
+      const requestedTab = params.get("tab") as TabKey | null;
+      if (requestedTab) setTab(requestedTab);
     }
   }, []);
   const [listings,  setListings]  = React.useState(initialListings);

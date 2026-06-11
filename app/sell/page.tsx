@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ShoppingBag, Repeat2, ChevronRight, ChevronDown,
   MessageSquare, Camera, Check, Search, Loader2, Tag, X, MapPin, Info, Mail,
+  AlertTriangle, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StepIndicator }        from "@/components/auth/StepIndicator";
@@ -111,6 +112,12 @@ function SellPageInner() {
   React.useEffect(() => {
     if (!localStorage.getItem(SELLER_INFORMED_KEY)) setSellerInfoOpen(true);
   }, []);
+
+  // ── MercadoPago required modal ────────────────────────────────────────────
+  const [mpRequiredOpen, setMpRequiredOpen] = React.useState(false);
+  React.useEffect(() => {
+    if (!userLoading && profile && !profile.mercadopago_user_id) setMpRequiredOpen(true);
+  }, [userLoading, profile]);
 
   function dismissSellerInfo() {
     localStorage.setItem(SELLER_INFORMED_KEY, "true");
@@ -857,6 +864,12 @@ function SellPageInner() {
       {sellerInfoOpen && (
         <SellerInfoModal onClose={dismissSellerInfo} />
       )}
+      {mpRequiredOpen && (
+        <MpRequiredModal
+          onCancel={() => router.push("/")}
+          onConnect={() => router.push("/profile?tab=configuracion")}
+        />
+      )}
     </div>
   );
 }
@@ -914,6 +927,47 @@ function SellerInfoModal({ onClose }: { onClose: () => void }) {
           <Button variant="primary" size="lg" onClick={onClose} rightIcon={<ChevronRight size={16} />}>
             Entendido, continuar
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MercadoPago required modal ───────────────────────────────────────────────
+
+function MpRequiredModal({ onCancel, onConnect }: { onCancel: () => void; onConnect: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-background rounded-2xl border border-border w-full max-w-md shadow-xl">
+        <div className="p-6 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 size-10 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+              <AlertTriangle size={20} />
+            </span>
+            <h2 className="font-serif text-xl font-semibold text-text-primary">
+              Conectá tu cuenta de MercadoPago
+            </h2>
+          </div>
+
+          <p className="text-sm font-sans text-text-secondary leading-relaxed">
+            Para publicar una carta necesitás vincular tu cuenta de MercadoPago. Así podemos
+            transferirte el pago directamente cuando vendas.
+          </p>
+
+          <div className="flex gap-3 mt-2">
+            <Button variant="secondary" size="lg" className="flex-1" onClick={onCancel}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1"
+              leftIcon={<Wallet size={16} />}
+              onClick={onConnect}
+            >
+              Llevame ahí
+            </Button>
+          </div>
         </div>
       </div>
     </div>
