@@ -4,11 +4,13 @@ import * as React from "react";
 import { X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { LocationPicker } from "@/components/ui/LocationPicker";
 import { useExploreNavigation } from "./ExploreTransitionProvider";
 import {
   FilterGroup, PillList, OptionList,
   POKEMON_RARITIES, sortAndLabelRarities,
 } from "./FilterPrimitives";
+import type { LocationValue } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +28,9 @@ interface ExploreFiltersProps {
   currentQ:        string;
   currentSort:     string;
   currentInStock:  boolean;
+  currentProvinceId: string;
+  currentZoneId:     string;
+  currentAreaId:     string;
   filterOptions:   FilterOptions | null;
 }
 
@@ -50,7 +55,7 @@ const SORT_OPTIONS = [
 
 export function ExploreFilters({
   currentGame, currentSet, currentRarities, currentColors, currentQ,
-  currentSort, currentInStock, filterOptions,
+  currentSort, currentInStock, currentProvinceId, currentZoneId, currentAreaId, filterOptions,
 }: ExploreFiltersProps) {
   const { navigate } = useExploreNavigation();
 
@@ -60,6 +65,11 @@ export function ExploreFilters({
   const [pendingSet,      setPendingSet]      = React.useState(currentSet);
   const [pendingRarities, setPendingRarities] = React.useState<string[]>(currentRarities);
   const [pendingColors,   setPendingColors]   = React.useState<string[]>(currentColors);
+  const [pendingLocation, setPendingLocation] = React.useState<LocationValue>({
+    province_id: currentProvinceId || null,
+    zone_id:     currentZoneId || null,
+    area_id:     currentAreaId || null,
+  });
 
   // Stable string keys for array deps — avoids referential instability on every render
   const currentRaritiesKey = currentRarities.join(",");
@@ -73,13 +83,23 @@ export function ExploreFilters({
   React.useEffect(() => { setPendingRarities(currentRarities);     }, [currentRaritiesKey]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => { setPendingColors(currentColors);         }, [currentColorsKey]);
+  React.useEffect(() => {
+    setPendingLocation({
+      province_id: currentProvinceId || null,
+      zone_id:     currentZoneId || null,
+      area_id:     currentAreaId || null,
+    });
+  }, [currentProvinceId, currentZoneId, currentAreaId]);
 
   const hasPendingChanges =
     pendingSort    !== (currentSort || "recent")          ||
     pendingInStock !== currentInStock                     ||
     pendingSet     !== currentSet                         ||
     pendingRarities.join(",") !== currentRarities.join(",") ||
-    pendingColors.join(",")   !== currentColors.join(",");
+    pendingColors.join(",")   !== currentColors.join(",") ||
+    (pendingLocation.province_id ?? "") !== currentProvinceId ||
+    (pendingLocation.zone_id     ?? "") !== currentZoneId ||
+    (pendingLocation.area_id     ?? "") !== currentAreaId;
 
   function buildUrl() {
     const params = new URLSearchParams();
@@ -90,6 +110,9 @@ export function ExploreFilters({
     if (pendingColors.length)                        params.set("color",   pendingColors.join(","));
     if (pendingSort && pendingSort !== "recent")     params.set("sort",    pendingSort);
     if (!pendingInStock)                             params.set("instock", "0");
+    if (pendingLocation.province_id)                 params.set("province", pendingLocation.province_id);
+    if (pendingLocation.zone_id)                     params.set("zone",     pendingLocation.zone_id);
+    if (pendingLocation.area_id)                     params.set("area",     pendingLocation.area_id);
     return `/cards?${params.toString()}`;
   }
 
@@ -103,13 +126,16 @@ export function ExploreFilters({
     if (game)                                    params.set("game", game);
     if (pendingSort && pendingSort !== "recent") params.set("sort", pendingSort);
     if (!pendingInStock)                         params.set("instock", "0");
+    if (pendingLocation.province_id)             params.set("province", pendingLocation.province_id);
+    if (pendingLocation.zone_id)                 params.set("zone",     pendingLocation.zone_id);
+    if (pendingLocation.area_id)                 params.set("area",     pendingLocation.area_id);
     navigate(`/cards?${params.toString()}`);
   }
 
   // A filter is "active" when it deviates from its default value
   const hasAnyFilter = Boolean(
     currentGame || currentSet || currentRarities.length || currentColors.length || currentQ ||
-    (currentSort && currentSort !== "recent") || !currentInStock
+    (currentSort && currentSort !== "recent") || !currentInStock || currentProvinceId
   );
 
   return (
@@ -161,6 +187,16 @@ export function ExploreFilters({
             )} />
           </div>
         </button>
+      </FilterGroup>
+
+      {/* ── Ubicación ───────────────────────────────────────────────── */}
+      <FilterGroup label="Ubicación">
+        <LocationPicker
+          mode="filter"
+          value={pendingLocation}
+          onChange={setPendingLocation}
+          placeholder="Cualquier ubicación"
+        />
       </FilterGroup>
 
       {/* ── Juego ──────────────────────────────────────────────────── */}

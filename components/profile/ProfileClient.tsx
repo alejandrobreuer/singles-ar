@@ -27,6 +27,7 @@ import type {
 import type {
   TransactionHistoryRow, WishlistRowWithStats,
 } from "@/app/profile/page";
+import { useCardListFilters, ProfileListFilters, type CardFilterFields } from "@/components/profile/ProfileListFilters";
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ interface ProfileClientProps {
   profile:        Profile;
   currentUserId:  string;
   listings:       ListingWithCard[];
-  buyOrders:      (BuyOrder & { cards: { id: string; name: string; image_url: string | null; game: Game } })[];
+  buyOrders:      (BuyOrder & { cards: { id: string; name: string; image_url: string | null; set_name: string | null; set_code: string | null; rarity: string | null; color: string | null; game: Game } })[];
   wishlist:       WishlistRowWithStats[];
   transactions:   TransactionHistoryRow[];
   reservedOrderTransactions: Record<string, string>; // buyOrderId → transactionId
@@ -200,6 +201,21 @@ export function ProfileClient({
     }
   }
 
+  // ── Filters ────────────────────────────────────────────────────────────────
+  const getListingCard = React.useCallback((l: typeof listings[number]): CardFilterFields | null => {
+    const card = l.cards as { set_name: string | null; set_code: string | null; rarity: string | null; color: string | null; game: Game } | null;
+    return card ? { game: card.game, set_code: card.set_code, set_name: card.set_name, rarity: card.rarity, color: card.color } : null;
+  }, []);
+  const getListingName = React.useCallback((l: typeof listings[number]) => (l.cards as { name: string } | null)?.name ?? "", []);
+  const listingFilters = useCardListFilters(listings, getListingCard, getListingName);
+
+  const getOrderCard = React.useCallback((o: typeof buyOrders[number]): CardFilterFields | null => {
+    const card = o.cards as { set_name: string | null; set_code: string | null; rarity: string | null; color: string | null; game: Game } | null;
+    return card ? { game: card.game, set_code: card.set_code, set_name: card.set_name, rarity: card.rarity, color: card.color } : null;
+  }, []);
+  const getOrderName = React.useCallback((o: typeof buyOrders[number]) => (o.cards as { name: string } | null)?.name ?? "", []);
+  const buyOrderFilters = useCardListFilters(buyOrders, getOrderCard, getOrderName);
+
   // ── Wishlist actions ───────────────────────────────────────────────────────
   async function removeFromWishlist(cardId: string) {
     const res = await fetch(`/api/wishlist?cardId=${cardId}`, { method: "DELETE" });
@@ -267,7 +283,7 @@ export function ProfileClient({
         {tab === "listings" && (
           <div>
             <div className="flex items-center justify-between p-4 pb-0">
-              <p className="text-sm text-text-muted font-sans">{listings.length} publicaciones</p>
+              <p className="text-sm text-text-muted font-sans">{listingFilters.filtered.length} de {listings.length} publicaciones</p>
               <Link href="/sell">
                 <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
                   Nueva publicación
@@ -284,11 +300,18 @@ export function ProfileClient({
                 />
               </div>
             ) : (
+              <>
+                <ProfileListFilters filters={listingFilters} searchPlaceholder="Buscar por nombre de carta…" />
+                {listingFilters.filtered.length === 0 ? (
+                  <div className="p-4">
+                    <Empty icon={<Package size={28} />} text="Ninguna publicación coincide con los filtros." />
+                  </div>
+                ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm font-sans">
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
-                      {["Carta", "Tipo", "Precio", "Estado", "Acciones"].map((h) => (
+                      {["Carta", "Juego", "Set", "Tipo", "Precio", "Estado", "Acciones"].map((h) => (
                         <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">
                           {h}
                         </th>
@@ -296,8 +319,8 @@ export function ProfileClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {listings.map((listing) => {
-                      const card = listing.cards as { id: string; name: string; image_url: string | null; game: Game } | null;
+                    {listingFilters.filtered.map((listing) => {
+                      const card = listing.cards as { id: string; name: string; image_url: string | null; set_name: string | null; set_code: string | null; game: Game } | null;
                       const info = LISTING_STATUS_LABEL[listing.status] ?? { label: listing.status, variant: "slate" as const };
                       return (
                         <tr key={listing.id} className="hover:bg-secondary/30 transition-colors">
@@ -309,9 +332,16 @@ export function ProfileClient({
                                 <Link href={card ? `/cards/${card.id}` : "#"} className="text-sm font-medium text-text-primary hover:text-primary transition-colors truncate block max-w-[160px]">
                                   {card?.name ?? "—"}
                                 </Link>
-                                {card?.game && <Badge variant={GAME_VARIANT[card.game]} size="sm" />}
                               </div>
                             </div>
+                          </td>
+                          {/* Juego */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {card?.game && <Badge variant={GAME_VARIANT[card.game]} size="sm" />}
+                          </td>
+                          {/* Set */}
+                          <td className="px-4 py-3 whitespace-nowrap text-text-secondary">
+                            {card?.set_code ?? card?.set_name ?? "—"}
                           </td>
                           {/* Tipo */}
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -356,6 +386,8 @@ export function ProfileClient({
                   </tbody>
                 </table>
               </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -366,7 +398,7 @@ export function ProfileClient({
         {tab === "buy-orders" && (
           <div>
             <div className="flex items-center justify-between p-4 pb-0">
-              <p className="text-sm text-text-muted font-sans">{buyOrders.length} órdenes</p>
+              <p className="text-sm text-text-muted font-sans">{buyOrderFilters.filtered.length} de {buyOrders.length} órdenes</p>
               <Link href="/buy-orders/new">
                 <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
                   Nuevo buy order
@@ -383,6 +415,13 @@ export function ProfileClient({
                 />
               </div>
             ) : (
+              <>
+                <ProfileListFilters filters={buyOrderFilters} searchPlaceholder="Buscar por nombre de carta…" />
+                {buyOrderFilters.filtered.length === 0 ? (
+                  <div className="p-4">
+                    <Empty icon={<TrendingUp size={28} />} text="Ninguna orden coincide con los filtros." />
+                  </div>
+                ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm font-sans">
                   <thead>
@@ -393,7 +432,7 @@ export function ProfileClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {buyOrders.map((order) => {
+                    {buyOrderFilters.filtered.map((order) => {
                       const card        = order.cards as { id: string; name: string; image_url: string | null; game: Game } | null;
                       const daysLeft    = differenceInDays(new Date(order.expires_at), new Date());
                       const isExpiring  = daysLeft <= 3 && order.status === "active";
@@ -489,6 +528,8 @@ export function ProfileClient({
                   </tbody>
                 </table>
               </div>
+                )}
+              </>
             )}
           </div>
         )}

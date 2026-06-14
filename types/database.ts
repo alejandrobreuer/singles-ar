@@ -104,6 +104,56 @@ export interface Card {
 }
 
 
+// ─── Locations ────────────────────────────────────────────────────────────────
+// 3-level delivery location hierarchy: Province > Zone (optional) > Area or Store
+
+export interface Province {
+  id:            string;
+  name:          string;
+  code:          string;
+  is_favorite:   boolean;
+  display_order: number;
+}
+
+export interface Zone {
+  id:          string;
+  province_id: string;
+  name:        string;
+}
+
+export interface Area {
+  id:          string;
+  zone_id:     string | null;
+  province_id: string;
+  name:        string;
+}
+
+export interface Store {
+  id:          string;
+  province_id: string;
+  zone_id:     string | null;
+  name:        string;
+  address:     string | null;
+  is_verified: boolean;
+}
+
+// Selected location value, as produced/consumed by LocationPicker
+export interface LocationValue {
+  province_id: string | null;
+  zone_id?:    string | null;
+  area_id?:    string | null;
+  store_id?:   string | null;
+}
+
+// The full provinces/zones/areas/stores tree, as returned by GET /api/locations
+export interface LocationTree {
+  provinces: Province[];
+  zones:     Zone[];
+  areas:     Area[];
+  stores:    Store[];
+}
+
+
 // ─── Listings ─────────────────────────────────────────────────────────────────
 
 export interface Listing {
@@ -119,17 +169,25 @@ export interface Listing {
   notes:            string | null;
   trade_for:        string | null;   // what seller wants in a trade
   price_diff:       number | null;   // optional cash component in a trade
-  delivery_stores:  string[] | null; // store meetup points selected by the seller
+  delivery_stores:  string[] | null; // store meetup points selected by the seller (legacy)
+  province_id:      string | null;
+  zone_id:          string | null;
+  area_id:          string | null;
+  store_id:         string | null;
   created_at:       string;
   updated_at:       string;
 }
 
 export interface ListingWithCard extends Listing {
-  cards: Pick<Card, "id" | "name" | "set_name" | "image_url" | "game">;
+  cards: Pick<Card, "id" | "name" | "set_name" | "set_code" | "rarity" | "color" | "image_url" | "game">;
 }
 
 export interface ListingWithSeller extends Listing {
   profiles: PublicProfile;
+  provinces?: Pick<Province, "name"> | null;
+  zones?:     Pick<Zone, "name"> | null;
+  areas?:     Pick<Area, "name"> | null;
+  stores?:    Pick<Store, "name" | "address"> | null;
 }
 
 export interface ListingWithCardAndSeller extends Listing {
@@ -162,7 +220,7 @@ export interface BuyOrderWithBuyer extends BuyOrder {
 }
 
 export interface BuyOrderWithCard extends BuyOrder {
-  cards: Pick<Card, "id" | "name" | "image_url" | "game">;
+  cards: Pick<Card, "id" | "name" | "set_name" | "set_code" | "rarity" | "color" | "image_url" | "game">;
 }
 
 

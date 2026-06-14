@@ -25,9 +25,27 @@ const PAGE_SIZE = 24;
 
 // ─── Server data helpers ──────────────────────────────────────────────────────
 
+async function fetchCardIdsForLocation(provinceId: string, zoneId: string, areaId: string): Promise<string[] | null> {
+  if (!provinceId) return null;
+
+  const supabase = createClient();
+  let query = supabase
+    .from("listings")
+    .select("card_id")
+    .eq("province_id", provinceId)
+    .in("status", ["active", "reserved"]);
+
+  if (areaId)      query = query.eq("area_id", areaId);
+  else if (zoneId) query = query.eq("zone_id", zoneId);
+
+  const { data } = await query;
+  return Array.from(new Set((data ?? []).map((d) => d.card_id as string)));
+}
+
 async function fetchCards(
   q: string, game: string, set: string, rarities: string[], colors: string[],
-  sort: string, instock: boolean, page: number
+  sort: string, instock: boolean, page: number,
+  provinceId: string, zoneId: string, areaId: string,
 ) {
   if (!(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").startsWith("http")) {
     return { cards: [] as CardWithListingStats[], total: 0 };
@@ -55,6 +73,11 @@ async function fetchCards(
   if (rarities.length) query = query.or(rarities.map((r) => `rarity.ilike.${r}`).join(","));
   if (colors.length)   query = query.or(colors.map((c) => `color.ilike.%${c}%`).join(","));
   if (instock)      query = query.gt("listing_count", 0);
+
+  if (provinceId) {
+    const cardIds = await fetchCardIdsForLocation(provinceId, zoneId, areaId);
+    query = query.in("id", cardIds && cardIds.length > 0 ? cardIds : ["00000000-0000-0000-0000-000000000000"]);
+  }
 
   const { data, count, error } = await query;
   if (error) {
@@ -94,7 +117,7 @@ async function fetchFilterOptions(game: string): Promise<FilterOptions | null> {
 export default async function ExplorePage({
   searchParams,
 }: {
-  searchParams: { q?: string; game?: string; set?: string; rarity?: string; color?: string; sort?: string; instock?: string; page?: string };
+  searchParams: { q?: string; game?: string; set?: string; rarity?: string; color?: string; sort?: string; instock?: string; page?: string; province?: string; zone?: string; area?: string };
 }) {
   const q       = searchParams.q       ?? "";
   const game    = searchParams.game    ?? "";
@@ -104,14 +127,17 @@ export default async function ExplorePage({
   const sort    = searchParams.sort    ?? "recent";
   const instock = searchParams.instock !== "0";
   const page    = Math.max(1, parseInt(searchParams.page ?? "1", 10));
+  const province = searchParams.province ?? "";
+  const zone     = searchParams.zone     ?? "";
+  const area     = searchParams.area     ?? "";
 
   const [{ cards, total }, filterOptions] = await Promise.all([
-    fetchCards(q, game, set, rarities, colors, sort, instock, page),
+    fetchCards(q, game, set, rarities, colors, sort, instock, page, province, zone, area),
     fetchFilterOptions(game),
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const hasFilter  = Boolean(q || game || set || rarities.length || colors.length || (sort && sort !== "recent") || !instock);
+  const hasFilter  = Boolean(q || game || set || rarities.length || colors.length || (sort && sort !== "recent") || !instock || province);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -155,6 +181,9 @@ export default async function ExplorePage({
                   currentQ={q}
                   currentSort={sort}
                   currentInStock={instock}
+                  currentProvinceId={province}
+                  currentZoneId={zone}
+                  currentAreaId={area}
                   filterOptions={filterOptions}
                 />
               </div>
@@ -209,6 +238,7 @@ export default async function ExplorePage({
                       page={page} totalPages={totalPages}
                       q={q} game={game} set={set} rarities={rarities} colors={colors}
                       sort={sort} instock={instock}
+                      province={province} zone={zone} area={area}
                     />
                   )}
                 </>
@@ -279,11 +309,12 @@ function buildPageNumbers(current: number, total: number): Array<number | "…">
 }
 
 function Pagination({
-  page, totalPages, q, game, set, rarities, colors, sort, instock,
+  page, totalPages, q, game, set, rarities, colors, sort, instock, province, zone, area,
 }: {
   page: number; totalPages: number;
   q: string; game: string; set: string; rarities: string[]; colors: string[];
   sort: string; instock: boolean;
+  province: string; zone: string; area: string;
 }) {
   function href(p: number) {
     const ps = new URLSearchParams();
@@ -294,6 +325,9 @@ function Pagination({
     if (colors.length)             ps.set("color",   colors.join(","));
     if (sort && sort !== "recent") ps.set("sort",    sort);
     if (instock)                   ps.set("instock", "1");
+    if (province)                  ps.set("province", province);
+    if (zone)                      ps.set("zone",      zone);
+    if (area)                      ps.set("area",      area);
     ps.set("page", String(p));
     return `/cards?${ps.toString()}`;
   }

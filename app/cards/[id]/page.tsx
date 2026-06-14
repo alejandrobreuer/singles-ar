@@ -143,7 +143,11 @@ export default async function CardDetailPage({
           *,
           profiles (
             id, username, avatar_url, reputation_score, total_sales
-          )
+          ),
+          provinces ( name ),
+          zones ( name ),
+          areas ( name ),
+          stores ( name, address )
         `)
         .eq("card_id", params.id)
         .in("status", ["active", "reserved"])

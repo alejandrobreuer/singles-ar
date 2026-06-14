@@ -63,7 +63,7 @@ export default async function MyProfilePage() {
       .select(`
         id, listing_type, price, condition, quantity, status, currency,
         notes, trade_for, created_at, updated_at,
-        cards ( id, name, set_name, image_url, game )
+        cards ( id, name, set_name, set_code, rarity, color, image_url, game )
       `)
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false })
@@ -75,7 +75,7 @@ export default async function MyProfilePage() {
       .select(`
         id, card_id, price, currency, condition, quantity, status,
         expires_at, notes, created_at, updated_at,
-        cards ( id, name, set_name, image_url, game )
+        cards ( id, name, set_name, set_code, rarity, color, image_url, game )
       `)
       .eq("buyer_id", user.id)
       .order("created_at", { ascending: false })
@@ -107,7 +107,7 @@ export default async function MyProfilePage() {
 
   const profile     = profileResult.data   as unknown as Profile;
   const listings    = (listingsResult.data    ?? []) as unknown as ListingWithCard[];
-  const buyOrders   = (buyOrdersResult.data   ?? []) as unknown as (BuyOrder & { cards: { id: string; name: string; image_url: string | null; game: Game } })[];
+  const buyOrders   = (buyOrdersResult.data   ?? []) as unknown as (BuyOrder & { cards: { id: string; name: string; set_name: string | null; set_code: string | null; rarity: string | null; color: string | null; image_url: string | null; game: Game } })[];
   const wishlistRaw = (wishlistResult.data    ?? []) as unknown as WishlistWithCard[];
   const txRaw       = (transactionsResult.data ?? []) as unknown as TransactionHistoryRow[];
 

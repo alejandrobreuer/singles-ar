@@ -14,6 +14,14 @@ function formatARS(price: number): string {
   }).format(price);
 }
 
+function listingLocationLabel(listing: ListingWithSeller): string | null {
+  if (listing.stores)    return `🏪 ${listing.stores.name}`;
+  if (listing.areas)     return `📍 ${listing.areas.name}, ${listing.provinces?.name ?? ""}`;
+  if (listing.zones)     return `📍 ${listing.zones.name}, ${listing.provinces?.name ?? ""}`;
+  if (listing.provinces) return `📍 ${listing.provinces.name}`;
+  return null;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface ListingRowProps {
@@ -23,6 +31,7 @@ interface ListingRowProps {
 
 export function ListingRow({ listing, className }: ListingRowProps) {
   const { profiles: seller } = listing;
+  const locationLabel = listingLocationLabel(listing);
 
   return (
     <div
@@ -54,6 +63,9 @@ export function ListingRow({ listing, className }: ListingRowProps) {
               · {seller.total_sales} ventas
             </span>
           </div>
+          {locationLabel && (
+            <p className="text-2xs text-text-muted font-sans truncate">{locationLabel}</p>
+          )}
         </div>
       </Link>
 

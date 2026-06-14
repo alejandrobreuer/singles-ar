@@ -13,6 +13,7 @@ const NAV = [
   { href: "/admin/cards",        label: "Cartas",           icon: <Layers          size={16} />, exact: false },
   { href: "/admin/transactions", label: "Transacciones",    icon: <CreditCard      size={16} />, exact: false },
   { href: "/admin/users",        label: "Usuarios",         icon: <Users           size={16} />, exact: false },
+  { href: "/admin/locations",    label: "Ubicaciones",      icon: <MapPin          size={16} />, exact: false },
   { href: "/admin/stores",       label: "Lugar de entrega", icon: <MapPin          size={16} />, exact: false },
   { href: "/admin/settings",     label: "Configuración",    icon: <Settings        size={16} />, exact: false },
 ];

@@ -40,6 +40,10 @@ const patchSchema = z.object({
   trade_for:        z.string().max(500).nullable().optional(),
   price_diff:       z.number().nullable().optional(),
   delivery_stores:  z.array(z.string()).max(20).nullable().optional(),
+  province_id:      z.string().uuid().nullable().optional(),
+  zone_id:          z.string().uuid().nullable().optional(),
+  area_id:          z.string().uuid().nullable().optional(),
+  store_id:         z.string().uuid().nullable().optional(),
   status:           z.enum(["active", "reserved"]).optional(),
 }).strict();
 

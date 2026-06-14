@@ -15,7 +15,8 @@ import { HoverTooltip }          from "@/components/ui/HoverTooltip";
 import { toast }                 from "sonner";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
-import type { Condition, ListingType, AdminSettings } from "@/types/database";
+import { LocationPicker }        from "@/components/ui/LocationPicker";
+import type { Condition, ListingType, AdminSettings, LocationValue } from "@/types/database";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -36,8 +37,7 @@ export default function EditListingPage() {
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
-  const [deliveryStores,  setDeliveryStores]  = React.useState<string[]>([]);
-  const [storeOptions,    setStoreOptions]    = React.useState<string[]>([]);
+  const [location,        setLocation]        = React.useState<LocationValue>({ province_id: null, zone_id: null, area_id: null, store_id: null });
   const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
@@ -58,18 +58,15 @@ export default function EditListingPage() {
   React.useEffect(() => {
     async function load() {
       try {
-        const [listingRes, settingsRes, storesRes] = await Promise.all([
+        const [listingRes, settingsRes] = await Promise.all([
           fetch(`/api/listings/${id}`),
           fetch("/api/settings"),
-          fetch("/api/delivery-stores"),
         ]);
 
         if (!listingRes.ok) { setNotFound(true); return; }
 
         const { data: listing } = await listingRes.json();
         const settingsData      = await settingsRes.json().catch(() => DEFAULT_SETTINGS);
-        const storesData        = await storesRes.json().catch(() => ({ data: [] }));
-        setStoreOptions((storesData.data ?? []).map((s: { name: string }) => s.name));
 
         // Pre-fill form
         setListingType(listing.listing_type ?? "sale");
@@ -77,7 +74,12 @@ export default function EditListingPage() {
         setPriceRaw(listing.price != null ? String(listing.price) : "");
         setQuantity(String(listing.quantity ?? 1));
         setNotes(listing.notes ?? "");
-        setDeliveryStores(listing.delivery_stores ?? []);
+        setLocation({
+          province_id: listing.province_id ?? null,
+          zone_id:     listing.zone_id ?? null,
+          area_id:     listing.area_id ?? null,
+          store_id:    listing.store_id ?? null,
+        });
         setTradeFor(listing.trade_for ?? "");
         setPriceDiff(listing.price_diff != null ? String(listing.price_diff) : "");
 
@@ -125,7 +127,10 @@ export default function EditListingPage() {
           notes:            notes.trim() || null,
           trade_for:        listingType === "trade" ? tradeFor.trim() : null,
           price_diff:       listingType === "trade" ? priceDiffNum : null,
-          delivery_stores:  deliveryStores.length > 0 ? deliveryStores : null,
+          province_id:      location.province_id,
+          zone_id:          location.zone_id ?? null,
+          area_id:          location.area_id ?? null,
+          store_id:         location.store_id ?? null,
         }),
       });
 
@@ -376,37 +381,20 @@ export default function EditListingPage() {
 
             <Divider />
 
-            {/* Delivery stores */}
+            {/* Delivery location */}
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium text-text-primary font-sans flex items-center gap-1.5">
                 <MapPin size={14} className="text-text-muted" />
-                Lugar de entrega — Tiendas
+                Lugar de entrega
               </label>
               <p className="text-xs text-text-muted font-sans -mt-1">
-                Seleccioná las tiendas o zonas donde podés encontrarte con el comprador.
+                Indicá la zona o tienda donde podés encontrarte con el comprador.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                {storeOptions.map((store) => {
-                  const checked = deliveryStores.includes(store);
-                  return (
-                    <label key={store} className="flex items-center gap-2.5 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() =>
-                          setDeliveryStores((prev) =>
-                            checked ? prev.filter((s) => s !== store) : [...prev, store]
-                          )
-                        }
-                        className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
-                      />
-                      <span className="text-sm font-sans text-text-secondary group-hover:text-text-primary transition-colors">
-                        {store}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
+              <LocationPicker
+                mode="delivery"
+                value={location}
+                onChange={setLocation}
+              />
             </div>
           </div>
 

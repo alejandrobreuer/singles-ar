@@ -27,7 +27,8 @@ import { RARITY_DESCRIPTIONS, COLOR_DESCRIPTIONS } from "@/lib/cardAttributes";
 import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
-import type { CardSearchResult, Condition, ListingType, AdminSettings, Game } from "@/types/database";
+import { LocationPicker }       from "@/components/ui/LocationPicker";
+import type { CardSearchResult, Condition, ListingType, AdminSettings, Game, LocationValue } from "@/types/database";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -88,8 +89,7 @@ function SellPageInner() {
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
-  const [deliveryStores,    setDeliveryStores]    = React.useState<string[]>([]);
-  const [storeOptions,      setStoreOptions]      = React.useState<string[]>([]);
+  const [location,         setLocation]         = React.useState<LocationValue>({ province_id: null, zone_id: null, area_id: null, store_id: null });
   const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
@@ -124,16 +124,11 @@ function SellPageInner() {
     setSellerInfoOpen(false);
   }
 
-  // ── Fetch settings + store options once ──────────────────────────────────
+  // ── Fetch settings once ────────────────────────────────────────────────────
   React.useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
       .then((data: AdminSettings) => setSettings(data))
-      .catch(() => {});
-
-    fetch("/api/delivery-stores")
-      .then((r) => r.json())
-      .then((json) => setStoreOptions((json.data ?? []).map((s: { name: string }) => s.name)))
       .catch(() => {});
   }, []);
 
@@ -284,7 +279,10 @@ function SellPageInner() {
           notes:            notes.trim() || null,
           trade_for:        listingType === "trade" ? tradeFor.trim() : null,
           price_diff:       listingType === "trade" ? priceDiffNum : null,
-          delivery_stores:  deliveryStores.length > 0 ? deliveryStores : null,
+          province_id:      location.province_id,
+          zone_id:          location.zone_id ?? null,
+          area_id:          location.area_id ?? null,
+          store_id:         location.store_id ?? null,
         }),
       });
 
@@ -730,37 +728,20 @@ function SellPageInner() {
 
                 <Divider />
 
-                {/* Delivery stores */}
+                {/* Delivery location */}
                 <div className="flex flex-col gap-3">
                   <label className="text-sm font-medium text-text-primary font-sans flex items-center gap-1.5">
                     <MapPin size={14} className="text-text-muted" />
-                    Lugar de entrega — Tiendas
+                    Lugar de entrega
                   </label>
                   <p className="text-xs text-text-muted font-sans -mt-1">
-                    Seleccioná las tiendas o zonas donde podés encontrarte con el comprador.
+                    Indicá la zona o tienda donde podés encontrarte con el comprador.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                    {storeOptions.map((store) => {
-                      const checked = deliveryStores.includes(store);
-                      return (
-                        <label key={store} className="flex items-center gap-2.5 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              setDeliveryStores((prev) =>
-                                checked ? prev.filter((s) => s !== store) : [...prev, store]
-                              )
-                            }
-                            className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
-                          />
-                          <span className="text-sm font-sans text-text-secondary group-hover:text-text-primary transition-colors">
-                            {store}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <LocationPicker
+                    mode="delivery"
+                    value={location}
+                    onChange={setLocation}
+                  />
                 </div>
               </div>
 

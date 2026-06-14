@@ -16,6 +16,10 @@ const createListingSchema = z.object({
   trade_for:        z.string().max(500).nullable().optional(),
   price_diff:       z.number().nullable().optional(),
   delivery_stores:  z.array(z.string()).max(20).nullable().optional(),
+  province_id:      z.string().uuid().nullable().optional(),
+  zone_id:          z.string().uuid().nullable().optional(),
+  area_id:          z.string().uuid().nullable().optional(),
+  store_id:         z.string().uuid().nullable().optional(),
 }).refine(
   (d) => d.listing_type === "trade" || (d.price != null && d.price > 0),
   { message: "Las ventas directas requieren un precio.", path: ["price"] }
@@ -82,6 +86,13 @@ export async function POST(req: NextRequest) {
   // entirely avoids PGRST204 if the column hasn't been migrated yet.
   if (input.delivery_stores && input.delivery_stores.length > 0) {
     insertPayload.delivery_stores = input.delivery_stores;
+  }
+
+  if (input.province_id) {
+    insertPayload.province_id = input.province_id;
+    insertPayload.zone_id     = input.zone_id  ?? null;
+    insertPayload.area_id     = input.area_id  ?? null;
+    insertPayload.store_id    = input.store_id ?? null;
   }
 
   const { data: listing, error: insertError } = await supabase
