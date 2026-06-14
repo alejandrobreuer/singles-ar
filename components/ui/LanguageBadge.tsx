@@ -4,14 +4,15 @@ import { LANGUAGE_LABELS, LANGUAGE_FLAGS } from "@/lib/cardAttributes";
 import type { CardLanguage } from "@/types/database";
 
 interface LanguageBadgeProps {
-  language:  CardLanguage;
+  language:  CardLanguage | null | undefined;
   variant?:  "short" | "long";
   className?: string;
 }
 
 export function LanguageBadge({ language, variant = "short", className }: LanguageBadgeProps) {
-  const flag  = LANGUAGE_FLAGS[language]  ?? "";
-  const label = LANGUAGE_LABELS[language] ?? language.toUpperCase();
+  const lang  = language ?? "en";
+  const flag  = LANGUAGE_FLAGS[lang]  ?? "";
+  const label = LANGUAGE_LABELS[lang] ?? lang.toUpperCase();
 
   return (
     <span
@@ -20,7 +21,7 @@ export function LanguageBadge({ language, variant = "short", className }: Langua
         className
       )}
     >
-      {flag} {variant === "short" ? language.toUpperCase() : label}
+      {flag} {variant === "short" ? lang.toUpperCase() : label}
     </span>
   );
 }
