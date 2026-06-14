@@ -10,7 +10,7 @@ import {
   Package, TrendingUp, Heart, Clock, Settings,
   Star, Award, ShieldAlert, Tag, Plus, RefreshCw,
   CheckCircle2, XCircle, Edit2, Trash2, Check, X,
-  ChevronRight, ExternalLink, Pencil,
+  ChevronRight, ExternalLink, Zap, ListChecks,
 } from "lucide-react";
 import { toast }     from "sonner";
 import { cn }        from "@/lib/utils";
@@ -234,6 +234,104 @@ export function ProfileClient({
     }
   }
 
+  // ── Mass edit (bulk price / location across selected listings) ────────────
+  const [massEditMode,  setMassEditMode]  = React.useState(false);
+  const [selectedIds,   setSelectedIds]   = React.useState<Set<string>>(new Set());
+  const [bulkPrice,     setBulkPrice]     = React.useState("");
+  const [bulkLocations, setBulkLocations] = React.useState<LocationValue[]>([]);
+  const [bulkSaving,    setBulkSaving]    = React.useState(false);
+
+  const EDITABLE_STATUSES = new Set(["active", "reserved"]);
+
+  function toggleMassEdit() {
+    setMassEditMode((v) => !v);
+    setSelectedIds(new Set());
+    setEditingId(null);
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const selectable = listingFilters.filtered.filter((l) => EDITABLE_STATUSES.has(l.status));
+    setSelectedIds((prev) =>
+      prev.size === selectable.length && selectable.length > 0
+        ? new Set()
+        : new Set(selectable.map((l) => l.id))
+    );
+  }
+
+  async function applyBulkPrice() {
+    const priceNum = parseARSInput(bulkPrice);
+    if (priceNum <= 0) return;
+
+    const targets = listings.filter((l) => selectedIds.has(l.id) && l.listing_type === "sale");
+    if (targets.length === 0) {
+      toast.error("Ninguna publicación de venta seleccionada.");
+      return;
+    }
+
+    setBulkSaving(true);
+    try {
+      const results = await Promise.all(targets.map((l) =>
+        fetch(`/api/listings/${l.id}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ price: priceNum }),
+        }).then((r) => r.ok)
+      ));
+
+      const okIds = new Set(targets.filter((_, i) => results[i]).map((l) => l.id));
+      setListings((prev) => prev.map((l) => okIds.has(l.id) ? { ...l, price: priceNum } : l));
+
+      const failed = targets.length - okIds.size;
+      if (failed > 0) toast.error(`No se pudo actualizar el precio de ${failed} publicación(es).`);
+      if (okIds.size > 0) toast.success(`Precio actualizado en ${okIds.size} publicación(es).`);
+      setBulkPrice("");
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function applyBulkLocations() {
+    const locations = bulkLocations.filter((l) => l.province_id);
+    if (locations.length === 0) return;
+
+    const targets = listings.filter((l) => selectedIds.has(l.id));
+    if (targets.length === 0) return;
+
+    setBulkSaving(true);
+    try {
+      const results = await Promise.all(targets.map(async (l) => {
+        const res = await fetch(`/api/listings/${l.id}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ locations }),
+        });
+        if (!res.ok) return null;
+        const fresh = await fetch(`/api/listings/${l.id}`).then((r) => r.json()).catch(() => null);
+        return fresh?.data?.listing_locations ?? [];
+      }));
+
+      setListings((prev) => prev.map((l) => {
+        const idx = targets.findIndex((t) => t.id === l.id);
+        if (idx === -1 || results[idx] == null) return l;
+        return { ...l, listing_locations: results[idx] };
+      }));
+
+      const failed = results.filter((r) => r == null).length;
+      if (failed > 0) toast.error(`No se pudo actualizar la ubicación de ${failed} publicación(es).`);
+      if (targets.length - failed > 0) toast.success(`Ubicación actualizada en ${targets.length - failed} publicación(es).`);
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
   // ── Buy order actions ──────────────────────────────────────────────────────
   async function cancelBuyOrder(id: string) {
     const res = await fetch(`/api/buy-orders/${id}`, {
@@ -346,12 +444,79 @@ export function ProfileClient({
           <div>
             <div className="flex items-center justify-between p-4 pb-0">
               <p className="text-sm text-text-muted font-sans">{listingFilters.filtered.length} de {listings.length} publicaciones</p>
-              <Link href="/sell">
-                <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
-                  Nueva publicación
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                {listings.length > 0 && (
+                  <Button
+                    variant={massEditMode ? "primary" : "secondary"}
+                    size="sm"
+                    leftIcon={<ListChecks size={13} />}
+                    onClick={toggleMassEdit}
+                  >
+                    Edición en masa
+                  </Button>
+                )}
+                <Link href="/sell">
+                  <Button variant="primary" size="sm" leftIcon={<Plus size={13} />}>
+                    Nueva publicación
+                  </Button>
+                </Link>
+              </div>
             </div>
+
+            {/* Mass-edit toolbar */}
+            {massEditMode && listings.length > 0 && (
+              <div className="mx-4 mt-3 p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col gap-3">
+                <p className="text-sm font-sans text-text-secondary">
+                  {selectedIds.size} publicación{selectedIds.size === 1 ? "" : "es"} seleccionada{selectedIds.size === 1 ? "" : "s"}
+                </p>
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-2xs font-semibold font-sans text-text-muted uppercase tracking-wide">
+                      Nuevo precio (ARS)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Ej: 15000"
+                        value={bulkPrice}
+                        onChange={(e) => setBulkPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                        className="w-32 h-9 px-2.5 rounded-lg border border-border bg-background font-sans text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={selectedIds.size === 0 || !bulkPrice || bulkSaving}
+                        loading={bulkSaving}
+                        onClick={applyBulkPrice}
+                      >
+                        Aplicar precio
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 flex-1 min-w-[260px]">
+                    <label className="text-2xs font-semibold font-sans text-text-muted uppercase tracking-wide">
+                      Nueva ubicación
+                    </label>
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <LocationPickerList value={bulkLocations} onChange={setBulkLocations} />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={selectedIds.size === 0 || !bulkLocations.some((l) => l.province_id) || bulkSaving}
+                        loading={bulkSaving}
+                        onClick={applyBulkLocations}
+                      >
+                        Aplicar ubicación
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {listings.length === 0 ? (
               <div className="p-4">
@@ -373,6 +538,16 @@ export function ProfileClient({
                 <table className="w-full text-sm font-sans">
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
+                      {massEditMode && (
+                        <th className="px-4 py-2.5 text-left w-8">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.size > 0 && selectedIds.size === listingFilters.filtered.filter((l) => EDITABLE_STATUSES.has(l.status)).length}
+                            onChange={toggleSelectAll}
+                            className="size-4 rounded border-border accent-primary"
+                          />
+                        </th>
+                      )}
                       {["Carta", "Juego", "Set", "Tipo", "Ubicación", "Precio", "Estado", "Acciones"].map((h) => (
                         <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">
                           {h}
@@ -388,6 +563,18 @@ export function ProfileClient({
                       const locationSummary = listingLocationSummary(listing);
                       return (
                         <tr key={listing.id} className="hover:bg-secondary/30 transition-colors">
+                          {massEditMode && (
+                            <td className="px-4 py-3">
+                              {EDITABLE_STATUSES.has(listing.status) && (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(listing.id)}
+                                  onChange={() => toggleSelected(listing.id)}
+                                  className="size-4 rounded border-border accent-primary"
+                                />
+                              )}
+                            </td>
+                          )}
                           {/* Carta */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
@@ -473,7 +660,7 @@ export function ProfileClient({
                                     className="p-1.5 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
                                     title="Edición rápida (precio y ubicación)"
                                   >
-                                    <Pencil size={14} />
+                                    <Zap size={14} />
                                   </button>
                                   <Link href={`/sell/edit/${listing.id}`}>
                                     <button className="p-1.5 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors" title="Editar">
