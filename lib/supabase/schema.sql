@@ -167,10 +167,6 @@ CREATE TABLE IF NOT EXISTS public.listings (
   trade_for        text,                                      -- what seller wants in a trade
   price_diff       numeric,                                   -- trade + cash: cash difference
   delivery_stores  text[],                                    -- store meetup points selected by the seller (legacy)
-  province_id  uuid REFERENCES public.provinces ON DELETE SET NULL,
-  zone_id      uuid REFERENCES public.zones     ON DELETE SET NULL,
-  area_id      uuid REFERENCES public.areas     ON DELETE SET NULL,
-  store_id     uuid REFERENCES public.stores    ON DELETE SET NULL,
   created_at   timestamptz DEFAULT now() NOT NULL,
   updated_at   timestamptz DEFAULT now() NOT NULL,
 
@@ -180,11 +176,41 @@ CREATE TABLE IF NOT EXISTS public.listings (
     CHECK (listing_type <> 'trade' OR trade_for IS NOT NULL)
 );
 
-CREATE INDEX IF NOT EXISTS idx_listings_province ON public.listings (province_id);
-
 CREATE INDEX IF NOT EXISTS idx_listings_card_status   ON public.listings (card_id, status);
 CREATE INDEX IF NOT EXISTS idx_listings_seller        ON public.listings (seller_id);
 CREATE INDEX IF NOT EXISTS idx_listings_status        ON public.listings (status);
+
+
+-- ─── Listing locations: multiple delivery locations per listing ────────────────
+
+CREATE TABLE IF NOT EXISTS public.listing_locations (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id  uuid NOT NULL REFERENCES public.listings  ON DELETE CASCADE,
+  province_id uuid NOT NULL REFERENCES public.provinces ON DELETE CASCADE,
+  zone_id     uuid REFERENCES public.zones  ON DELETE SET NULL,
+  area_id     uuid REFERENCES public.areas  ON DELETE SET NULL,
+  store_id    uuid REFERENCES public.stores ON DELETE SET NULL
+);
+
+ALTER TABLE public.listing_locations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "listing_locations_public_read"
+  ON public.listing_locations FOR SELECT
+  USING (true);
+
+CREATE POLICY "listing_locations_owner_write"
+  ON public.listing_locations FOR ALL
+  USING (
+    EXISTS (SELECT 1 FROM public.listings l WHERE l.id = listing_id AND l.seller_id = auth.uid())
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM public.listings l WHERE l.id = listing_id AND l.seller_id = auth.uid())
+  );
+
+CREATE INDEX IF NOT EXISTS idx_listing_locations_listing  ON public.listing_locations (listing_id);
+CREATE INDEX IF NOT EXISTS idx_listing_locations_province ON public.listing_locations (province_id);
+CREATE INDEX IF NOT EXISTS idx_listing_locations_zone     ON public.listing_locations (zone_id);
+CREATE INDEX IF NOT EXISTS idx_listing_locations_area     ON public.listing_locations (area_id);
 
 
 -- ─── Delivery Store Options ───────────────────────────────────────────────────

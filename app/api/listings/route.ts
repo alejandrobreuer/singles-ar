@@ -16,10 +16,12 @@ const createListingSchema = z.object({
   trade_for:        z.string().max(500).nullable().optional(),
   price_diff:       z.number().nullable().optional(),
   delivery_stores:  z.array(z.string()).max(20).nullable().optional(),
-  province_id:      z.string().uuid().nullable().optional(),
-  zone_id:          z.string().uuid().nullable().optional(),
-  area_id:          z.string().uuid().nullable().optional(),
-  store_id:         z.string().uuid().nullable().optional(),
+  locations: z.array(z.object({
+    province_id: z.string().uuid(),
+    zone_id:     z.string().uuid().nullable().optional(),
+    area_id:     z.string().uuid().nullable().optional(),
+    store_id:    z.string().uuid().nullable().optional(),
+  })).max(5).optional(),
 }).refine(
   (d) => d.listing_type === "trade" || (d.price != null && d.price > 0),
   { message: "Las ventas directas requieren un precio.", path: ["price"] }
@@ -88,13 +90,6 @@ export async function POST(req: NextRequest) {
     insertPayload.delivery_stores = input.delivery_stores;
   }
 
-  if (input.province_id) {
-    insertPayload.province_id = input.province_id;
-    insertPayload.zone_id     = input.zone_id  ?? null;
-    insertPayload.area_id     = input.area_id  ?? null;
-    insertPayload.store_id    = input.store_id ?? null;
-  }
-
   const { data: listing, error: insertError } = await supabase
     .from("listings")
     .insert(insertPayload)
@@ -113,6 +108,23 @@ export async function POST(req: NextRequest) {
       },
       { status: 500 }
     );
+  }
+
+  // ── Insert delivery locations ──────────────────────────────────────────────
+  if (input.locations && input.locations.length > 0) {
+    const { error: locError } = await supabase
+      .from("listing_locations")
+      .insert(input.locations.map((loc) => ({
+        listing_id:  listing.id,
+        province_id: loc.province_id,
+        zone_id:     loc.zone_id  ?? null,
+        area_id:     loc.area_id  ?? null,
+        store_id:    loc.store_id ?? null,
+      })));
+
+    if (locError) {
+      console.error("[POST /api/listings] listing_locations insert error:", locError);
+    }
   }
 
   // ── Wishlist stock notifications (non-blocking) ───────────────────────────

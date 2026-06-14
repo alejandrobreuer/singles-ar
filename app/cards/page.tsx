@@ -30,16 +30,20 @@ async function fetchCardIdsForLocation(provinceId: string, zoneId: string, areaI
 
   const supabase = createClient();
   let query = supabase
-    .from("listings")
-    .select("card_id")
-    .eq("province_id", provinceId)
-    .in("status", ["active", "reserved"]);
+    .from("listing_locations")
+    .select("listings!inner(card_id, status)")
+    .eq("province_id", provinceId);
 
   if (areaId)      query = query.eq("area_id", areaId);
   else if (zoneId) query = query.eq("zone_id", zoneId);
 
   const { data } = await query;
-  return Array.from(new Set((data ?? []).map((d) => d.card_id as string)));
+  const ACTIVE = new Set(["active", "reserved"]);
+  const ids = ((data ?? []) as unknown as { listings: { card_id: string; status: string } }[])
+    .filter((d) => ACTIVE.has(d.listings?.status))
+    .map((d) => d.listings.card_id);
+
+  return Array.from(new Set(ids));
 }
 
 async function fetchCards(

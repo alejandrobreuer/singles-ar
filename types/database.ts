@@ -153,6 +153,24 @@ export interface LocationTree {
   stores:    Store[];
 }
 
+// A delivery location attached to a listing (a listing may have several)
+export interface ListingLocation {
+  id:          string;
+  listing_id:  string;
+  province_id: string;
+  zone_id:     string | null;
+  area_id:     string | null;
+  store_id:    string | null;
+}
+
+// ListingLocation enriched with the joined names, as returned by listing queries
+export interface ListingLocationWithNames extends ListingLocation {
+  provinces?: Pick<Province, "name"> | null;
+  zones?:     Pick<Zone, "name"> | null;
+  areas?:     Pick<Area, "name"> | null;
+  stores?:    Pick<Store, "name" | "address"> | null;
+}
+
 
 // ─── Listings ─────────────────────────────────────────────────────────────────
 
@@ -170,12 +188,9 @@ export interface Listing {
   trade_for:        string | null;   // what seller wants in a trade
   price_diff:       number | null;   // optional cash component in a trade
   delivery_stores:  string[] | null; // store meetup points selected by the seller (legacy)
-  province_id:      string | null;
-  zone_id:          string | null;
-  area_id:          string | null;
-  store_id:         string | null;
   created_at:       string;
   updated_at:       string;
+  listing_locations?: ListingLocationWithNames[];
 }
 
 export interface ListingWithCard extends Listing {
@@ -184,10 +199,6 @@ export interface ListingWithCard extends Listing {
 
 export interface ListingWithSeller extends Listing {
   profiles: PublicProfile;
-  provinces?: Pick<Province, "name"> | null;
-  zones?:     Pick<Zone, "name"> | null;
-  areas?:     Pick<Area, "name"> | null;
-  stores?:    Pick<Store, "name" | "address"> | null;
 }
 
 export interface ListingWithCardAndSeller extends Listing {

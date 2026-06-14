@@ -15,7 +15,7 @@ import { HoverTooltip }          from "@/components/ui/HoverTooltip";
 import { toast }                 from "sonner";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
-import { LocationPicker }        from "@/components/ui/LocationPicker";
+import { LocationPickerList }    from "@/components/ui/LocationPickerList";
 import type { Condition, ListingType, AdminSettings, LocationValue } from "@/types/database";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ export default function EditListingPage() {
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
-  const [location,        setLocation]        = React.useState<LocationValue>({ province_id: null, zone_id: null, area_id: null, store_id: null });
+  const [locations,       setLocations]       = React.useState<LocationValue[]>([]);
   const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
 
@@ -74,12 +74,14 @@ export default function EditListingPage() {
         setPriceRaw(listing.price != null ? String(listing.price) : "");
         setQuantity(String(listing.quantity ?? 1));
         setNotes(listing.notes ?? "");
-        setLocation({
-          province_id: listing.province_id ?? null,
-          zone_id:     listing.zone_id ?? null,
-          area_id:     listing.area_id ?? null,
-          store_id:    listing.store_id ?? null,
-        });
+        setLocations(
+          (listing.listing_locations ?? []).map((loc: LocationValue) => ({
+            province_id: loc.province_id ?? null,
+            zone_id:     loc.zone_id ?? null,
+            area_id:     loc.area_id ?? null,
+            store_id:    loc.store_id ?? null,
+          }))
+        );
         setTradeFor(listing.trade_for ?? "");
         setPriceDiff(listing.price_diff != null ? String(listing.price_diff) : "");
 
@@ -127,10 +129,7 @@ export default function EditListingPage() {
           notes:            notes.trim() || null,
           trade_for:        listingType === "trade" ? tradeFor.trim() : null,
           price_diff:       listingType === "trade" ? priceDiffNum : null,
-          province_id:      location.province_id,
-          zone_id:          location.zone_id ?? null,
-          area_id:          location.area_id ?? null,
-          store_id:         location.store_id ?? null,
+          locations:        locations.filter((l) => l.province_id),
         }),
       });
 
@@ -388,12 +387,11 @@ export default function EditListingPage() {
                 Lugar de entrega
               </label>
               <p className="text-xs text-text-muted font-sans -mt-1">
-                Indicá la zona o tienda donde podés encontrarte con el comprador.
+                Indicá la zona o tienda donde podés encontrarte con el comprador. Podés agregar más de una.
               </p>
-              <LocationPicker
-                mode="delivery"
-                value={location}
-                onChange={setLocation}
+              <LocationPickerList
+                value={locations}
+                onChange={setLocations}
               />
             </div>
           </div>

@@ -17,7 +17,17 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("listings")
-    .select("*, cards(id, name, image_url, game, set_name)")
+    .select(`
+      *,
+      cards(id, name, image_url, game, set_name),
+      listing_locations (
+        id, province_id, zone_id, area_id, store_id,
+        provinces ( name ),
+        zones ( name ),
+        areas ( name ),
+        stores ( name, address )
+      )
+    `)
     .eq("id", params.id)
     .eq("seller_id", user.id)
     .single();
@@ -40,10 +50,12 @@ const patchSchema = z.object({
   trade_for:        z.string().max(500).nullable().optional(),
   price_diff:       z.number().nullable().optional(),
   delivery_stores:  z.array(z.string()).max(20).nullable().optional(),
-  province_id:      z.string().uuid().nullable().optional(),
-  zone_id:          z.string().uuid().nullable().optional(),
-  area_id:          z.string().uuid().nullable().optional(),
-  store_id:         z.string().uuid().nullable().optional(),
+  locations: z.array(z.object({
+    province_id: z.string().uuid(),
+    zone_id:     z.string().uuid().nullable().optional(),
+    area_id:     z.string().uuid().nullable().optional(),
+    store_id:    z.string().uuid().nullable().optional(),
+  })).max(5).optional(),
   status:           z.enum(["active", "reserved"]).optional(),
 }).strict();
 
@@ -99,15 +111,38 @@ export async function PATCH(
     );
   }
 
+  const { locations, ...fields } = parsed.data;
+
   const { data: updated, error: updateError } = await supabase
     .from("listings")
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .update({ ...fields, updated_at: new Date().toISOString() })
     .eq("id", params.id)
     .select()
     .single();
 
   if (updateError) {
     return NextResponse.json({ error: "Error al actualizar." }, { status: 500 });
+  }
+
+  // ── Replace delivery locations ─────────────────────────────────────────────
+  if (locations !== undefined) {
+    await supabase.from("listing_locations").delete().eq("listing_id", params.id);
+
+    if (locations.length > 0) {
+      const { error: locError } = await supabase
+        .from("listing_locations")
+        .insert(locations.map((loc) => ({
+          listing_id:  params.id,
+          province_id: loc.province_id,
+          zone_id:     loc.zone_id  ?? null,
+          area_id:     loc.area_id  ?? null,
+          store_id:    loc.store_id ?? null,
+        })));
+
+      if (locError) {
+        console.error("[PATCH /api/listings/:id] listing_locations insert error:", locError);
+      }
+    }
   }
 
   return NextResponse.json({ data: updated });
