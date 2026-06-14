@@ -358,13 +358,22 @@ function ProvinceStep({
   onSelect: (province: Province) => void;
   mode:     "delivery" | "filter";
 }) {
-  const favorites = tree.provinces.filter((p) => p.is_favorite).sort((a, b) => a.display_order - b.display_order);
+  // Provinces with no zones/areas of their own — selecting them just drops
+  // straight into a store list, which belongs under the "Tiendas" tab instead.
+  const visibleProvinces = tree.provinces.filter((p) => {
+    const hasZones  = tree.zones.some((z) => z.province_id === p.id);
+    const hasAreas  = tree.areas.some((a) => a.province_id === p.id && !a.zone_id);
+    const hasStores = tree.stores.some((s) => s.province_id === p.id && !s.zone_id);
+    return hasZones || hasAreas || !hasStores;
+  });
+
+  const favorites = visibleProvinces.filter((p) => p.is_favorite).sort((a, b) => a.display_order - b.display_order);
 
   const filtered = React.useMemo(() => {
-    const all = [...tree.provinces].sort((a, b) => a.name.localeCompare(b.name));
+    const all = [...visibleProvinces].sort((a, b) => a.name.localeCompare(b.name));
     if (!search.trim()) return all;
     return all.filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()));
-  }, [tree.provinces, search]);
+  }, [visibleProvinces, search]);
 
   return (
     <div>
