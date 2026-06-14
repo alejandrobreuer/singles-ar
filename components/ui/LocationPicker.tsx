@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ChevronDown, ChevronLeft, X, Search, MapPin, Store as StoreIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { LocationValue, LocationTree, Province, Zone } from "@/types/database";
+import type { LocationValue, LocationTree, Province, Zone, Store } from "@/types/database";
 
 interface LocationPickerProps {
   value:       LocationValue;
@@ -65,6 +65,7 @@ export function LocationPicker({ value, onChange, placeholder = "¿Dónde podés
   const [tree, setTree]   = React.useState<LocationTree | null>(null);
   const [step, setStep]   = React.useState<Step>({ level: "province" });
   const [search, setSearch] = React.useState("");
+  const [topTab, setTopTab] = React.useState<"regions" | "stores">("regions");
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -87,6 +88,7 @@ export function LocationPicker({ value, onChange, placeholder = "¿Dónde podés
     if (!open) {
       setStep({ level: "province" });
       setSearch("");
+      setTopTab("regions");
     }
   }, [open]);
 
@@ -141,6 +143,11 @@ export function LocationPicker({ value, onChange, placeholder = "¿Dónde podés
 
   function selectStore(storeId: string, province: Province, zone: Zone | null) {
     onChange({ province_id: province.id, zone_id: zone?.id ?? null, area_id: null, store_id: storeId });
+    setOpen(false);
+  }
+
+  function selectStoreDirect(store: Store) {
+    onChange({ province_id: store.province_id, zone_id: store.zone_id, area_id: null, store_id: store.id });
     setOpen(false);
   }
 
@@ -202,13 +209,27 @@ export function LocationPicker({ value, onChange, placeholder = "¿Dónde podés
           {!tree ? (
             <p className="text-xs text-text-muted font-sans text-center py-6 px-3">Cargando…</p>
           ) : step.level === "province" ? (
-            <ProvinceStep
-              tree={tree}
-              search={search}
-              setSearch={setSearch}
-              onSelect={selectProvince}
-              mode={mode}
-            />
+            <div>
+              <div className="flex border-b border-border">
+                <TopTab active={topTab === "regions"} onClick={() => setTopTab("regions")}>
+                  Provincias / Regiones
+                </TopTab>
+                <TopTab active={topTab === "stores"} onClick={() => setTopTab("stores")}>
+                  Tiendas
+                </TopTab>
+              </div>
+              {topTab === "regions" ? (
+                <ProvinceStep
+                  tree={tree}
+                  search={search}
+                  setSearch={setSearch}
+                  onSelect={selectProvince}
+                  mode={mode}
+                />
+              ) : (
+                <StoreSearchStep tree={tree} onSelect={selectStoreDirect} />
+              )}
+            </div>
           ) : step.level === "zone" ? (
             <ZoneStep
               tree={tree}
@@ -231,6 +252,97 @@ export function LocationPicker({ value, onChange, placeholder = "¿Dónde podés
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Top-level tabs ───────────────────────────────────────────────────────────
+
+function TopTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex-1 px-3 py-2 text-xs font-sans font-medium text-center transition-colors border-b-2 -mb-px",
+        active
+          ? "text-primary border-primary"
+          : "text-text-muted border-transparent hover:text-text-primary",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Tiendas tab: flat searchable store list ─────────────────────────────────
+
+function StoreSearchStep({ tree, onSelect }: { tree: LocationTree; onSelect: (store: Store) => void }) {
+  const [search, setSearch] = React.useState("");
+
+  const filtered = React.useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const all = [...tree.stores].sort((a, b) => a.name.localeCompare(b.name));
+    if (!term) return all;
+    return all.filter((s) => {
+      const province = tree.provinces.find((p) => p.id === s.province_id);
+      const zone     = tree.zones.find((z) => z.id === s.zone_id);
+      return (
+        s.name.toLowerCase().includes(term) ||
+        (s.address ?? "").toLowerCase().includes(term) ||
+        (province?.name ?? "").toLowerCase().includes(term) ||
+        (zone?.name ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [tree, search]);
+
+  return (
+    <div>
+      <div className="p-2 border-b border-border">
+        <div className="relative">
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+          <input
+            type="text"
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar tienda…"
+            className={cn(
+              "w-full h-8 pl-7 pr-2 rounded-lg border border-border bg-background",
+              "font-sans text-xs text-text-primary placeholder:text-text-muted",
+              "focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50",
+            )}
+          />
+        </div>
+      </div>
+      <div className="max-h-60 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <p className="text-xs text-text-muted font-sans text-center py-4 px-3">Sin resultados.</p>
+        ) : (
+          filtered.map((s) => {
+            const province = tree.provinces.find((p) => p.id === s.province_id);
+            const zone     = tree.zones.find((z) => z.id === s.zone_id);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => onSelect(s)}
+                className="flex w-full items-start gap-1.5 px-3 py-2 text-left text-xs font-sans text-text-secondary hover:bg-secondary/60 hover:text-text-primary transition-colors"
+              >
+                <StoreIcon size={12} className="mt-0.5 shrink-0 text-text-muted" />
+                <span>
+                  {s.name}
+                  {s.is_verified && <span className="ml-1 text-accent text-2xs">✓</span>}
+                  <span className="block text-2xs text-text-muted">
+                    {[zone?.name, province?.name].filter(Boolean).join(", ")}
+                  </span>
+                  {s.address && <span className="block text-2xs text-text-muted">{s.address}</span>}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
