@@ -63,7 +63,14 @@ export default async function MyProfilePage() {
       .select(`
         id, listing_type, price, condition, quantity, status, currency,
         notes, trade_for, created_at, updated_at,
-        cards ( id, name, set_name, set_code, rarity, color, image_url, game )
+        cards ( id, name, set_name, set_code, rarity, color, image_url, game ),
+        listing_locations (
+          id, province_id, zone_id, area_id, store_id,
+          provinces ( name ),
+          zones ( name ),
+          areas ( name ),
+          stores ( name, address )
+        )
       `)
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false })

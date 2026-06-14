@@ -4,7 +4,8 @@ import { ShieldCheck, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar }          from "@/components/ui/avatar";
 import { ConditionBadge }  from "@/components/ui/ConditionBadge";
-import type { ListingWithSeller, ListingLocationWithNames } from "@/types/database";
+import { listingLocationSummary } from "@/lib/listingLocation";
+import type { ListingWithSeller } from "@/types/database";
 
 function formatARS(price: number): string {
   return new Intl.NumberFormat("es-AR", {
@@ -12,24 +13,6 @@ function formatARS(price: number): string {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(price);
-}
-
-function locationItemLabel(loc: ListingLocationWithNames): string | null {
-  if (loc.stores)    return `🏪 ${loc.stores.name}`;
-  if (loc.areas)     return `📍 ${loc.areas.name}, ${loc.provinces?.name ?? ""}`;
-  if (loc.zones)     return `📍 ${loc.zones.name}, ${loc.provinces?.name ?? ""}`;
-  if (loc.provinces) return `📍 ${loc.provinces.name}`;
-  return null;
-}
-
-function listingLocationLabel(listing: ListingWithSeller): string | null {
-  const labels = (listing.listing_locations ?? [])
-    .map(locationItemLabel)
-    .filter((l): l is string => !!l);
-
-  if (labels.length === 0) return null;
-  if (labels.length === 1) return labels[0];
-  return `${labels[0]} +${labels.length - 1}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -41,7 +24,7 @@ interface ListingRowProps {
 
 export function ListingRow({ listing, className }: ListingRowProps) {
   const { profiles: seller } = listing;
-  const locationLabel = listingLocationLabel(listing);
+  const locationLabel = listingLocationSummary(listing);
 
   return (
     <div

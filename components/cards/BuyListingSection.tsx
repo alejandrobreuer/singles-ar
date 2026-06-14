@@ -9,6 +9,7 @@ import { Badge }           from "@/components/ui/badge";
 import { Avatar }          from "@/components/ui/avatar";
 import { ConditionBadge }  from "@/components/ui/ConditionBadge";
 import { fantasyName }     from "@/lib/fantasy-name";
+import { listingLocationLabels } from "@/lib/listingLocation";
 import type { Card, ListingWithSeller } from "@/types/database";
 
 function formatARS(price: number): string {
@@ -101,6 +102,7 @@ function BuyableListingRow({
 }) {
   const { profiles: seller } = listing;
   const alias  = fantasyName(listing.id);
+  const locationLabels = listingLocationLabels(listing);
 
   const isReserved = listing.status === "reserved";
 
@@ -126,6 +128,11 @@ function BuyableListingRow({
               <span className="text-2xs text-text-muted font-sans">{seller.reputation_score.toFixed(1)}</span>
               <span className="text-2xs text-text-muted font-sans">· {seller.total_sales} ventas</span>
             </div>
+            {locationLabels.length > 0 && (
+              <p className="text-2xs text-text-muted font-sans truncate">
+                {locationLabels.length > 1 ? `${locationLabels[0]} +${locationLabels.length - 1}` : locationLabels[0]}
+              </p>
+            )}
           </div>
         </div>
 
@@ -209,6 +216,7 @@ function BuyConfirmModal({
   const { profiles: seller } = listing;
   const alias  = fantasyName(listing.id);
   const imgSrc = card.image_override_url ?? card.image_url;
+  const locationLabels = listingLocationLabels(listing);
 
   async function handleConfirm() {
     setError(null);
@@ -329,14 +337,14 @@ function BuyConfirmModal({
               Lugar de entrega
             </p>
           </div>
-          {listing.delivery_stores && listing.delivery_stores.length > 0 ? (
+          {locationLabels.length > 0 ? (
             <div className="flex flex-wrap gap-1.5 mb-2.5">
-              {listing.delivery_stores.map((store) => (
+              {locationLabels.map((label) => (
                 <span
-                  key={store}
+                  key={label}
                   className="inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-sans bg-surface border border-border text-text-secondary"
                 >
-                  {store}
+                  {label}
                 </span>
               ))}
             </div>
@@ -347,7 +355,7 @@ function BuyConfirmModal({
           )}
           <p className="text-2xs text-text-muted font-sans leading-relaxed">
             Al confirmar el pago aceptás que la entrega se realizará únicamente en{" "}
-            {listing.delivery_stores && listing.delivery_stores.length > 0
+            {locationLabels.length > 0
               ? "los lugares indicados arriba"
               : "el lugar que acuerden por chat"}
             {" "}y dentro de los plazos acordados.

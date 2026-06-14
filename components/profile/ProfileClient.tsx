@@ -10,7 +10,7 @@ import {
   Package, TrendingUp, Heart, Clock, Settings,
   Star, Award, ShieldAlert, Tag, Plus, RefreshCw,
   CheckCircle2, XCircle, Edit2, Trash2, Check, X,
-  ChevronRight, ExternalLink,
+  ChevronRight, ExternalLink, Pencil,
 } from "lucide-react";
 import { toast }     from "sonner";
 import { cn }        from "@/lib/utils";
@@ -20,9 +20,11 @@ import { Button }    from "@/components/ui/button";
 import { Input }     from "@/components/ui/input";
 import { Divider }   from "@/components/ui/divider";
 import { Spinner }   from "@/components/ui/spinner";
-import { formatARS } from "@/lib/formatting";
+import { LocationPickerList } from "@/components/ui/LocationPickerList";
+import { formatARS, formatARSNumber, parseARSInput } from "@/lib/formatting";
+import { listingLocationSummary } from "@/lib/listingLocation";
 import type {
-  Profile, ListingWithCard, BuyOrder, Game,
+  Profile, ListingWithCard, BuyOrder, Game, LocationValue,
 } from "@/types/database";
 import type {
   TransactionHistoryRow, WishlistRowWithStats,
@@ -172,6 +174,66 @@ export function ProfileClient({
     }
   }
 
+  // ── Quick edit (price + location, inline) ─────────────────────────────────
+  const [editingId,     setEditingId]     = React.useState<string | null>(null);
+  const [editPrice,     setEditPrice]     = React.useState("");
+  const [editLocations, setEditLocations] = React.useState<LocationValue[]>([]);
+  const [savingEdit,    setSavingEdit]    = React.useState(false);
+
+  function startQuickEdit(listing: ListingWithCard) {
+    setEditingId(listing.id);
+    setEditPrice(listing.price != null ? formatARSNumber(listing.price) : "");
+    setEditLocations(
+      (listing.listing_locations ?? []).map((loc) => ({
+        province_id: loc.province_id,
+        zone_id:     loc.zone_id,
+        area_id:     loc.area_id,
+        store_id:    loc.store_id,
+      }))
+    );
+  }
+
+  function cancelQuickEdit() {
+    setEditingId(null);
+  }
+
+  async function saveQuickEdit(listing: ListingWithCard) {
+    setSavingEdit(true);
+    try {
+      const payload: Record<string, unknown> = {
+        locations: editLocations.filter((l) => l.province_id),
+      };
+      if (listing.listing_type === "sale") {
+        const priceNum = parseARSInput(editPrice);
+        payload.price = priceNum > 0 ? priceNum : null;
+      }
+
+      const res = await fetch(`/api/listings/${listing.id}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "No se pudo guardar.");
+        return;
+      }
+
+      const fresh = await fetch(`/api/listings/${listing.id}`).then((r) => r.json()).catch(() => null);
+      setListings((prev) => prev.map((l) => l.id === listing.id ? {
+        ...l,
+        price:             json.data?.price ?? l.price,
+        listing_locations: fresh?.data?.listing_locations ?? l.listing_locations,
+      } : l));
+      toast.success("Publicación actualizada.");
+      setEditingId(null);
+    } catch {
+      toast.error("Error de red. Verificá tu conexión.");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   // ── Buy order actions ──────────────────────────────────────────────────────
   async function cancelBuyOrder(id: string) {
     const res = await fetch(`/api/buy-orders/${id}`, {
@@ -311,7 +373,7 @@ export function ProfileClient({
                 <table className="w-full text-sm font-sans">
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
-                      {["Carta", "Juego", "Set", "Tipo", "Precio", "Estado", "Acciones"].map((h) => (
+                      {["Carta", "Juego", "Set", "Tipo", "Ubicación", "Precio", "Estado", "Acciones"].map((h) => (
                         <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">
                           {h}
                         </th>
@@ -322,6 +384,8 @@ export function ProfileClient({
                     {listingFilters.filtered.map((listing) => {
                       const card = listing.cards as { id: string; name: string; image_url: string | null; set_name: string | null; set_code: string | null; game: Game } | null;
                       const info = LISTING_STATUS_LABEL[listing.status] ?? { label: listing.status, variant: "slate" as const };
+                      const isEditing = editingId === listing.id;
+                      const locationSummary = listingLocationSummary(listing);
                       return (
                         <tr key={listing.id} className="hover:bg-secondary/30 transition-colors">
                           {/* Carta */}
@@ -350,9 +414,31 @@ export function ProfileClient({
                               : <Badge variant="navy"  size="sm">Venta</Badge>
                             }
                           </td>
+                          {/* Ubicación */}
+                          <td className="px-4 py-3">
+                            {isEditing ? (
+                              <div className="min-w-[240px]">
+                                <LocationPickerList value={editLocations} onChange={setEditLocations} />
+                              </div>
+                            ) : (
+                              <span className="text-text-secondary text-xs whitespace-nowrap">
+                                {locationSummary ?? "—"}
+                              </span>
+                            )}
+                          </td>
                           {/* Precio */}
                           <td className="px-4 py-3 font-price whitespace-nowrap text-text-primary">
-                            {listing.price != null ? formatARS(listing.price) : "—"}
+                            {isEditing && listing.listing_type === "sale" ? (
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={editPrice}
+                                onChange={(e) => setEditPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                                className="w-24 h-8 px-2 rounded-md border border-border bg-background font-price text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                              />
+                            ) : (
+                              listing.price != null ? formatARS(listing.price) : "—"
+                            )}
                           </td>
                           {/* Estado */}
                           <td className="px-4 py-3">
@@ -361,8 +447,34 @@ export function ProfileClient({
                           {/* Acciones */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1.5">
-                              {listing.status === "active" && (
+                              {isEditing ? (
                                 <>
+                                  <button
+                                    onClick={() => saveQuickEdit(listing)}
+                                    disabled={savingEdit}
+                                    className="p-1.5 rounded-md text-success hover:bg-success/10 transition-colors disabled:opacity-50"
+                                    title="Guardar"
+                                  >
+                                    {savingEdit ? <Spinner size="sm" /> : <Check size={14} />}
+                                  </button>
+                                  <button
+                                    onClick={cancelQuickEdit}
+                                    disabled={savingEdit}
+                                    className="p-1.5 rounded-md text-text-muted hover:bg-secondary transition-colors disabled:opacity-50"
+                                    title="Cancelar"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </>
+                              ) : listing.status === "active" && (
+                                <>
+                                  <button
+                                    onClick={() => startQuickEdit(listing)}
+                                    className="p-1.5 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
+                                    title="Edición rápida (precio y ubicación)"
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
                                   <Link href={`/sell/edit/${listing.id}`}>
                                     <button className="p-1.5 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors" title="Editar">
                                       <Edit2 size={14} />
