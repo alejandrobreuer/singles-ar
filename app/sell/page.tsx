@@ -22,13 +22,14 @@ import { Spinner }              from "@/components/ui/spinner";
 import { Badge }                from "@/components/ui/badge";
 import { HoverTooltip }         from "@/components/ui/HoverTooltip";
 import { CONDITIONS, CONDITION_DETAILS, ConditionGuideModal, ConditionConfirmModal } from "@/components/sell/ConditionModals";
+import { LanguageSelector }     from "@/components/sell/LanguageSelector";
 import { toast }               from "sonner";
-import { RARITY_DESCRIPTIONS, COLOR_DESCRIPTIONS } from "@/lib/cardAttributes";
+import { RARITY_DESCRIPTIONS, COLOR_DESCRIPTIONS, LANGUAGES_BY_GAME } from "@/lib/cardAttributes";
 import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
 import { LocationPickerList }   from "@/components/ui/LocationPickerList";
-import type { CardSearchResult, Condition, ListingType, AdminSettings, Game, LocationValue } from "@/types/database";
+import type { CardSearchResult, Condition, CardLanguage, ListingType, AdminSettings, Game, LocationValue } from "@/types/database";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ function SellPageInner() {
   // ── Form state ────────────────────────────────────────────────────────────
   const [listingType, setListingType] = React.useState<ListingType>("sale");
   const [condition,   setCondition]   = React.useState<Condition>("NM");
+  const [language,    setLanguage]    = React.useState<CardLanguage>("es");
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
@@ -238,6 +240,7 @@ function SellPageInner() {
   // ── When card is selected, fetch platform median price ───────────────────
   async function handleCardSelect(card: CardSearchResult) {
     setSelectedCard(card);
+    setLanguage((prev) => (LANGUAGES_BY_GAME[card.game].includes(prev) ? prev : LANGUAGES_BY_GAME[card.game][0]));
     setPriceLoading(true);
     setPlatformMedianARS(null);
     setPlatformTxCount(0);
@@ -275,6 +278,7 @@ function SellPageInner() {
           listing_type: listingType,
           price:        listingType === "sale" ? priceARS : null,
           condition,
+          language,
           quantity:     parseInt(quantity, 10) || 1,
           notes:            notes.trim() || null,
           trade_for:        listingType === "trade" ? tradeFor.trim() : null,
@@ -602,6 +606,20 @@ function SellPageInner() {
 
                 <Divider />
 
+                {/* Language selector */}
+                <div>
+                  <p className="text-sm font-medium text-text-primary font-sans mb-3">
+                    Idioma de la carta
+                  </p>
+                  <LanguageSelector
+                    game={selectedCard.game}
+                    value={language}
+                    onChange={setLanguage}
+                  />
+                </div>
+
+                <Divider />
+
                 {/* Sale: price input */}
                 {listingType === "sale" && (
                   <div className="flex flex-col gap-4">
@@ -770,6 +788,7 @@ function SellPageInner() {
                 listingType={listingType}
                 price={listingType === "sale" ? priceARS : null}
                 condition={condition}
+                language={language}
                 quantity={parseInt(quantity, 10) || 1}
                 notes={notes}
                 tradeFor={tradeFor}

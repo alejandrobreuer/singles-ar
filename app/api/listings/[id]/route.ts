@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { LANGUAGES_BY_GAME } from "@/lib/cardAttributes";
+import type { Game } from "@/types/database";
 
 // ─── GET /api/listings/[id] ───────────────────────────────────────────────────
 
@@ -45,6 +47,7 @@ const patchSchema = z.object({
   listing_type: z.enum(["sale", "trade"]).optional(),
   price:        z.number().positive().nullable().optional(),
   condition:    z.enum(["NM", "LP", "MP", "HP", "DMG"]).optional(),
+  language:     z.enum(["en", "es", "pt", "ja"]).optional(),
   quantity:     z.number().int().min(1).max(99).optional(),
   notes:            z.string().max(300).nullable().optional(),
   trade_for:        z.string().max(500).nullable().optional(),
@@ -65,7 +68,7 @@ async function getOwnedListing(userId: string, listingId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("listings")
-    .select("id, seller_id, status")
+    .select("id, seller_id, status, cards ( game )")
     .eq("id", listingId)
     .single();
 
@@ -109,6 +112,13 @@ export async function PATCH(
       { error: parsed.error.issues[0]?.message ?? "Datos inválidos." },
       { status: 422 }
     );
+  }
+
+  if (parsed.data.language) {
+    const game = (listing as unknown as { cards: { game: Game } | null }).cards?.game;
+    if (game && !LANGUAGES_BY_GAME[game].includes(parsed.data.language)) {
+      return NextResponse.json({ error: "Idioma inválido para este juego." }, { status: 422 });
+    }
   }
 
   const { locations, ...fields } = parsed.data;

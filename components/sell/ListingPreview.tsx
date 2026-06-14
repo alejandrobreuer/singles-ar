@@ -4,9 +4,10 @@ import { Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge }           from "@/components/ui/badge";
 import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import { LanguageBadge }   from "@/components/ui/LanguageBadge";
 import { CommissionBreakdown } from "./CommissionBreakdown";
 import { formatARS, setLabel } from "@/lib/formatting";
-import type { CardSearchResult, Condition, ListingType, Game } from "@/types/database";
+import type { CardSearchResult, Condition, CardLanguage, ListingType, Game } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,7 @@ interface ListingPreviewProps {
   listingType:        ListingType;
   price:              number | null;
   condition:          Condition;
+  language:           CardLanguage;
   quantity:           number;
   notes:              string;
   tradeFor:           string;
@@ -38,6 +40,7 @@ export function ListingPreview({
   listingType,
   price,
   condition,
+  language,
   quantity,
   notes,
   tradeFor,
@@ -91,6 +94,7 @@ export function ListingPreview({
             {/* Meta row */}
             <div className="flex flex-wrap items-center gap-2">
               <ConditionBadge condition={condition} variant="long" />
+              <LanguageBadge language={language} variant="long" />
 
               {quantity > 1 && (
                 <span className="text-xs text-text-muted font-sans">

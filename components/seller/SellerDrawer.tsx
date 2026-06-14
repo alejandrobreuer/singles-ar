@@ -9,7 +9,8 @@ import { createClient } from "@/lib/supabase/client";
 import { fantasyName } from "@/lib/fantasy-name";
 import { formatARS } from "@/lib/formatting";
 import { useSellerDrawer } from "@/hooks/useSellerDrawer";
-import type { Game } from "@/types/database";
+import { LanguageBadge } from "@/components/ui/LanguageBadge";
+import type { Game, CardLanguage } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,12 +19,12 @@ interface DrawerListing {
   price:    number | null;
   currency: string;
   card_id:  string;
+  language: CardLanguage;
   cards: {
     id:       string;
     name:     string;
     set_name: string | null;
     game:     Game;
-    lang:     string;
   };
 }
 
@@ -39,19 +40,6 @@ const GAME_FILTERS: { value: Game | "all"; label: string }[] = [
   { value: "pokemon",  label: "Pokémon" },
   { value: "onepiece", label: "OP" },
 ];
-
-const LANG_FLAGS: Record<string, string> = {
-  en: "🇺🇸",
-  es: "🇦🇷",
-  ja: "🇯🇵",
-  jp: "🇯🇵",
-  pt: "🇧🇷",
-  fr: "🇫🇷",
-  de: "🇩🇪",
-  it: "🇮🇹",
-  ko: "🇰🇷",
-  zh: "🇨🇳",
-};
 
 const MONTHS_ES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -89,8 +77,8 @@ export function SellerDrawer() {
         supabase
           .from("listings")
           .select(`
-            id, price, currency, card_id,
-            cards ( id, name, set_name, game, lang )
+            id, price, currency, card_id, language,
+            cards ( id, name, set_name, game )
           `)
           .eq("seller_id", sellerId)
           .eq("status", "active")
@@ -232,11 +220,7 @@ export function SellerDrawer() {
                     {listing.cards.set_name && (
                       <span className="text-xs text-text-muted font-sans">{listing.cards.set_name}</span>
                     )}
-                    {listing.cards.lang && (
-                      <span className="text-2xs font-sans text-text-muted">
-                        {LANG_FLAGS[listing.cards.lang.toLowerCase()] ?? ""} {listing.cards.lang.toUpperCase()}
-                      </span>
-                    )}
+                    <LanguageBadge language={listing.language} />
                     <Badge
                       variant={listing.cards.game === "magic" ? "magic" : listing.cards.game === "pokemon" ? "poke" : "op"}
                       size="sm"

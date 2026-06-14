@@ -9,6 +9,7 @@
 
 export type Game            = "magic" | "pokemon" | "onepiece";
 export type Condition       = "NM" | "LP" | "MP" | "HP" | "DMG";
+export type CardLanguage    = "en" | "es" | "pt" | "ja";
 export type ListingType     = "sale" | "trade";
 export type ListingStatus   = "active" | "reserved" | "sold" | "cancelled";
 export type BuyOrderStatus  = "active" | "reserved" | "filled" | "cancelled" | "expired";
@@ -182,6 +183,7 @@ export interface Listing {
   price:        number | null;   // required when listing_type = 'sale'
   currency:     string;
   condition:    Condition;
+  language:     CardLanguage;    // physical print language of the seller's copy
   quantity:     number;
   status:       ListingStatus;
   notes:            string | null;

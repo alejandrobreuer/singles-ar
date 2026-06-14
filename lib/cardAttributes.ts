@@ -1,3 +1,29 @@
+import type { Game, CardLanguage } from "@/types/database";
+
+// ─── Listing languages ────────────────────────────────────────────────────────
+// The physical print language of the seller's copy — independent from the
+// card catalog's source language (cards.lang).
+
+export const LANGUAGES_BY_GAME: Record<Game, CardLanguage[]> = {
+  pokemon:  ["es", "pt", "en", "ja"],
+  onepiece: ["en", "ja"],
+  magic:    ["es", "pt", "en", "ja"],
+};
+
+export const LANGUAGE_LABELS: Record<CardLanguage, string> = {
+  en: "Inglés",
+  es: "Español",
+  pt: "Portugués",
+  ja: "Japonés",
+};
+
+export const LANGUAGE_FLAGS: Record<CardLanguage, string> = {
+  en: "🇺🇸",
+  es: "🇦🇷",
+  pt: "🇧🇷",
+  ja: "🇯🇵",
+};
+
 // Hover-tooltip descriptions for rarity and color values shown across the app.
 
 export const RARITY_DESCRIPTIONS: Record<string, string> = {

@@ -8,6 +8,7 @@ import { cn }           from "@/lib/utils";
 import { Badge }           from "@/components/ui/badge";
 import { Avatar }          from "@/components/ui/avatar";
 import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import { LanguageBadge }   from "@/components/ui/LanguageBadge";
 import { SellerNameLink }  from "@/components/seller/SellerNameLink";
 import { fantasyName }     from "@/lib/fantasy-name";
 import { listingLocationLabels } from "@/lib/listingLocation";
@@ -118,6 +119,7 @@ function BuyableListingRow({
       <div className="flex items-center gap-4 px-4 py-3.5">
         {/* Condition */}
         <ConditionBadge condition={listing.condition} />
+        <LanguageBadge language={listing.language} />
 
         {/* Seller — anonymised */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -302,6 +304,7 @@ function BuyConfirmModal({
 
             <div className="flex items-center gap-2 mb-2">
               <ConditionBadge condition={listing.condition} />
+              <LanguageBadge language={listing.language} />
               {card.game && (
                 <Badge
                   variant={card.game === "magic" ? "magic" : card.game === "pokemon" ? "poke" : "op"}

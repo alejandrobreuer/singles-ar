@@ -21,10 +21,12 @@ import { Input }     from "@/components/ui/input";
 import { Divider }   from "@/components/ui/divider";
 import { Spinner }   from "@/components/ui/spinner";
 import { LocationPickerList } from "@/components/ui/LocationPickerList";
+import { LanguageBadge } from "@/components/ui/LanguageBadge";
 import { formatARS, formatARSNumber, parseARSInput } from "@/lib/formatting";
 import { listingLocationSummary } from "@/lib/listingLocation";
+import { LANGUAGES_BY_GAME, LANGUAGE_LABELS, LANGUAGE_FLAGS } from "@/lib/cardAttributes";
 import type {
-  Profile, ListingWithCard, BuyOrder, Game, LocationValue,
+  Profile, ListingWithCard, BuyOrder, Game, LocationValue, CardLanguage,
 } from "@/types/database";
 import type {
   TransactionHistoryRow, WishlistRowWithStats,
@@ -174,10 +176,11 @@ export function ProfileClient({
     }
   }
 
-  // ── Quick edit (price + location, inline) ─────────────────────────────────
+  // ── Quick edit (price + location + language, inline) ───────────────────────
   const [editingId,     setEditingId]     = React.useState<string | null>(null);
   const [editPrice,     setEditPrice]     = React.useState("");
   const [editLocations, setEditLocations] = React.useState<LocationValue[]>([]);
+  const [editLanguage,  setEditLanguage]  = React.useState<CardLanguage>("es");
   const [savingEdit,    setSavingEdit]    = React.useState(false);
 
   function startQuickEdit(listing: ListingWithCard) {
@@ -191,6 +194,7 @@ export function ProfileClient({
         store_id:    loc.store_id,
       }))
     );
+    setEditLanguage(listing.language ?? "es");
   }
 
   function cancelQuickEdit() {
@@ -202,6 +206,7 @@ export function ProfileClient({
     try {
       const payload: Record<string, unknown> = {
         locations: editLocations.filter((l) => l.province_id),
+        language:  editLanguage,
       };
       if (listing.listing_type === "sale") {
         const priceNum = parseARSInput(editPrice);
@@ -223,6 +228,7 @@ export function ProfileClient({
       setListings((prev) => prev.map((l) => l.id === listing.id ? {
         ...l,
         price:             json.data?.price ?? l.price,
+        language:          json.data?.language ?? l.language,
         listing_locations: fresh?.data?.listing_locations ?? l.listing_locations,
       } : l));
       toast.success("Publicación actualizada.");
@@ -239,6 +245,7 @@ export function ProfileClient({
   const [selectedIds,   setSelectedIds]   = React.useState<Set<string>>(new Set());
   const [bulkPrice,     setBulkPrice]     = React.useState("");
   const [bulkLocations, setBulkLocations] = React.useState<LocationValue[]>([]);
+  const [bulkLanguage,  setBulkLanguage]  = React.useState<CardLanguage | "">("");
   const [bulkSaving,    setBulkSaving]    = React.useState(false);
 
   const EDITABLE_STATUSES = new Set(["active", "reserved"]);
@@ -327,6 +334,43 @@ export function ProfileClient({
       const failed = results.filter((r) => r == null).length;
       if (failed > 0) toast.error(`No se pudo actualizar la ubicación de ${failed} publicación(es).`);
       if (targets.length - failed > 0) toast.success(`Ubicación actualizada en ${targets.length - failed} publicación(es).`);
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function applyBulkLanguage() {
+    if (!bulkLanguage) return;
+
+    const targets = listings.filter((l) => {
+      if (!selectedIds.has(l.id)) return false;
+      const game = (l.cards as { game: Game } | null)?.game;
+      return game ? LANGUAGES_BY_GAME[game].includes(bulkLanguage) : false;
+    });
+    if (targets.length === 0) {
+      toast.error("El idioma elegido no es válido para ninguna publicación seleccionada.");
+      return;
+    }
+
+    setBulkSaving(true);
+    try {
+      const results = await Promise.all(targets.map((l) =>
+        fetch(`/api/listings/${l.id}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ language: bulkLanguage }),
+        }).then((r) => r.ok)
+      ));
+
+      const okIds = new Set(targets.filter((_, i) => results[i]).map((l) => l.id));
+      setListings((prev) => prev.map((l) => okIds.has(l.id) ? { ...l, language: bulkLanguage } : l));
+
+      const skipped = selectedIds.size - targets.length;
+      const failed  = targets.length - okIds.size;
+      if (failed > 0) toast.error(`No se pudo actualizar el idioma de ${failed} publicación(es).`);
+      if (skipped > 0) toast.error(`${skipped} publicación(es) no admiten ese idioma y fueron omitidas.`);
+      if (okIds.size > 0) toast.success(`Idioma actualizado en ${okIds.size} publicación(es).`);
+      setBulkLanguage("");
     } finally {
       setBulkSaving(false);
     }
@@ -514,6 +558,35 @@ export function ProfileClient({
                       </Button>
                     </div>
                   </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-2xs font-semibold font-sans text-text-muted uppercase tracking-wide">
+                      Nuevo idioma
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={bulkLanguage}
+                        onChange={(e) => setBulkLanguage(e.target.value as CardLanguage | "")}
+                        className="h-9 px-2.5 rounded-lg border border-border bg-background font-sans text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                      >
+                        <option value="">Elegir…</option>
+                        {(["en", "es", "pt", "ja"] as CardLanguage[]).map((lang) => (
+                          <option key={lang} value={lang}>
+                            {LANGUAGE_FLAGS[lang]} {LANGUAGE_LABELS[lang]}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={selectedIds.size === 0 || !bulkLanguage || bulkSaving}
+                        loading={bulkSaving}
+                        onClick={applyBulkLanguage}
+                      >
+                        Aplicar idioma
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -548,7 +621,7 @@ export function ProfileClient({
                           />
                         </th>
                       )}
-                      {["Carta", "Juego", "Set", "Tipo", "Ubicación", "Precio", "Estado", "Acciones"].map((h) => (
+                      {["Carta", "Juego", "Set", "Tipo", "Idioma", "Ubicación", "Precio", "Estado", "Acciones"].map((h) => (
                         <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">
                           {h}
                         </th>
@@ -600,6 +673,24 @@ export function ProfileClient({
                               ? <Badge variant="amber" size="sm">Trade</Badge>
                               : <Badge variant="navy"  size="sm">Venta</Badge>
                             }
+                          </td>
+                          {/* Idioma */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {isEditing && card ? (
+                              <select
+                                value={editLanguage}
+                                onChange={(e) => setEditLanguage(e.target.value as CardLanguage)}
+                                className="h-8 px-2 rounded-md border border-border bg-background font-sans text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                              >
+                                {LANGUAGES_BY_GAME[card.game].map((lang) => (
+                                  <option key={lang} value={lang}>
+                                    {LANGUAGE_FLAGS[lang]} {LANGUAGE_LABELS[lang]}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <LanguageBadge language={listing.language} />
+                            )}
                           </td>
                           {/* Ubicación */}
                           <td className="px-4 py-3">

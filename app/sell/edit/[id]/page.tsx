@@ -11,12 +11,13 @@ import { Spinner }               from "@/components/ui/spinner";
 import { PriceValidator }        from "@/components/sell/PriceValidator";
 import { CommissionBreakdown }   from "@/components/sell/CommissionBreakdown";
 import { CONDITIONS, CONDITION_DETAILS, ConditionGuideModal, ConditionConfirmModal } from "@/components/sell/ConditionModals";
+import { LanguageSelector }      from "@/components/sell/LanguageSelector";
 import { HoverTooltip }          from "@/components/ui/HoverTooltip";
 import { toast }                 from "sonner";
 import { parseARSInput, formatARSNumber } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
 import { LocationPickerList }    from "@/components/ui/LocationPickerList";
-import type { Condition, ListingType, AdminSettings, LocationValue } from "@/types/database";
+import type { Condition, CardLanguage, Game, ListingType, AdminSettings, LocationValue } from "@/types/database";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -30,10 +31,12 @@ export default function EditListingPage() {
   const [cardName, setCardName] = React.useState("");
   const [cardImage, setCardImage] = React.useState<string | null>(null);
   const [cardId,   setCardId]   = React.useState("");
+  const [cardGame, setCardGame] = React.useState<Game>("magic");
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [listingType, setListingType] = React.useState<ListingType>("sale");
   const [condition,   setCondition]   = React.useState<Condition>("NM");
+  const [language,    setLanguage]    = React.useState<CardLanguage>("es");
   const [priceRaw,    setPriceRaw]    = React.useState("");
   const [quantity,    setQuantity]    = React.useState("1");
   const [notes,           setNotes]           = React.useState("");
@@ -71,6 +74,7 @@ export default function EditListingPage() {
         // Pre-fill form
         setListingType(listing.listing_type ?? "sale");
         setCondition(listing.condition ?? "NM");
+        setLanguage(listing.language ?? "es");
         setPriceRaw(listing.price != null ? String(listing.price) : "");
         setQuantity(String(listing.quantity ?? 1));
         setNotes(listing.notes ?? "");
@@ -87,6 +91,7 @@ export default function EditListingPage() {
 
         // Card info (joined)
         const card = listing.cards ?? listing.card ?? null;
+        setCardGame(card?.game ?? "magic");
         setCardName(card?.name ?? "Carta");
         setCardImage(card?.image_url ?? null);
         setCardId(listing.card_id ?? card?.id ?? "");
@@ -124,6 +129,7 @@ export default function EditListingPage() {
         body: JSON.stringify({
           listing_type: listingType,
           condition,
+          language,
           price:      listingType === "sale" ? priceARS : null,
           quantity:   parseInt(quantity, 10) || 1,
           notes:            notes.trim() || null,
@@ -276,6 +282,20 @@ export default function EditListingPage() {
                   );
                 })}
               </div>
+            </div>
+
+            <Divider />
+
+            {/* Language */}
+            <div>
+              <p className="text-sm font-medium text-text-primary font-sans mb-3">
+                Idioma de la carta
+              </p>
+              <LanguageSelector
+                game={cardGame}
+                value={language}
+                onChange={setLanguage}
+              />
             </div>
 
             <Divider />

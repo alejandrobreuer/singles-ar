@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
   price        numeric     CHECK (price > 0),                -- required when listing_type = 'sale'
   currency     text        NOT NULL DEFAULT 'ARS',
   condition    text        NOT NULL CHECK (condition IN ('NM', 'LP', 'MP', 'HP', 'DMG')),
+  language     text        NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'es', 'pt', 'ja')),
   quantity     integer     NOT NULL DEFAULT 1 CHECK (quantity >= 1),
   status       text        NOT NULL DEFAULT 'active'
                            CHECK (status IN ('active', 'reserved', 'sold', 'cancelled')),
@@ -179,6 +180,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
 CREATE INDEX IF NOT EXISTS idx_listings_card_status   ON public.listings (card_id, status);
 CREATE INDEX IF NOT EXISTS idx_listings_seller        ON public.listings (seller_id);
 CREATE INDEX IF NOT EXISTS idx_listings_status        ON public.listings (status);
+CREATE INDEX IF NOT EXISTS idx_listings_language      ON public.listings (language);
 
 
 -- ─── Listing locations: multiple delivery locations per listing ────────────────

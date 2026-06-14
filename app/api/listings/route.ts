@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyMany }        from "@/lib/notifications";
+import { LANGUAGES_BY_GAME }  from "@/lib/cardAttributes";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -11,6 +12,7 @@ const createListingSchema = z.object({
   listing_type: z.enum(["sale", "trade"]),
   price:        z.number().positive("El precio debe ser mayor a 0.").nullable(),
   condition:    z.enum(["NM", "LP", "MP", "HP", "DMG"]),
+  language:     z.enum(["en", "es", "pt", "ja"]),
   quantity:     z.number().int().min(1).max(99).default(1),
   notes:            z.string().max(300).nullable().optional(),
   trade_for:        z.string().max(500).nullable().optional(),
@@ -69,6 +71,27 @@ export async function POST(req: NextRequest) {
 
   const input = parsed.data;
 
+  // ── Validate language against the card's game ─────────────────────────────
+  const { data: card } = await supabase
+    .from("cards")
+    .select("game")
+    .eq("id", input.card_id)
+    .single();
+
+  if (!card) {
+    return NextResponse.json(
+      { error: "Carta no encontrada.", code: "VALIDATION_ERROR", field: "card_id" },
+      { status: 422 }
+    );
+  }
+
+  if (!LANGUAGES_BY_GAME[card.game as keyof typeof LANGUAGES_BY_GAME].includes(input.language)) {
+    return NextResponse.json(
+      { error: "Idioma inválido para este juego.", code: "VALIDATION_ERROR", field: "language" },
+      { status: 422 }
+    );
+  }
+
   // ── Insert listing ─────────────────────────────────────────────────────────
   const insertPayload: Record<string, unknown> = {
     card_id:      input.card_id,
@@ -77,6 +100,7 @@ export async function POST(req: NextRequest) {
     price:        input.price,
     currency:     "ARS",
     condition:    input.condition,
+    language:     input.language,
     quantity:     input.quantity,
     status:       "active",
     notes:        input.notes      ?? null,
