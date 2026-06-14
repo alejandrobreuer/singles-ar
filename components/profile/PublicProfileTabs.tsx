@@ -2,15 +2,14 @@
 
 import * as React from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Star, Tag, Package, MessageSquare, CheckCircle } from "lucide-react";
+import { Star, Tag, MessageSquare, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge }    from "@/components/ui/badge";
 import { Avatar }   from "@/components/ui/avatar";
 import { formatARS } from "@/lib/formatting";
-import type { ListingWithCard, ReviewWithReviewer, Game } from "@/types/database";
+import type { ReviewWithReviewer, Game } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +72,6 @@ function Chip({
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  listings:    ListingWithCard[];
   reviews:     ReviewWithReviewer[];
   history:     HistoryItem[];
   gameVariant: Record<Game, React.ComponentProps<typeof Badge>["variant"]>;
@@ -87,12 +85,10 @@ const GAME_LABELS: Record<Game, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function PublicProfileTabs({ listings, reviews, history, gameVariant }: Props) {
-  const [tab, setTab] = React.useState<"listings" | "reviews" | "history">("listings");
+export function PublicProfileTabs({ reviews, history, gameVariant }: Props) {
+  const [tab, setTab] = React.useState<"reviews" | "history">("reviews");
 
   // ── Filter state ─────────────────────────────────────────────────────────────
-  const [listingGame, setListingGame]   = React.useState<Game | null>(null);
-  const [listingType, setListingType]   = React.useState<"sale" | "trade" | null>(null);
   const [reviewRating, setReviewRating] = React.useState<number | null>(null);
   const [historyGame, setHistoryGame]   = React.useState<Game | null>(null);
 
@@ -103,21 +99,11 @@ export function PublicProfileTabs({ listings, reviews, history, gameVariant }: P
   );
 
   // ── Distinct games present ────────────────────────────────────────────────────
-  const listingGames = Array.from(new Set(
-    listings.map((l) => (l.cards as { game: Game } | null)?.game).filter(Boolean) as Game[]
-  ));
   const historyGames = Array.from(new Set(
     history.map((h) => h.card?.game).filter(Boolean) as Game[]
   ));
 
   // ── Filtered lists ────────────────────────────────────────────────────────────
-  const filteredListings = listings.filter((l) => {
-    const card = l.cards as { game: Game } | null;
-    if (listingGame && card?.game !== listingGame) return false;
-    if (listingType && l.listing_type !== listingType) return false;
-    return true;
-  });
-
   const filteredReviews = reviews.filter((r) => {
     if (reviewRating !== null && r.rating !== reviewRating) return false;
     return true;
@@ -129,7 +115,6 @@ export function PublicProfileTabs({ listings, reviews, history, gameVariant }: P
   });
 
   const tabs = [
-    { key: "listings" as const, label: "Vendiendo", count: listings.length, icon: <Package      size={14} /> },
     { key: "reviews"  as const, label: "Reseñas",   count: reviews.length,  icon: <MessageSquare size={14} /> },
     { key: "history"  as const, label: "Historial",  count: history.length,  icon: <CheckCircle  size={14} /> },
   ];
@@ -162,40 +147,6 @@ export function PublicProfileTabs({ listings, reviews, history, gameVariant }: P
         ))}
       </div>
 
-      {/* ── Filter row: Listings ───────────────────────────────────────────── */}
-      {tab === "listings" && listings.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-border bg-background/40">
-          {listingGames.length > 1 && (
-            <>
-              <Chip active={listingGame === null} onClick={() => setListingGame(null)}>Todos</Chip>
-              {listingGames.map((g) => (
-                <Chip
-                  key={g}
-                  active={listingGame === g}
-                  onClick={() => setListingGame(listingGame === g ? null : g)}
-                >
-                  {GAME_LABELS[g]}
-                </Chip>
-              ))}
-              <span className="w-px self-stretch bg-border mx-0.5" />
-            </>
-          )}
-          <Chip active={listingType === null} onClick={() => setListingType(null)}>Todo tipo</Chip>
-          <Chip
-            active={listingType === "sale"}
-            onClick={() => setListingType(listingType === "sale" ? null : "sale")}
-          >
-            Venta
-          </Chip>
-          <Chip
-            active={listingType === "trade"}
-            onClick={() => setListingType(listingType === "trade" ? null : "trade")}
-          >
-            Trade
-          </Chip>
-        </div>
-      )}
-
       {/* ── Filter row: Reviews ────────────────────────────────────────────── */}
       {tab === "reviews" && reviews.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-border bg-background/40">
@@ -225,60 +176,6 @@ export function PublicProfileTabs({ listings, reviews, history, gameVariant }: P
               {GAME_LABELS[g]}
             </Chip>
           ))}
-        </div>
-      )}
-
-      {/* ── Listings tab ──────────────────────────────────────────────────── */}
-      {tab === "listings" && (
-        <div className="p-4">
-          {filteredListings.length === 0 ? (
-            <EmptyState
-              icon={<Package size={24} />}
-              text={listings.length === 0 ? "Sin publicaciones activas." : "Ninguna publicación coincide con el filtro."}
-            />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {filteredListings.map((listing) => {
-                const card = listing.cards as { id: string; name: string; set_name: string | null; image_url: string | null; game: Game } | null;
-                return (
-                  <Link
-                    key={listing.id}
-                    href={card ? `/cards/${card.id}` : "#"}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-secondary/60 transition-colors no-underline group"
-                  >
-                    <div className="relative shrink-0 w-10 h-14 rounded-lg overflow-hidden border border-border bg-secondary">
-                      {card?.image_url ? (
-                        <Image src={card.image_url} alt={card.name} fill sizes="40px" className="object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Tag size={14} className="text-border" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold font-sans text-text-primary truncate group-hover:text-primary transition-colors">
-                        {card?.name ?? "Carta"}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {card?.game && <Badge variant={gameVariant[card.game]} size="sm" />}
-                        <span className="text-2xs text-text-muted font-sans">{listing.condition}</span>
-                        {listing.listing_type === "trade" && <Badge variant="amber" size="sm">Trade</Badge>}
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      {listing.price != null ? (
-                        <p className="font-price text-base text-text-primary">{formatARS(listing.price)}</p>
-                      ) : (
-                        <p className="text-xs text-text-muted font-sans">Ver oferta</p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
 

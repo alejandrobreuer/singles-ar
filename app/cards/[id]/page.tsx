@@ -9,7 +9,7 @@ import {
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
 import { setLabel }           from "@/lib/formatting";
-import { fantasyName }        from "@/lib/fantasy-name";
+import { SellerNameLink }     from "@/components/seller/SellerNameLink";
 import { Badge }              from "@/components/ui/badge";
 import { Button }             from "@/components/ui/button";
 import { Divider }            from "@/components/ui/divider";
@@ -375,7 +375,8 @@ export default async function CardDetailPage({
                     {lowestListing.price != null ? formatARS(lowestListing.price) : "—"}
                   </p>
                   <p className="text-xs text-text-muted font-sans mt-0.5">
-                    {lowestListing.condition} · {fantasyName(lowestListing.id)}
+                    {lowestListing.condition} ·{" "}
+                    <SellerNameLink listingId={lowestListing.id} sellerId={lowestListing.seller_id} />
                   </p>
                 </div>
               )}

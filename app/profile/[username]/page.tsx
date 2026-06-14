@@ -6,7 +6,7 @@ import { Star, ShieldAlert, Award } from "lucide-react";
 import { createAdminClient }  from "@/lib/supabase/admin";
 import { Avatar }             from "@/components/ui/avatar";
 import { Badge }              from "@/components/ui/badge";
-import type { ListingWithCard, ReviewWithReviewer, Game } from "@/types/database";
+import type { ReviewWithReviewer, Game } from "@/types/database";
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
@@ -71,19 +71,8 @@ export default async function PublicProfilePage({
 
   if (!profile) notFound();
 
-  // ── Parallel: active listings + received reviews + completed history ─────────
-  const [listingsResult, reviewsResult, historyResult] = await Promise.all([
-    admin
-      .from("listings")
-      .select(`
-        id, listing_type, price, condition, quantity, status, created_at,
-        cards ( id, name, set_name, image_url, game )
-      `)
-      .eq("seller_id", profile.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(50),
-
+  // ── Parallel: received reviews + completed history ────────────────────────────
+  const [reviewsResult, historyResult] = await Promise.all([
     admin
       .from("reviews")
       .select(`
@@ -106,7 +95,6 @@ export default async function PublicProfilePage({
       .limit(50),
   ]);
 
-  const listings = (listingsResult.data ?? []) as unknown as ListingWithCard[];
   const reviews  = (reviewsResult.data  ?? []) as unknown as ReviewWithReviewer[];
   const history  = (historyResult.data  ?? []) as unknown as HistoryItem[];
 
@@ -176,7 +164,6 @@ export default async function PublicProfilePage({
 
         {/* ── Tabs ────────────────────────────────────────────────────────── */}
         <PublicProfileTabs
-          listings={listings}
           reviews={reviews}
           history={history}
           gameVariant={GAME_VARIANT}

@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { TopbarGuard } from "@/components/layout/TopbarGuard";
 import { BetaBanner } from "@/components/layout/BetaBanner";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { SellerDrawer } from "@/components/seller/SellerDrawer";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -35,6 +36,7 @@ export default function RootLayout({
         <BetaBanner />
         <TopbarGuard />
         {children}
+        <SellerDrawer />
         <WhatsAppButton />
         <Toaster
           position="bottom-right"

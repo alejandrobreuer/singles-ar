@@ -9,6 +9,7 @@ import { Button }  from "@/components/ui/button";
 import { Avatar }  from "@/components/ui/avatar";
 import { formatARS }   from "@/lib/formatting";
 import { fantasyName } from "@/lib/fantasy-name";
+import { SellerNameLink } from "@/components/seller/SellerNameLink";
 import type { BuyOrderWithBuyer } from "@/types/database";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -124,7 +125,9 @@ export function BuyOrderCard({
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold font-sans text-text-primary truncate leading-tight">
-              {isOwn ? (buyer?.username ?? "Usuario desconocido") : alias}
+              {isOwn
+                ? (buyer?.username ?? "Usuario desconocido")
+                : <SellerNameLink listingId={order.id} sellerId={order.buyer_id} />}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
               <ReputationStars score={buyer?.reputation_score ?? null} />
