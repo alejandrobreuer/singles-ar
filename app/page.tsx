@@ -171,7 +171,7 @@ function HowItWorksSection() {
                 Ves el historial de precios de la plataforma y la reputación de cada vendedor — todo en un solo lugar.
               </Step>
               <Step n={3} title="Pagá con MercadoPago" tag={{ label: "Pago seguro", style: "mp" }}>
-                Seleccionás el listing y pagás de forma segura vía MercadoPago. El pago se procesa en el momento y el dinero se acredita al vendedor en hasta 72 horas.
+                Seleccionás el listing y pagás de forma segura vía MercadoPago. El pago se procesa en el momento; la acreditación al vendedor depende del historial de su cuenta de MercadoPago.
               </Step>
               <Step n={4} title="Coordiná la entrega por chat" tag={{ label: "Chat habilitado post-pago", style: "chat" }}>
                 Una vez confirmado el pago, se habilita el chat con el vendedor. Coordinan el encuentro, pedís fotos si querés, y acordán cómo y dónde entregar la carta.
@@ -198,8 +198,8 @@ function HowItWorksSection() {
               <Step n={3} title="Coordiná la entrega por chat" tag={{ label: "Chat post-pago", style: "chat" }}>
                 Cuando el comprador paga, se habilita el chat. Coordinan el encuentro, podés enviar fotos del estado real de la carta.
               </Step>
-              <Step n={4} title="El pago se acredita en 72 horas" last tag={{ label: "Acreditación automática", style: "mp" }}>
-                Una vez coordinada la entrega, el monto se acredita automáticamente en tu MercadoPago dentro de las 72 horas del pago. Sin necesidad de confirmación del comprador.
+              <Step n={4} title="El pago se acredita automáticamente" last tag={{ label: "Acreditación automática", style: "mp" }}>
+                Una vez coordinada la entrega, el monto se acredita solo en tu MercadoPago — sin necesidad de confirmación del comprador. El plazo lo define MercadoPago según tu historial: hasta 20 días con cuentas nuevas (comisión más baja), y se va acortando a medida que sumás ventas (con una comisión algo mayor).
               </Step>
             </div>
           </div>
