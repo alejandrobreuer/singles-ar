@@ -64,6 +64,7 @@ export function AdminSettingsForm({ settings }: Props) {
     }
     return init;
   });
+  const [bulkEnabled, setBulkEnabled] = React.useState(settings.bulk_listing_enabled ?? false);
   const [saving, setSaving]   = React.useState(false);
   const [message, setMessage] = React.useState<{ ok: boolean; text: string } | null>(null);
 
@@ -72,11 +73,12 @@ export function AdminSettingsForm({ settings }: Props) {
     setSaving(true);
     setMessage(null);
 
-    const body: Record<string, number> = {};
+    const body: Record<string, number | boolean> = {};
     for (const f of FIELDS) {
       const n = parseFloat(values[f.key]);
       if (!isNaN(n)) body[f.key] = n;
     }
+    body.bulk_listing_enabled = bulkEnabled;
 
     try {
       const res = await fetch("/api/admin/settings", {
@@ -122,6 +124,35 @@ export function AdminSettingsForm({ settings }: Props) {
           </div>
         </div>
       ))}
+
+      {/* Bulk listing toggle */}
+      <div className="bg-surface border border-border rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="block text-sm font-medium font-sans text-text-primary mb-0.5">
+              Publicación masiva de listings
+            </label>
+            <p className="text-xs text-text-muted font-sans">
+              Permite a los vendedores publicar múltiples listings en un solo paso.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={bulkEnabled}
+            onClick={() => setBulkEnabled((v) => !v)}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+              bulkEnabled ? "bg-primary" : "bg-border"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                bulkEnabled ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
 
       {message && (
         <p className={`text-sm font-sans ${message.ok ? "text-emerald-400" : "text-red-400"}`}>

@@ -29,6 +29,7 @@ import { useUser }              from "@/hooks/useUser";
 import { parseARSInput, formatARSNumber, setLabel } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }     from "@/lib/priceValidation";
 import { LocationPickerList }   from "@/components/ui/LocationPickerList";
+import { BulkSellFlow }         from "@/components/sell/BulkSellFlow";
 import type { CardSearchResult, Condition, CardLanguage, ListingType, AdminSettings, Game, LocationValue } from "@/types/database";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -65,6 +66,9 @@ function SellPageInner() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
   const { profile, loading: userLoading } = useUser();
+
+  // ── Mode state (single vs bulk) ────────────────────────────────────────────
+  const [mode, setMode] = React.useState<"single" | "bulk">("single");
 
   // ── Step state ────────────────────────────────────────────────────────────
   const [step,         setStep]         = React.useState<1 | 2 | 3>(1);
@@ -349,7 +353,49 @@ function SellPageInner() {
           </div>
         </div>
 
+        {/* ── Mode toggle (only when bulk is available) ─────────────────── */}
+        {settings.bulk_listing_enabled &&
+         profile &&
+         !profile.bulk_listing_disabled &&
+         profile.mercadopago_user_id && (
+          <div className="border-b border-border bg-surface">
+            <div className="mx-auto max-w-2xl px-4 sm:px-6 py-3">
+              <div className="inline-flex rounded-lg border border-border bg-secondary/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setMode("single")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-sans font-medium transition-all duration-150",
+                    mode === "single"
+                      ? "bg-surface text-text-primary shadow-sm"
+                      : "text-text-muted hover:text-text-secondary"
+                  )}
+                >
+                  Una carta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("bulk")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-sans font-medium transition-all duration-150",
+                    mode === "bulk"
+                      ? "bg-surface text-text-primary shadow-sm"
+                      : "text-text-muted hover:text-text-secondary"
+                  )}
+                >
+                  Varias cartas
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Content ───────────────────────────────────────────────────── */}
+        {mode === "bulk" ? (
+          <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
+            <BulkSellFlow settings={settings} />
+          </div>
+        ) : (
         <div className={cn("mx-auto px-4 sm:px-6 py-8", step === 1 && selectedGame ? "max-w-5xl" : "max-w-2xl")}>
           <StepIndicator steps={STEPS} currentStep={step - 1} className="mb-8" />
 
@@ -833,6 +879,7 @@ function SellPageInner() {
             </div>
           )}
         </div>
+        )}
       </main>
 
       {conditionGuideOpen && (

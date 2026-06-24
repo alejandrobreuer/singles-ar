@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   suspended_at              timestamptz,                           -- null = not suspended
   suspend_reason            text,
 
+  -- Bulk listing
+  bulk_listing_disabled     boolean DEFAULT false NOT NULL,
+
   -- Username change cooldown
   username_last_changed_at  timestamptz,
 
@@ -406,7 +409,8 @@ INSERT INTO public.admin_settings (key, value) VALUES
   ('max_cancels_before_flag',    '3'),    -- cancellations before is_reliable_buyer = false
   ('cancel_window_days',         '30'),   -- rolling window for cancel_count
   ('usd_to_ars_rate',            '1000'), -- informational; updated by cron
-  ('mp_fee_percent',             '5.99')  -- MercadoPago fee (informational)
+  ('mp_fee_percent',             '5.99'), -- MercadoPago fee (informational)
+  ('bulk_listing_enabled',       '"true"') -- global toggle for bulk listing mode
 ON CONFLICT (key) DO NOTHING;
 
 

@@ -18,7 +18,7 @@ export default async function AdminUsersPage({
     .select(
       "id, username, email, reputation_score, total_sales, total_purchases, " +
       "cancel_count, is_reliable_buyer, created_at, suspended_at, suspend_reason, " +
-      "mercadopago_access_token",
+      "mercadopago_access_token, bulk_listing_disabled",
       { count: "exact" }
     )
     .order("created_at", { ascending: false })

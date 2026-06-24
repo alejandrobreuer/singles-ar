@@ -20,6 +20,7 @@ interface AdminUser {
   suspended_at:     string | null;
   suspend_reason:   string | null;
   mercadopago_access_token: string | null;
+  bulk_listing_disabled: boolean;
 }
 
 interface Props {
@@ -34,7 +35,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
   const router  = useRouter();
   const [search, setSearch] = React.useState(q);
   const [confirmId, setConfirmId]  = React.useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = React.useState<"suspend" | "unsuspend" | "unflag" | null>(null);
+  const [confirmAction, setConfirmAction] = React.useState<"suspend" | "unsuspend" | "unflag" | "toggle_bulk" | null>(null);
   const [suspendReason, setSuspendReason] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
@@ -48,7 +49,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
     router.push(`/admin/users?${params.toString()}`);
   }
 
-  function openConfirm(id: string, action: "suspend" | "unsuspend" | "unflag") {
+  function openConfirm(id: string, action: "suspend" | "unsuspend" | "unflag" | "toggle_bulk") {
     setConfirmId(id);
     setConfirmAction(action);
     setSuspendReason("");
@@ -96,8 +97,9 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface border border-border rounded-2xl p-6 max-w-sm w-full">
             <h3 className="text-base font-semibold font-sans text-text-primary mb-2">
-              {confirmAction === "suspend"   ? "Suspender usuario"   :
-               confirmAction === "unsuspend" ? "Reactivar usuario"   :
+              {confirmAction === "suspend"     ? "Suspender usuario"   :
+               confirmAction === "unsuspend"   ? "Reactivar usuario"   :
+               confirmAction === "toggle_bulk" ? "Cambiar acceso a publicación masiva" :
                "Quitar flag de comprador"}
             </h3>
             {confirmAction === "suspend" && (
@@ -141,6 +143,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                 <th className="text-right px-4 py-2.5 font-medium">Ventas</th>
                 <th className="text-right px-4 py-2.5 font-medium">Cancels</th>
                 <th className="text-left px-4 py-2.5 font-medium">MP</th>
+                <th className="text-left px-4 py-2.5 font-medium">Bulk</th>
                 <th className="text-left px-4 py-2.5 font-medium">Estado</th>
                 <th className="text-left px-4 py-2.5 font-medium">Registro</th>
                 <th className="text-left px-4 py-2.5 font-medium">Acciones</th>
@@ -173,6 +176,23 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                         No vinculado
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <button
+                      onClick={() => openConfirm(u.id, "toggle_bulk")}
+                      title={u.bulk_listing_disabled ? "Activar publicación masiva" : "Desactivar publicación masiva"}
+                      className="cursor-pointer"
+                    >
+                      {u.bulk_listing_disabled ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400">
+                          Desactivado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
+                          Habilitado
+                        </span>
+                      )}
+                    </button>
                   </td>
                   <td className="px-4 py-2.5">
                     {u.suspended_at ? (
@@ -229,7 +249,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-text-muted">
+                  <td colSpan={10} className="px-4 py-8 text-center text-text-muted">
                     No se encontraron usuarios.
                   </td>
                 </tr>

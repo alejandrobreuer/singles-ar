@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   buy_order_default_days:      30,
   max_cancels_before_flag:     3,
   cancel_window_days:          1,
+  bulk_listing_enabled:        false,
 } as const;
 
 // ─── Price validation ─────────────────────────────────────────────────────────

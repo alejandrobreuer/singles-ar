@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
 const patchSchema = z.object({
   userId:         z.string().uuid(),
-  action:         z.enum(["suspend", "unsuspend", "unflag"]),
+  action:         z.enum(["suspend", "unsuspend", "unflag", "toggle_bulk"]),
   suspend_reason: z.string().max(300).optional(),
 });
 
@@ -76,6 +76,17 @@ export async function PATCH(req: NextRequest) {
     const { error: dbErr } = await admin
       .from("profiles")
       .update({ is_reliable_buyer: true, cancel_count: 0 })
+      .eq("id", userId);
+    if (dbErr) return NextResponse.json({ error: "DB error." }, { status: 500 });
+  } else if (action === "toggle_bulk") {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("bulk_listing_disabled")
+      .eq("id", userId)
+      .single();
+    const { error: dbErr } = await admin
+      .from("profiles")
+      .update({ bulk_listing_disabled: !(profile?.bulk_listing_disabled ?? false) })
       .eq("id", userId);
     if (dbErr) return NextResponse.json({ error: "DB error." }, { status: 500 });
   }

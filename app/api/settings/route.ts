@@ -21,9 +21,15 @@ export async function GET() {
     const settings = { ...DEFAULT_SETTINGS } as unknown as AdminSettings;
 
     for (const row of data) {
-      const val = parseFloat(String(row.value));
-      if (!isNaN(val) && row.key in DEFAULT_SETTINGS) {
-        (settings as unknown as Record<string, number>)[row.key] = val;
+      if (!(row.key in DEFAULT_SETTINGS)) continue;
+      const strVal = String(row.value);
+      if (strVal === "true" || strVal === "false") {
+        (settings as unknown as Record<string, boolean>)[row.key] = strVal === "true";
+      } else {
+        const val = parseFloat(strVal);
+        if (!isNaN(val)) {
+          (settings as unknown as Record<string, number>)[row.key] = val;
+        }
       }
     }
 

@@ -57,6 +57,9 @@ export interface Profile {
   cancel_count_reset_at:    string | null;
   is_reliable_buyer:        boolean;
 
+  // Bulk listing
+  bulk_listing_disabled:    boolean;
+
   // Admin moderation
   suspended_at:             string | null;  // null = active account
   suspend_reason:           string | null;
@@ -362,6 +365,7 @@ export interface AdminSettings {
   cancel_window_days:          number;  // rolling window for cancel_count
   usd_to_ars_rate:             number;  // informational exchange rate
   mp_fee_percent:              number;  // MercadoPago fee (informational)
+  bulk_listing_enabled:        boolean; // global toggle for bulk listing mode
 }
 
 export type AdminSettingKey = keyof AdminSettings;

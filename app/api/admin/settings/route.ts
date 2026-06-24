@@ -10,6 +10,7 @@ const patchSchema = z.object({
   max_cancels_before_flag:     z.number().int().min(1).max(10).optional(),
   usd_to_ars_rate:             z.number().positive().optional(),
   mp_fee_percent:              z.number().min(0).max(20).optional(),
+  bulk_listing_enabled:        z.boolean().optional(),
 });
 
 // ─── GET /api/admin/settings ──────────────────────────────────────────────────

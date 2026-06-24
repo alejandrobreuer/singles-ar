@@ -17,7 +17,12 @@ export default async function AdminSettingsPage() {
 
   const settings: Partial<AdminSettings> = {};
   for (const row of data ?? []) {
-    (settings as Record<string, number>)[row.key] = parseFloat(String(row.value));
+    const strVal = String(row.value);
+    if (strVal === "true" || strVal === "false") {
+      (settings as Record<string, boolean>)[row.key] = strVal === "true";
+    } else {
+      (settings as Record<string, number>)[row.key] = parseFloat(strVal);
+    }
   }
 
   return (
