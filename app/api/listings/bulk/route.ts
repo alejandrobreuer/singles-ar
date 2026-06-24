@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
   const { listings } = parsed.data;
 
   // Fetch all referenced cards to validate language
-  const cardIds = [...new Set(listings.map((l) => l.card_id))];
+  const cardIds = Array.from(new Set(listings.map((l) => l.card_id)));
   const { data: cards } = await admin
     .from("cards")
     .select("id, game, name")
