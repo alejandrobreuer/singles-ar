@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { CardAutocomplete } from "@/components/sell/CardAutocomplete";
 import { CONDITIONS, CONDITION_DETAILS } from "@/components/sell/ConditionModals";
 import { LanguageSelector } from "@/components/sell/LanguageSelector";
-import { CommissionBreakdown } from "@/components/sell/CommissionBreakdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Divider } from "@/components/ui/divider";
