@@ -73,8 +73,7 @@ export default async function MyProfilePage() {
         )
       `)
       .eq("seller_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(100),
+      .order("created_at", { ascending: false }),
 
     // All buy orders by this user, with card info
     admin

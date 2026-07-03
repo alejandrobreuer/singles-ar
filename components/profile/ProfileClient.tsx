@@ -11,6 +11,7 @@ import {
   Star, Award, ShieldAlert, Tag, Plus, RefreshCw,
   CheckCircle2, XCircle, Edit2, Trash2, Check, X,
   ChevronRight, ExternalLink, Zap, ListChecks,
+  ArrowUp, ArrowDown, ArrowUpDown,
 } from "lucide-react";
 import { toast }     from "sonner";
 import { cn }        from "@/lib/utils";
@@ -413,6 +414,39 @@ export function ProfileClient({
   const getListingName = React.useCallback((l: typeof listings[number]) => (l.cards as { name: string } | null)?.name ?? "", []);
   const listingFilters = useCardListFilters(listings, getListingCard, getListingName);
 
+  const [listingSort, setListingSort] = React.useState<{ key: string; dir: "asc" | "desc" } | null>(null);
+
+  function toggleListingSort(key: string) {
+    setListingSort((prev) =>
+      prev?.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" }
+    );
+  }
+
+  const sortedListings = React.useMemo(() => {
+    if (!listingSort) return listingFilters.filtered;
+    return [...listingFilters.filtered].sort((a, b) => {
+      const cardA = a.cards as { name: string; game: Game; set_code: string | null; set_name: string | null } | null;
+      const cardB = b.cards as { name: string; game: Game; set_code: string | null; set_name: string | null } | null;
+      let aVal: string | number = "";
+      let bVal: string | number = "";
+      switch (listingSort.key) {
+        case "name":     aVal = cardA?.name ?? ""; bVal = cardB?.name ?? ""; break;
+        case "game":     aVal = cardA?.game ?? ""; bVal = cardB?.game ?? ""; break;
+        case "set":      aVal = cardA?.set_code ?? cardA?.set_name ?? ""; bVal = cardB?.set_code ?? cardB?.set_name ?? ""; break;
+        case "type":     aVal = a.listing_type; bVal = b.listing_type; break;
+        case "language": aVal = a.language ?? ""; bVal = b.language ?? ""; break;
+        case "price":    aVal = a.price ?? 0; bVal = b.price ?? 0; break;
+        case "status":   aVal = a.status; bVal = b.status; break;
+      }
+      const cmp = typeof aVal === "number" && typeof bVal === "number"
+        ? aVal - bVal
+        : String(aVal).localeCompare(String(bVal), "es");
+      return listingSort.dir === "asc" ? cmp : -cmp;
+    });
+  }, [listingFilters.filtered, listingSort]);
+
   const getOrderCard = React.useCallback((o: typeof buyOrders[number]): CardFilterFields | null => {
     const card = o.cards as { set_name: string | null; set_code: string | null; rarity: string | null; color: string | null; game: Game } | null;
     return card ? { game: card.game, set_code: card.set_code, set_name: card.set_name, rarity: card.rarity, color: card.color } : null;
@@ -621,15 +655,40 @@ export function ProfileClient({
                           />
                         </th>
                       )}
-                      {["Carta", "Juego", "Set", "Tipo", "Idioma", "Ubicación", "Precio", "Estado", "Acciones"].map((h) => (
-                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">
-                          {h}
+                      {([
+                        { label: "Carta",     key: "name"     },
+                        { label: "Juego",     key: "game"     },
+                        { label: "Set",       key: "set"      },
+                        { label: "Tipo",      key: "type"     },
+                        { label: "Idioma",    key: "language" },
+                        { label: "Ubicación", key: null       },
+                        { label: "Precio",    key: "price"    },
+                        { label: "Estado",    key: "status"   },
+                        { label: "Acciones",  key: null       },
+                      ] as { label: string; key: string | null }[]).map(({ label, key }) => (
+                        <th key={label} className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">
+                          {key ? (
+                            <button
+                              onClick={() => toggleListingSort(key)}
+                              className="flex items-center gap-1 hover:text-text-primary transition-colors"
+                            >
+                              {label}
+                              {listingSort?.key === key
+                                ? listingSort.dir === "asc"
+                                  ? <ArrowUp size={11} className="text-primary" />
+                                  : <ArrowDown size={11} className="text-primary" />
+                                : <ArrowUpDown size={11} className="opacity-40" />
+                              }
+                            </button>
+                          ) : (
+                            label
+                          )}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {listingFilters.filtered.map((listing) => {
+                    {sortedListings.map((listing) => {
                       const card = listing.cards as { id: string; name: string; image_url: string | null; set_name: string | null; set_code: string | null; game: Game } | null;
                       const info = LISTING_STATUS_LABEL[listing.status] ?? { label: listing.status, variant: "slate" as const };
                       const isEditing = editingId === listing.id;
