@@ -115,7 +115,7 @@ export async function POST(
   });
 
   // Notify seller — awaited so it completes before the serverless function exits
-  const cardName = (listing.cards as { name: string } | null)?.name ?? "tu carta";
+  const cardName = (listing.cards as unknown as { name: string } | null)?.name ?? "tu carta";
   await notify({
     user_id: listing.seller_id,
     type:    "card_sold",
