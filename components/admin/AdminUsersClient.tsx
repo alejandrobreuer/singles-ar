@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { ShieldOff, ShieldCheck, Flag, History } from "lucide-react";
+import { ShieldOff, ShieldCheck, Flag, History, Package } from "lucide-react";
 
 interface AdminUser {
   id:               string;
@@ -21,6 +21,7 @@ interface AdminUser {
   suspend_reason:   string | null;
   mercadopago_access_token: string | null;
   bulk_listing_disabled: boolean;
+  listing_count: number;
 }
 
 interface Props {
@@ -144,6 +145,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                 <th className="text-right px-4 py-2.5 font-medium">Cancels</th>
                 <th className="text-left px-4 py-2.5 font-medium">MP</th>
                 <th className="text-left px-4 py-2.5 font-medium">Bulk</th>
+                <th className="text-right px-4 py-2.5 font-medium">Listings</th>
                 <th className="text-left px-4 py-2.5 font-medium">Estado</th>
                 <th className="text-left px-4 py-2.5 font-medium">Registro</th>
                 <th className="text-left px-4 py-2.5 font-medium">Acciones</th>
@@ -194,6 +196,9 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                       )}
                     </button>
                   </td>
+                  <td className="px-4 py-2.5 text-right text-text-secondary">
+                    {u.listing_count}
+                  </td>
                   <td className="px-4 py-2.5">
                     {u.suspended_at ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400">
@@ -210,6 +215,14 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/profile/${u.username}`}
+                        title="Ver listings"
+                        target="_blank"
+                        className="p-1 rounded hover:bg-primary/10 text-primary transition-colors"
+                      >
+                        <Package size={14} />
+                      </Link>
                       <Link
                         href={`/admin/transactions?user_id=${u.id}`}
                         title="Ver historial"
@@ -249,7 +262,7 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-text-muted">
+                  <td colSpan={12} className="px-4 py-8 text-center text-text-muted">
                     No se encontraron usuarios.
                   </td>
                 </tr>

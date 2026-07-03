@@ -27,7 +27,28 @@ export default async function AdminUsersPage({
   if (q) query = query.or(`username.ilike.%${q}%,email.ilike.%${q}%`);
 
   const { data: rawUsers, count } = await query;
-  const users = rawUsers as unknown as React.ComponentProps<typeof AdminUsersClient>["users"];
+
+  // Fetch listing counts for this page's users
+  const userIds = (rawUsers ?? []).map((u) => (u as { id: string }).id);
+  let listingCountMap: Record<string, number> = {};
+  if (userIds.length > 0) {
+    const { data: lc } = await admin
+      .from("listings")
+      .select("seller_id")
+      .in("seller_id", userIds);
+    listingCountMap = (lc ?? []).reduce(
+      (acc: Record<string, number>, l: { seller_id: string }) => {
+        acc[l.seller_id] = (acc[l.seller_id] ?? 0) + 1;
+        return acc;
+      },
+      {}
+    );
+  }
+
+  const users = (rawUsers ?? []).map((u) => ({
+    ...(u as unknown as React.ComponentProps<typeof AdminUsersClient>["users"][number]),
+    listing_count: listingCountMap[(u as { id: string }).id] ?? 0,
+  }));
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
