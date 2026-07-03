@@ -29,7 +29,7 @@ export default async function AdminUsersPage({
   const { data: rawUsers, count } = await query;
 
   // Fetch listing counts for this page's users
-  const userIds = (rawUsers ?? []).map((u) => (u as { id: string }).id);
+  const userIds = (rawUsers ?? []).map((u) => (u as unknown as { id: string }).id);
   let listingCountMap: Record<string, number> = {};
   if (userIds.length > 0) {
     const { data: lc } = await admin
@@ -47,7 +47,7 @@ export default async function AdminUsersPage({
 
   const users = (rawUsers ?? []).map((u) => ({
     ...(u as unknown as React.ComponentProps<typeof AdminUsersClient>["users"][number]),
-    listing_count: listingCountMap[(u as { id: string }).id] ?? 0,
+    listing_count: listingCountMap[(u as unknown as { id: string }).id] ?? 0,
   }));
 
   return (
