@@ -141,17 +141,17 @@ export async function POST(req: NextRequest, { params }: Params) {
     .update({ updated_at: new Date().toISOString() })
     .eq("id", params.transactionId);
 
-  // Non-blocking: notify the other participant about the new message
+  // Notify the other participant — awaited so it completes before the serverless function exits
   const recipientId    = transaction.buyer_id === user.id ? transaction.seller_id : transaction.buyer_id;
   const senderUsername = (message.sender as { username?: string } | null)?.username ?? "Alguien";
   const preview        = trimmed.length > 60 ? trimmed.slice(0, 57) + "…" : trimmed || null;
-  notify({
+  await notify({
     user_id: recipientId,
     type:    "new_message",
     title:   `Mensaje de ${senderUsername}`,
     body:    preview,
     link:    `/chat/${params.transactionId}`,
-  }).catch(() => null);
+  });
 
   return NextResponse.json({ data: message }, { status: 201 });
 }

@@ -31,7 +31,7 @@ export async function POST(
 
   const { data: listing, error: listingErr } = await admin
     .from("listings")
-    .select("id, card_id, seller_id, price, status, listing_type, quantity")
+    .select("id, card_id, seller_id, price, status, listing_type, quantity, cards(name)")
     .eq("id", params.id)
     .single();
 
@@ -114,21 +114,14 @@ export async function POST(
     message_type:   "system",
   });
 
-  // Non-blocking: notify seller of new purchase intent
-  const _sellerId = listing.seller_id;
-  const _cardId   = listing.card_id;
-  const _txId     = tx.id;
-  admin
-    .from("cards").select("name").eq("id", _cardId).single()
-    .then(
-      ({ data: card }) => notify({
-        user_id: _sellerId,
-        type:    "card_sold",
-        title:   `Quieren comprar: ${card?.name ?? "tu carta"}`,
-        link:    `/chat/${_txId}`,
-      }),
-      () => null
-    );
+  // Notify seller — awaited so it completes before the serverless function exits
+  const cardName = (listing.cards as { name: string } | null)?.name ?? "tu carta";
+  await notify({
+    user_id: listing.seller_id,
+    type:    "card_sold",
+    title:   `Quieren comprar: ${cardName}`,
+    link:    `/chat/${tx.id}`,
+  });
 
   return NextResponse.json({ data: { transactionId: tx.id } });
 }
