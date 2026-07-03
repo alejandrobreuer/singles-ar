@@ -86,7 +86,7 @@ export async function notifyMany(inputs: NotificationInput[]): Promise<void> {
   const emailable = inputs.filter((i) => EMAIL_TYPES.includes(i.type));
   if (emailable.length === 0) return;
 
-  const userIds = [...new Set(emailable.map((i) => i.user_id))];
+  const userIds = Array.from(new Set(emailable.map((i) => i.user_id)));
   const { data: profiles } = await admin
     .from("profiles")
     .select("id, email")
