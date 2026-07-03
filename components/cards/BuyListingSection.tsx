@@ -217,6 +217,11 @@ function BuyConfirmModal({
   const [step,  setStep]  = React.useState<"confirm" | "paying">("confirm");
   const [busy,  setBusy]  = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [qty,   setQty]   = React.useState(1);
+
+  const maxQty     = listing.quantity ?? 1;
+  const unitPrice  = listing.price ?? 0;
+  const totalPrice = unitPrice * qty;
 
   const { profiles: seller } = listing;
   const alias  = fantasyName(listing.id);
@@ -231,7 +236,11 @@ function BuyConfirmModal({
     setStep("paying");
     let transactionId: string;
     try {
-      const res  = await fetch(`/api/listings/${listing.id}/buy`, { method: "POST" });
+      const res  = await fetch(`/api/listings/${listing.id}/buy`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ qty }),
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Error al reservar la carta.");
       transactionId = json.data.transactionId;
@@ -332,10 +341,40 @@ function BuyConfirmModal({
               <span className="text-2xs text-text-muted font-sans">· {seller.total_sales} ventas</span>
             </div>
           </div>
-          <div className="shrink-0 font-price text-lg text-text-primary">
-            {listing.price != null ? formatARS(listing.price) : "—"}
+          <div className="shrink-0 text-right">
+            <div className="font-price text-lg text-text-primary">{formatARS(totalPrice)}</div>
+            {qty > 1 && (
+              <div className="text-2xs text-text-muted font-sans">{qty} × {formatARS(unitPrice)}</div>
+            )}
           </div>
         </div>
+
+        {/* Quantity stepper — only shown when listing has more than 1 unit */}
+        {maxQty > 1 && (
+          <div className="mx-5 mb-4 flex items-center justify-between px-3.5 py-3 rounded-xl border border-border bg-secondary/50">
+            <span className="text-xs font-semibold font-sans text-text-secondary uppercase tracking-wide">Cantidad</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                disabled={qty <= 1}
+                className="w-7 h-7 rounded-full border border-border bg-surface flex items-center justify-center text-text-primary hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-base leading-none"
+              >
+                −
+              </button>
+              <span className="w-6 text-center text-sm font-semibold font-sans text-text-primary">{qty}</span>
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                disabled={qty >= maxQty}
+                className="w-7 h-7 rounded-full border border-border bg-surface flex items-center justify-center text-text-primary hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-base leading-none"
+              >
+                +
+              </button>
+              <span className="text-2xs text-text-muted font-sans">de {maxQty} disponibles</span>
+            </div>
+          </div>
+        )}
 
         {/* Delivery options */}
         <div className="mx-5 mb-4 rounded-xl border border-border bg-secondary/50 px-3.5 py-3">
