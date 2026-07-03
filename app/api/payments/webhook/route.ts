@@ -155,13 +155,16 @@ export async function POST(req: NextRequest) {
     }),
   ];
 
-  // 2. Mark listing as sold (if from a listing)
+  // 3. Mark listing as sold only if stock is exhausted (status = "reserved").
+  // If quantity > 0 the buy route left it "active" — leave it alone so
+  // remaining units stay visible.
   if (tx.listing_id) {
     ops.push(
       admin
         .from("listings")
         .update({ status: "sold", updated_at: now })
         .eq("id", tx.listing_id)
+        .eq("status", "reserved")
     );
   }
 
