@@ -216,9 +216,8 @@ export function AdminUsersClient({ users, total, page, limit, q }: Props) {
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <Link
-                        href={`/profile/${u.username}`}
+                        href={`/admin/listings?seller_id=${u.id}`}
                         title="Ver listings"
-                        target="_blank"
                         className="p-1 rounded hover:bg-primary/10 text-primary transition-colors"
                       >
                         <Package size={14} />
