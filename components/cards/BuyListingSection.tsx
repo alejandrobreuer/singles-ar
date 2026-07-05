@@ -134,9 +134,13 @@ function BuyableListingRow({
               <span className="text-2xs text-text-muted font-sans">· {seller.total_sales} ventas</span>
             </div>
             {locationLabels.length > 0 && (
-              <p className="text-2xs text-text-muted font-sans truncate">
-                {locationLabels.length > 1 ? `${locationLabels[0]} +${locationLabels.length - 1}` : locationLabels[0]}
-              </p>
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {locationLabels.map((label) => (
+                  <p key={label} className="text-2xs font-sans font-semibold text-text-secondary">
+                    {label}
+                  </p>
+                ))}
+              </div>
             )}
           </div>
         </div>

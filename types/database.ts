@@ -383,6 +383,7 @@ export interface CardWithListingStats
   extends Omit<Card, "image_url"> {
   image_url:      string | null;   // resolved: override ?? original
   listing_count:  number;
+  total_stock:    number;
   lowest_price:   number | null;
   latest_listing: string | null;
 }

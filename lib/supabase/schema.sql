@@ -713,6 +713,7 @@ SELECT
   c.updated_at,
   c.color,
   COALESCE(s.listing_count, 0)                AS listing_count,
+  COALESCE(s.total_stock,  0)                AS total_stock,
   s.lowest_price,
   s.latest_listing
 FROM public.cards c
@@ -720,6 +721,7 @@ LEFT JOIN (
   SELECT
     card_id,
     COUNT(*)::integer       AS listing_count,
+    SUM(quantity)::integer  AS total_stock,
     MIN(price)              AS lowest_price,
     MAX(created_at)         AS latest_listing
   FROM public.listings

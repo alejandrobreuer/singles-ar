@@ -271,10 +271,15 @@ export default async function CardDetailPage({
 
                 {/* Quick stats */}
                 <div className="flex flex-wrap gap-3">
-                  <div className="flex flex-col">
-                    <span className="text-2xs text-text-muted font-sans uppercase tracking-wide">En venta</span>
-                    <span className="text-lg font-price text-text-primary">{listings.length}</span>
-                  </div>
+                  {(() => {
+                    const totalStock = listings.reduce((sum, l) => sum + (l.quantity ?? 1), 0);
+                    return totalStock > 0 ? (
+                      <div className="flex flex-col">
+                        <span className="text-2xs text-text-muted font-sans uppercase tracking-wide">En venta</span>
+                        <span className="text-lg font-price text-text-primary">{totalStock}</span>
+                      </div>
+                    ) : null;
+                  })()}
                   {lowestListing && (
                     <div className="flex flex-col">
                       <span className="text-2xs text-text-muted font-sans uppercase tracking-wide">Precio más bajo</span>

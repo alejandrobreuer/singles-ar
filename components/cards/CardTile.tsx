@@ -72,10 +72,10 @@ export function CardTile({ card, className }: CardTileProps) {
           <Badge variant={GAME_BADGE[card.game]} size="sm" />
         </div>
 
-        {/* Listing count pill — top right */}
-        {card.listing_count > 0 && (
+        {/* Total stock pill — top right */}
+        {card.total_stock > 0 && (
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-2xs font-sans font-medium px-1.5 py-0.5 rounded-md">
-            {card.listing_count} en venta
+            {card.total_stock} en venta
           </div>
         )}
       </div>
