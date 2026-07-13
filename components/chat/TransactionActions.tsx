@@ -52,19 +52,40 @@ export function TransactionActions({
     }
   }
 
-  async function handleConfirmDelivery() {
+  // Seller confirms delivery: in_chat (paid) -> delivered. On success we
+  // deliberately leave `busy` true (no `finally`) so the button stays
+  // disabled until router.refresh() swaps in the new status — otherwise
+  // there's a brief window where the button re-enables before the refreshed
+  // props replace this render.
+  async function handleSellerConfirmDelivery() {
     setError(null);
     setBusy(true);
     try {
       const res  = await fetch(`/api/transactions/${transaction.id}/confirm-delivery`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Error al confirmar.");
-      const next = json.transition === "completed" ? "completed" : "delivered";
-      onStatusChange?.(next);
+      onStatusChange?.("delivered");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
-    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Buyer marks the card received: available as soon as payment is
+  // confirmed, regardless of whether the seller has confirmed delivery yet.
+  // Always closes the transaction as completed.
+  async function handleMarkReceived() {
+    setError(null);
+    setBusy(true);
+    try {
+      const res  = await fetch(`/api/transactions/${transaction.id}/mark-received`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Error al confirmar.");
+      onStatusChange?.("completed");
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error inesperado.");
       setBusy(false);
     }
   }
@@ -286,15 +307,23 @@ export function TransactionActions({
             <Button
               variant="primary" size="sm"
               leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-              onClick={handleConfirmDelivery} disabled={busy}
+              onClick={handleSellerConfirmDelivery} disabled={busy}
             >
               {busy ? "Confirmando…" : "Confirmar entrega"}
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-text-muted text-xs font-sans">
-            <Clock size={13} />
-            Pago confirmado — esperando que el vendedor confirme la entrega…
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-text-muted font-sans">
+              Pago confirmado — esperando que el vendedor confirme la entrega. Si ya recibiste la carta, podés marcarla como recibida vos mismo/a.
+            </p>
+            <Button
+              variant="primary" size="sm"
+              leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+              onClick={handleMarkReceived} disabled={busy}
+            >
+              {busy ? "Confirmando…" : "Recibí la carta"}
+            </Button>
           </div>
         )}
         {errNode}
@@ -355,7 +384,7 @@ export function TransactionActions({
               <Button
                 variant="primary" size="sm" className="flex-1"
                 leftIcon={busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                onClick={handleConfirmDelivery} disabled={busy}
+                onClick={handleMarkReceived} disabled={busy}
               >
                 {busy ? "Confirmando…" : "Recibí la carta"}
               </Button>

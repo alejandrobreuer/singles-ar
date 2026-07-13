@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/auto-cancel-buy-orders",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/auto-complete-transactions",
+      "schedule": "0 * * * *"
     }
   ]
 }

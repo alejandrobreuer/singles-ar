@@ -4,14 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 // ─── POST /api/transactions/[id]/confirm-delivery ─────────────────────────────
 //
-// Two roles, two transitions:
-//
-//   Seller (status = in_chat, mp_payment_id set)
-//     → delivered_at = now(), release_at = now()+72h, status = 'delivered'
-//
-//   Buyer (status = delivered)
-//     → completed_at = now(), status = 'completed'
-//     → triggers price_history + reputation RPCs
+// Seller-only: status = in_chat (mp_payment_id set) → delivered.
+// Opens the 72h buyer-protection window (release_at). The transaction closes
+// automatically once that window elapses without a dispute — see
+// /api/cron/auto-complete-transactions. Buyers confirm receipt via
+// /api/transactions/[id]/mark-received instead, which is available even
+// before the seller confirms delivery.
 
 export async function POST(
   _req: NextRequest,
@@ -25,7 +23,7 @@ export async function POST(
 
   const { data: tx, error: fetchErr } = await admin
     .from("transactions")
-    .select("id, buyer_id, seller_id, card_id, price, status, listing_id, mp_payment_id")
+    .select("id, seller_id, status, mp_payment_id")
     .eq("id", params.id)
     .single();
 
@@ -33,82 +31,35 @@ export async function POST(
     return NextResponse.json({ error: "Transacción no encontrada." }, { status: 404 });
   }
 
-  const isBuyer  = tx.buyer_id  === user.id;
-  const isSeller = tx.seller_id === user.id;
-
-  if (!isBuyer && !isSeller) {
+  if (tx.seller_id !== user.id) {
     return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
   }
 
-  const now = new Date();
-
-  // ── Seller confirms delivery ──────────────────────────────────────────────────
-  if (isSeller) {
-    if (tx.status !== "in_chat" || !tx.mp_payment_id) {
-      return NextResponse.json(
-        { error: "Solo podés confirmar la entrega después de que el pago sea confirmado." },
-        { status: 422 }
-      );
-    }
-
-    const releaseAt = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
-
-    await Promise.all([
-      admin.from("transactions").update({
-        status:       "delivered",
-        delivered_at: now.toISOString(),
-        release_at:   releaseAt,
-        updated_at:   now.toISOString(),
-      }).eq("id", params.id),
-
-      admin.from("chat_messages").insert({
-        transaction_id: tx.id,
-        sender_id:      null,
-        body:           "📦 El vendedor confirmó la entrega. El comprador tiene 72 horas para reportar cualquier problema. Si no hay disputa, la transacción se cerrará automáticamente.",
-        message_type:   "system",
-      }),
-    ]);
-
-    return NextResponse.json({ ok: true, transition: "delivered" });
+  if (tx.status !== "in_chat" || !tx.mp_payment_id) {
+    return NextResponse.json(
+      { error: "Solo podés confirmar la entrega después de que el pago sea confirmado." },
+      { status: 422 }
+    );
   }
 
-  // ── Buyer confirms receipt ────────────────────────────────────────────────────
-  if (isBuyer) {
-    if (tx.status !== "delivered") {
-      return NextResponse.json(
-        { error: "Solo podés confirmar la recepción después de que el vendedor confirme la entrega." },
-        { status: 422 }
-      );
-    }
+  const now       = new Date();
+  const releaseAt = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
 
-    await Promise.all([
-      admin.from("transactions").update({
-        status:       "completed",
-        completed_at: now.toISOString(),
-        updated_at:   now.toISOString(),
-      }).eq("id", params.id),
+  await Promise.all([
+    admin.from("transactions").update({
+      status:       "delivered",
+      delivered_at: now.toISOString(),
+      release_at:   releaseAt,
+      updated_at:   now.toISOString(),
+    }).eq("id", params.id),
 
-      admin.rpc("increment_total_sales",     { seller_id: tx.seller_id }),
-      admin.rpc("increment_total_purchases", { buyer_id:  tx.buyer_id  }),
+    admin.from("chat_messages").insert({
+      transaction_id: tx.id,
+      sender_id:      null,
+      body:           "📦 El vendedor confirmó la entrega. El comprador tiene 72 horas para reportar cualquier problema. Si no hay disputa, la transacción se cerrará automáticamente.",
+      message_type:   "system",
+    }),
+  ]);
 
-      admin.from("price_history").insert({
-        card_id:     tx.card_id,
-        price_ars:   tx.price,
-        price_usd:   null,
-        source:      "listing",
-        recorded_at: now.toISOString(),
-      }),
-
-      admin.from("chat_messages").insert({
-        transaction_id: tx.id,
-        sender_id:      null,
-        body:           "✅ El comprador confirmó la recepción. ¡Transacción completada! Gracias por usar Card Stash.",
-        message_type:   "system",
-      }),
-    ]);
-
-    return NextResponse.json({ ok: true, transition: "completed" });
-  }
-
-  return NextResponse.json({ error: "Acción no válida." }, { status: 422 });
+  return NextResponse.json({ ok: true, transition: "delivered" });
 }
