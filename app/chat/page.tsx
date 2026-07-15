@@ -12,6 +12,11 @@ import type {
   TransactionWithDetails, ChatMessage,
 } from "@/types/database";
 
+// Same staleness concern as app/chat/[transactionId]/page.tsx — statuses and
+// previews here change from other pages/actions, so this list must always
+// reflect the latest row rather than a cached fetch response.
+export const dynamic = "force-dynamic";
+
 // ─── Status labels ────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }> = {

@@ -14,6 +14,13 @@ import type {
   TransactionWithDetails, ChatMessageWithSender,
 } from "@/types/database";
 
+// Transaction status changes constantly (payment, delivery, dispute) and this
+// page is reloaded via router.refresh() right after those mutations — without
+// this, Next's fetch Data Cache can keep serving the pre-mutation row even on
+// a hard reload, since cookies() alone opts the route into dynamic
+// *rendering* but doesn't disable fetch caching for the requests inside it.
+export const dynamic = "force-dynamic";
+
 // ─── Status label map ─────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }> = {
