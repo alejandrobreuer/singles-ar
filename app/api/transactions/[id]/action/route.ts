@@ -59,12 +59,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
-    const ops: PromiseLike<unknown>[] = [
-      admin
-        .from("transactions")
-        .update({ status: "cancelled", updated_at: now })
-        .eq("id", params.id),
-    ];
+    // Checked on its own: supabase-js resolves query calls with { error }
+    // instead of rejecting, so bundling this into an unchecked Promise.all
+    // would let a failed update return 200 without the transaction actually
+    // changing state.
+    const { error: updateErr } = await admin
+      .from("transactions")
+      .update({ status: "cancelled", updated_at: now })
+      .eq("id", params.id);
+
+    if (updateErr) {
+      console.error(`action/cancel: failed to update transaction ${tx.id}:`, updateErr.message);
+      return NextResponse.json({ error: "No se pudo cancelar. Intentá de nuevo." }, { status: 500 });
+    }
+
+    const ops: PromiseLike<unknown>[] = [];
 
     // Restore buy order to active if applicable
     if (tx.buy_order_id) {

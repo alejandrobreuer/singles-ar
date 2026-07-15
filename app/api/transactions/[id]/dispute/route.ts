@@ -49,19 +49,24 @@ export async function POST(
 
   const now = new Date().toISOString();
 
-  await Promise.all([
-    admin.from("transactions").update({
-      status:     "disputed",
-      updated_at: now,
-    }).eq("id", params.id),
+  const { error: updateErr } = await admin.from("transactions").update({
+    status:     "disputed",
+    updated_at: now,
+  }).eq("id", params.id);
 
-    admin.from("chat_messages").insert({
-      transaction_id: tx.id,
-      sender_id:      null,
-      body:           "⚠️ El comprador abrió una disputa. El equipo de Card Stash la revisará. En caso de validarse, el vendedor deberá reembolsar el pago.",
-      message_type:   "system",
-    }),
-  ]);
+  if (updateErr) {
+    console.error(`dispute: failed to update transaction ${tx.id}:`, updateErr.message);
+    return NextResponse.json({ error: "No se pudo abrir la disputa. Intentá de nuevo." }, { status: 500 });
+  }
+
+  const { error: msgErr } = await admin.from("chat_messages").insert({
+    transaction_id: tx.id,
+    sender_id:      null,
+    body:           "⚠️ El comprador abrió una disputa. El equipo de Card Stash la revisará. En caso de validarse, el vendedor deberá reembolsar el pago.",
+    message_type:   "system",
+  });
+
+  if (msgErr) console.error(`dispute: failed to post system message for ${tx.id}:`, msgErr.message);
 
   // Notify admin team (console for now — replace with email/Slack webhook when ready)
   console.warn(

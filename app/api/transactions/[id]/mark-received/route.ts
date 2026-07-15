@@ -47,14 +47,19 @@ export async function POST(
     );
   }
 
-  await completeTransaction(admin, {
-    id:            tx.id,
-    cardId:        tx.card_id,
-    price:         tx.price,
-    buyerId:       tx.buyer_id,
-    sellerId:      tx.seller_id,
-    systemMessage: "✅ El comprador confirmó la recepción. ¡Transacción completada! Gracias por usar Card Stash.",
-  });
+  try {
+    await completeTransaction(admin, {
+      id:            tx.id,
+      cardId:        tx.card_id,
+      price:         tx.price,
+      buyerId:       tx.buyer_id,
+      sellerId:      tx.seller_id,
+      systemMessage: "✅ El comprador confirmó la recepción. ¡Transacción completada! Gracias por usar Card Stash.",
+    });
+  } catch (err: unknown) {
+    console.error(`mark-received: failed to complete transaction ${tx.id}:`, err);
+    return NextResponse.json({ error: "No se pudo confirmar la recepción. Intentá de nuevo." }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, transition: "completed" });
 }

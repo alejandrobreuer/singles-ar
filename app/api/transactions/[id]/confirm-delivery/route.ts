@@ -45,21 +45,30 @@ export async function POST(
   const now       = new Date();
   const releaseAt = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
 
-  await Promise.all([
-    admin.from("transactions").update({
-      status:       "delivered",
-      delivered_at: now.toISOString(),
-      release_at:   releaseAt,
-      updated_at:   now.toISOString(),
-    }).eq("id", params.id),
+  // Checked on its own: supabase-js resolves query calls with { error }
+  // instead of rejecting, so bundling this into an unchecked Promise.all
+  // would let a failed update (e.g. a schema mismatch) return 200 without
+  // the transaction actually changing state.
+  const { error: updateErr } = await admin.from("transactions").update({
+    status:       "delivered",
+    delivered_at: now.toISOString(),
+    release_at:   releaseAt,
+    updated_at:   now.toISOString(),
+  }).eq("id", params.id);
 
-    admin.from("chat_messages").insert({
-      transaction_id: tx.id,
-      sender_id:      null,
-      body:           "📦 El vendedor confirmó la entrega. El comprador tiene 72 horas para reportar cualquier problema. Si no hay disputa, la transacción se cerrará automáticamente.",
-      message_type:   "system",
-    }),
-  ]);
+  if (updateErr) {
+    console.error(`confirm-delivery: failed to update transaction ${tx.id}:`, updateErr.message);
+    return NextResponse.json({ error: "No se pudo confirmar la entrega. Intentá de nuevo." }, { status: 500 });
+  }
+
+  const { error: msgErr } = await admin.from("chat_messages").insert({
+    transaction_id: tx.id,
+    sender_id:      null,
+    body:           "📦 El vendedor confirmó la entrega. El comprador tiene 72 horas para reportar cualquier problema. Si no hay disputa, la transacción se cerrará automáticamente.",
+    message_type:   "system",
+  });
+
+  if (msgErr) console.error(`confirm-delivery: failed to post system message for ${tx.id}:`, msgErr.message);
 
   return NextResponse.json({ ok: true, transition: "delivered" });
 }

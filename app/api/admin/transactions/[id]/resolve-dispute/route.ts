@@ -53,15 +53,24 @@ export async function POST(
 
   const finalStatus = resolution === "seller" ? "completed" : "disputed";
 
-  await Promise.all([
-    admin.from("transactions").update({
-      dispute_resolved_at: now,
-      dispute_resolution:  resolution,
-      status:              finalStatus,
-      ...(resolution === "seller" ? { completed_at: now } : {}),
-      updated_at:          now,
-    }).eq("id", params.id),
+  // Checked on its own: supabase-js resolves query calls with { error }
+  // instead of rejecting, so bundling this into an unchecked Promise.all
+  // would let a failed update return 200 without the transaction actually
+  // changing state.
+  const { error: updateErr } = await admin.from("transactions").update({
+    dispute_resolved_at: now,
+    dispute_resolution:  resolution,
+    status:              finalStatus,
+    ...(resolution === "seller" ? { completed_at: now } : {}),
+    updated_at:          now,
+  }).eq("id", params.id);
 
+  if (updateErr) {
+    console.error(`resolve-dispute: failed to update transaction ${tx.id}:`, updateErr.message);
+    return NextResponse.json({ error: "No se pudo resolver la disputa." }, { status: 500 });
+  }
+
+  const results = await Promise.all([
     admin.from("chat_messages").insert({
       transaction_id: tx.id,
       sender_id:      null,
@@ -77,6 +86,10 @@ export async function POST(
       admin.rpc("increment_total_purchases", { buyer_id:  tx.buyer_id  }),
     ] : []),
   ]);
+
+  for (const { error } of results) {
+    if (error) console.error(`resolve-dispute: side effect failed for ${tx.id}:`, error.message);
+  }
 
   console.log(`[dispute] Resolved ${params.id} in favour of ${resolution}`);
 

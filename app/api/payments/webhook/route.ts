@@ -128,25 +128,34 @@ export async function POST(req: NextRequest) {
     ? Number(tx.price) - Number(tx.platform_fee) - mpFee
     : null;
 
-  // ── Run all side-effects in parallel ────────────────────────────────────────
+  // ── Critical update: transaction → in_chat ──────────────────────────────────
+  // Checked on its own and logged loudly if it fails: supabase-js resolves
+  // query calls with { error } instead of rejecting, so this would otherwise
+  // silently no-op inside the Promise.all below. We still always return 200
+  // to MP regardless (see note at the bottom) — but a failure here needs to
+  // be visible in logs since there's no other symptom (payment succeeded,
+  // MP won't retry, and nothing in the UI signals the chat never opened).
+  const { error: updateErr } = await admin
+    .from("transactions")
+    .update({
+      status:             "in_chat",
+      mp_payment_id:      paymentId,
+      mp_fee:             mpFee,
+      mp_settlement_date: payment.money_release_date ?? null,
+      seller_net:         sellerNet,
+      updated_at:         now,
+    })
+    .eq("id", transactionId);
+
+  if (updateErr) {
+    console.error(`[webhook] CRITICAL: failed to update transaction ${transactionId} to in_chat:`, updateErr.message);
+  }
+
+  // ── Run remaining side-effects in parallel ──────────────────────────────────
   // NOTE: MP already transferred funds to the seller's account at this point.
-  // We open the chat so both parties can coordinate delivery.
   const ops: PromiseLike<unknown>[] = [
 
-    // 1. Update transaction → in_chat (chat opens), save MP payment ID + settlement info
-    admin
-      .from("transactions")
-      .update({
-        status:             "in_chat",
-        mp_payment_id:      paymentId,
-        mp_fee:             mpFee,
-        mp_settlement_date: payment.money_release_date ?? null,
-        seller_net:         sellerNet,
-        updated_at:         now,
-      })
-      .eq("id", transactionId),
-
-    // 2. System message — chat is now open
+    // System message — chat is now open
     admin.from("chat_messages").insert({
       transaction_id: transactionId,
       sender_id:      null,
@@ -155,7 +164,7 @@ export async function POST(req: NextRequest) {
     }),
   ];
 
-  // 3. Mark listing as sold only if stock is exhausted (status = "reserved").
+  // Mark listing as sold only if stock is exhausted (status = "reserved").
   // If quantity > 0 the buy route left it "active" — leave it alone so
   // remaining units stay visible.
   if (tx.listing_id) {
@@ -168,7 +177,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. Mark buy order as filled (if from a buy order)
+  // Mark buy order as filled (if from a buy order)
   if (tx.buy_order_id) {
     ops.push(
       admin
