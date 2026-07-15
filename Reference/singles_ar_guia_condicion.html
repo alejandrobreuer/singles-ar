@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de Condición de Cartas — Singles.ar</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cream:  #f7f5f0;
+  --white:  #ffffff;
+  --navy:   #1a2744;
+  --navy2:  #243258;
+  --slate:  #4a5578;
+  --slate2: #6b7a9e;
+  --mist:   #dde3ef;
+  --mist2:  #edf0f7;
+  --mist3:  #f3f5fa;
+  --gold:   #b5862a;
+  --gold2:  #d4a84b;
+  --border: #d8dde8;
+  --text:   #1a2030;
+  --text2:  #4a5578;
+  --text3:  #8a96b0;
+  --nm:     #1a7a4a;
+  --nm-bg:  #edf7f2;
+  --nm-bd:  #b8dece;
+  --lp:     #2563a8;
+  --lp-bg:  #eef4fd;
+  --lp-bd:  #bed5f0;
+  --mp:     #b45309;
+  --mp-bg:  #fef9ee;
+  --mp-bd:  #f0ddb0;
+  --hp:     #c0392b;
+  --hp-bg:  #fdf0ee;
+  --hp-bd:  #f0c8c3;
+  --d:      #5b3fa0;
+  --d-bg:   #f5f0fe;
+  --d-bd:   #d4c5f5;
+  --serif:  'Playfair Display', Georgia, serif;
+  --sans:   'DM Sans', system-ui, sans-serif;
+}
+body {
+  font-family: var(--sans);
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* TOPBAR */
+.topbar {
+  background: var(--navy);
+  padding: 0 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px;
+}
+.logo { font-family: var(--serif); font-size: 17px; font-weight: 600; color: white; }
+.logo span { color: var(--gold2); }
+.back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.15s; }
+.back-link:hover { color: white; }
+
+/* HERO */
+.hero {
+  background: var(--navy);
+  padding: 52px 40px 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.eyebrow {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--gold2);
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.eyebrow::before { content:''; width:20px; height:1px; background:var(--gold2); }
+.hero h1 { font-family: var(--serif); font-size: 38px; font-weight: 700; color: white; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 14px; }
+.hero p { font-size: 15px; color: rgba(255,255,255,0.55); max-width: 540px; line-height: 1.7; }
+
+/* MAIN */
+.main { max-width: 860px; margin: 0 auto; padding: 40px 40px 80px; }
+
+/* GRADE CARDS */
+.grade-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.grade-card:hover { box-shadow: 0 6px 24px rgba(26,39,68,0.09); }
+
+.grade-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.grade-badge {
+  font-family: var(--serif);
+  font-size: 13px; font-weight: 700;
+  padding: 5px 12px; border-radius: 5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.grade-title { font-family: var(--serif); font-size: 19px; font-weight: 600; color: var(--navy); }
+.grade-subtitle { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.grade-bar { flex: 1; display: flex; justify-content: flex-end; }
+.condition-dots { display: flex; gap: 4px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.grade-body { padding: 20px 24px; }
+.grade-desc { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 16px; }
+
+.criteria-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.criterion {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--mist3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 11px 13px;
+}
+.crit-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.crit-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 2px; }
+.crit-val { font-size: 13px; color: var(--text); font-weight: 500; }
+
+.grade-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--mist3);
+  flex-wrap: wrap; gap: 8px;
+}
+.legal-tag {
+  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.legal-yes { background: #edf7f2; color: var(--nm); border: 1px solid var(--nm-bd); }
+.legal-usually { background: #eef4fd; color: var(--lp); border: 1px solid var(--lp-bd); }
+.legal-sometimes { background: var(--mp-bg); color: var(--mp); border: 1px solid var(--mp-bd); }
+.legal-rarely { background: var(--d-bg); color: var(--d); border: 1px solid var(--d-bd); }
+.price-impact { font-size: 12px; color: var(--text3); }
+.price-impact strong { color: var(--text); }
+
+/* NM colors */
+.nm .grade-badge { background: var(--nm-bg); color: var(--nm); border: 1px solid var(--nm-bd); }
+.nm .dot.filled { background: var(--nm); }
+.nm .dot.empty { background: var(--nm-bd); }
+/* LP colors */
+.lp .grade-badge { background: var(--lp-bg); color: var(--lp); border: 1px solid var(--lp-bd); }
+.lp .dot.filled { background: var(--lp); }
+.lp .dot.empty { background: var(--lp-bd); }
+/* MP colors */
+.mp .grade-badge { background: var(--mp-bg); color: var(--mp); border: 1px solid var(--mp-bd); }
+.mp .dot.filled { background: var(--mp); }
+.mp .dot.empty { background: var(--mp-bd); }
+/* HP colors */
+.hp .grade-badge { background: var(--hp-bg); color: var(--hp); border: 1px solid var(--hp-bd); }
+.hp .dot.filled { background: var(--hp); }
+.hp .dot.empty { background: var(--hp-bd); }
+/* D colors */
+.d .grade-badge { background: var(--d-bg); color: var(--d); border: 1px solid var(--d-bd); }
+.d .dot.filled { background: var(--d); }
+.d .dot.empty { background: var(--d-bd); }
+
+/* QUICK TABLE */
+.section-head {
+  font-family: var(--serif); font-size: 22px; font-weight: 600;
+  color: var(--navy); margin: 40px 0 16px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.quick-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.quick-table th {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text3);
+  padding: 10px 14px; text-align: left;
+  background: var(--mist3); border-bottom: 1px solid var(--border);
+}
+.quick-table td {
+  padding: 13px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text2); vertical-align: middle;
+}
+.quick-table tr:last-child td { border-bottom: none; }
+.quick-table tr:hover td { background: var(--mist3); }
+.grade-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px;
+  border-radius: 4px; white-space: nowrap;
+}
+
+/* TIP BOX */
+.tip-box {
+  background: var(--white); border: 1px solid var(--border);
+  border-left: 3px solid var(--navy);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px; margin-top: 24px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.tip-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.tip-title { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+.tip-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .topbar { padding: 0 16px; }
+  .hero { padding: 36px 16px; }
+  .hero h1 { font-size: 28px; }
+  .main { padding: 24px 16px 60px; }
+  .criteria-grid { grid-template-columns: 1fr; }
+  .grade-header { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="logo">Singles<span>.ar</span></div>
+  <a class="back-link" href="#">← Volver al inicio</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Guía de referencia</div>
+    <h1>Condición de las cartas</h1>
+    <p>Entendé qué significa cada categoría antes de comprar o vender. Esta escala es el estándar internacional usado en Magic, Pokémon y One Piece TCG.</p>
+  </div>
+</section>
+
+<main class="main">
+
+  <!-- NM -->
+  <div class="grade-card nm">
+    <div class="grade-header">
+      <span class="grade-badge">NM</span>
+      <div>
+        <div class="grade-title">Near Mint — Casi Nueva</div>
+        <div class="grade-subtitle">El estándar más alto. Como recién salida del sobre.</div>
+      </div>
+      <div class="grade-bar">
+        <div class="condition-dots">
+          <div class="dot filled"></div><div class="dot filled"></div>
+          <div class="dot filled"></div><div class="dot filled"></div>
+          <div class="dot filled"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-body">
+      <p class="grade-desc">La carta está en condición prácticamente perfecta. Puede haber imperfecciones mínimas por el manejo normal al salir del sobre, pero son imperceptibles a distancia normal. Es el estándar que buscan coleccionistas y jugadores competitivos.</p>
+      <div class="criteria-grid">
+        <div class="criterion">
+          <div class="crit-icon">⬡</div>
+          <div><div class="crit-label">Esquinas y bordes</div><div class="crit-val">Perfectos, sin desgaste visible</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">✦</div>
+          <div><div class="crit-label">Superficie</div><div class="crit-val">Limpia, sin rayones ni marcas</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">〰</div>
+          <div><div class="crit-label">Pliegues o dobleces</div><div class="crit-val">Ninguno</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">💧</div>
+          <div><div class="crit-label">Daño por agua</div><div class="crit-val">Ninguno</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="legal-tag legal-yes">✓ Legal en torneos</span>
+        <span style="font-size:11px;color:var(--text3)">Siempre</span>
+      </div>
+      <span class="price-impact">Impacto en precio: <strong>Precio base de referencia</strong></span>
+    </div>
+  </div>
+
+  <!-- LP -->
+  <div class="grade-card lp">
+    <div class="grade-header">
+      <span class="grade-badge">LP</span>
+      <div>
+        <div class="grade-title">Lightly Played — Poco Jugada</div>
+        <div class="grade-subtitle">Jugada pero bien cuidada. Sigue luciendo muy bien.</div>
+      </div>
+      <div class="grade-bar">
+        <div class="condition-dots">
+          <div class="dot filled"></div><div class="dot filled"></div>
+          <div class="dot filled"></div><div class="dot filled"></div>
+          <div class="dot empty"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-body">
+      <p class="grade-desc">La carta fue usada pero con cuidado. Tiene desgaste muy leve, típico del uso normal. La mayoría de los jugadores competitivos aceptan cartas LP sin problema. Sigue siendo una excelente condición para jugar y coleccionar.</p>
+      <div class="criteria-grid">
+        <div class="criterion">
+          <div class="crit-icon">⬡</div>
+          <div><div class="crit-label">Esquinas y bordes</div><div class="crit-val">Leve blanqueado en 1–2 esquinas</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">✦</div>
+          <div><div class="crit-label">Superficie</div><div class="crit-val">Posibles rayaduras muy leves bajo luz directa</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">〰</div>
+          <div><div class="crit-label">Pliegues o dobleces</div><div class="crit-val">Ninguno</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">💧</div>
+          <div><div class="crit-label">Daño por agua</div><div class="crit-val">Ninguno</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="legal-tag legal-yes">✓ Legal en torneos</span>
+        <span style="font-size:11px;color:var(--text3)">Siempre</span>
+      </div>
+      <span class="price-impact">Impacto en precio: <strong>10–20% menos que NM</strong></span>
+    </div>
+  </div>
+
+  <!-- MP -->
+  <div class="grade-card mp">
+    <div class="grade-header">
+      <span class="grade-badge">MP</span>
+      <div>
+        <div class="grade-title">Moderately Played — Moderadamente Jugada</div>
+        <div class="grade-subtitle">Desgaste visible pero estructuralmente en buen estado.</div>
+      </div>
+      <div class="grade-bar">
+        <div class="condition-dots">
+          <div class="dot filled"></div><div class="dot filled"></div>
+          <div class="dot filled"></div><div class="dot empty"></div>
+          <div class="dot empty"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-body">
+      <p class="grade-desc">La carta muestra desgaste notorio en múltiples puntos, pero no compromete su integridad estructural. Sigue siendo funcional para jugar. El precio baja considerablemente respecto a NM/LP, lo que la hace atractiva para armar mazos de uso diario.</p>
+      <div class="criteria-grid">
+        <div class="criterion">
+          <div class="crit-icon">⬡</div>
+          <div><div class="crit-label">Esquinas y bordes</div><div class="crit-val">Blanqueado visible en varias esquinas</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">✦</div>
+          <div><div class="crit-label">Superficie</div><div class="crit-val">Rayaduras o marcas notorias</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">〰</div>
+          <div><div class="crit-label">Pliegues o dobleces</div><div class="crit-val">Posible pliegue muy leve</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">💧</div>
+          <div><div class="crit-label">Daño por agua</div><div class="crit-val">Posible mínimo en los bordes</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="legal-tag legal-usually">✓ Legal en torneos</span>
+        <span style="font-size:11px;color:var(--text3)">Generalmente</span>
+      </div>
+      <span class="price-impact">Impacto en precio: <strong>30–50% menos que NM</strong></span>
+    </div>
+  </div>
+
+  <!-- HP -->
+  <div class="grade-card hp">
+    <div class="grade-header">
+      <span class="grade-badge">HP</span>
+      <div>
+        <div class="grade-title">Heavily Played — Muy Jugada</div>
+        <div class="grade-subtitle">Desgaste significativo. Se nota que tuvo mucho uso.</div>
+      </div>
+      <div class="grade-bar">
+        <div class="condition-dots">
+          <div class="dot filled"></div><div class="dot filled"></div>
+          <div class="dot empty"></div><div class="dot empty"></div>
+          <div class="dot empty"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-body">
+      <p class="grade-desc">La carta muestra desgaste severo en esquinas, bordes y superficie. Puede tener un doblez o ligera curvatura. Es reconocible dentro de un mazo ensleevado en torneos, lo que puede generar problemas con los jueces. Ideal para juego casual o como reemplazo temporal.</p>
+      <div class="criteria-grid">
+        <div class="criterion">
+          <div class="crit-icon">⬡</div>
+          <div><div class="crit-label">Esquinas y bordes</div><div class="crit-val">Chipping o despostillado severo</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">✦</div>
+          <div><div class="crit-label">Superficie</div><div class="crit-val">Rayaduras profundas, textura rugosa</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">〰</div>
+          <div><div class="crit-label">Pliegues o dobleces</div><div class="crit-val">Posible pliegue o leve curvatura</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">💧</div>
+          <div><div class="crit-label">Daño por agua</div><div class="crit-val">Posible en bordes o esquinas</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="legal-tag legal-sometimes">⚠ Legal en torneos</span>
+        <span style="font-size:11px;color:var(--text3)">A veces — puede ser objetada</span>
+      </div>
+      <span class="price-impact">Impacto en precio: <strong>50–70% menos que NM</strong></span>
+    </div>
+  </div>
+
+  <!-- D -->
+  <div class="grade-card d">
+    <div class="grade-header">
+      <span class="grade-badge">D</span>
+      <div>
+        <div class="grade-title">Damaged — Dañada</div>
+        <div class="grade-subtitle">Daño estructural. Generalmente no apta para torneos.</div>
+      </div>
+      <div class="grade-bar">
+        <div class="condition-dots">
+          <div class="dot filled"></div><div class="dot empty"></div>
+          <div class="dot empty"></div><div class="dot empty"></div>
+          <div class="dot empty"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-body">
+      <p class="grade-desc">La carta tiene daño estructural que afecta su integridad. Puede tener roturas, agujeros, marcas de escritura o deformaciones permanentes. Solo tiene valor para completar colecciones, juego casual donde no importa el estado, o como carta de proxy. No es apta para torneos oficiales.</p>
+      <div class="criteria-grid">
+        <div class="criterion">
+          <div class="crit-icon">⬡</div>
+          <div><div class="crit-label">Esquinas y bordes</div><div class="crit-val">Chipping severo, piezas faltantes</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">✦</div>
+          <div><div class="crit-label">Superficie</div><div class="crit-val">Roturas, agujeros o marcas de tinta</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">〰</div>
+          <div><div class="crit-label">Pliegues o dobleces</div><div class="crit-val">Sí — doblez o curvatura permanente</div></div>
+        </div>
+        <div class="criterion">
+          <div class="crit-icon">💧</div>
+          <div><div class="crit-label">Daño por agua</div><div class="crit-val">Posible daño severo o alabeo</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grade-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="legal-tag legal-rarely">✗ No legal en torneos</span>
+        <span style="font-size:11px;color:var(--text3)">Identificable en mazo ensleevado</span>
+      </div>
+      <span class="price-impact">Impacto en precio: <strong>70–90% menos que NM</strong></span>
+    </div>
+  </div>
+
+  <!-- QUICK TABLE -->
+  <h2 class="section-head">Tabla de referencia rápida</h2>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+    <table class="quick-table">
+      <thead>
+        <tr>
+          <th>Condición</th>
+          <th>Esquinas / Bordes</th>
+          <th>Superficie</th>
+          <th>Pliegues</th>
+          <th>Legal en torneo</th>
+          <th>Precio vs NM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="grade-pill" style="background:var(--nm-bg);color:var(--nm);border:1px solid var(--nm-bd)">NM — Casi Nueva</span></td>
+          <td>Perfectos</td>
+          <td>Perfecta</td>
+          <td>Ninguno</td>
+          <td><span style="color:var(--nm);font-weight:600">✓ Siempre</span></td>
+          <td><strong>Precio base</strong></td>
+        </tr>
+        <tr>
+          <td><span class="grade-pill" style="background:var(--lp-bg);color:var(--lp);border:1px solid var(--lp-bd)">LP — Poco Jugada</span></td>
+          <td>Leve en 1–2 esquinas</td>
+          <td>Rayaduras mínimas</td>
+          <td>Ninguno</td>
+          <td><span style="color:var(--lp);font-weight:600">✓ Siempre</span></td>
+          <td>−10 a −20%</td>
+        </tr>
+        <tr>
+          <td><span class="grade-pill" style="background:var(--mp-bg);color:var(--mp);border:1px solid var(--mp-bd)">MP — Mod. Jugada</span></td>
+          <td>Visible en varias</td>
+          <td>Rayaduras notorias</td>
+          <td>Posible leve</td>
+          <td><span style="color:var(--mp);font-weight:600">✓ Generalmente</span></td>
+          <td>−30 a −50%</td>
+        </tr>
+        <tr>
+          <td><span class="grade-pill" style="background:var(--hp-bg);color:var(--hp);border:1px solid var(--hp-bd)">HP — Muy Jugada</span></td>
+          <td>Severo en todas</td>
+          <td>Profundas, rugosa</td>
+          <td>Posible</td>
+          <td><span style="color:var(--hp);font-weight:600">⚠ A veces</span></td>
+          <td>−50 a −70%</td>
+        </tr>
+        <tr>
+          <td><span class="grade-pill" style="background:var(--d-bg);color:var(--d);border:1px solid var(--d-bd)">D — Dañada</span></td>
+          <td>Chipping / faltantes</td>
+          <td>Roturas, marcas</td>
+          <td>Permanente</td>
+          <td><span style="color:var(--d);font-weight:600">✗ Raramente</span></td>
+          <td>−70 a −90%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TIP BOXES -->
+  <div class="tip-box" style="margin-top:28px;border-left-color:var(--gold)">
+    <div class="tip-icon">💡</div>
+    <div>
+      <div class="tip-title">Consejo para compradores</div>
+      <div class="tip-body">Antes de confirmar una compra, usá el chat para pedirle fotos al vendedor bajo buena iluminación. Prestá especial atención a las esquinas y al reverso de la carta. Si el precio parece muy bajo para una NM, preguntá siempre.</div>
+    </div>
+  </div>
+  <div class="tip-box" style="border-left-color:var(--nm)">
+    <div class="tip-icon">📦</div>
+    <div>
+      <div class="tip-title">Consejo para vendedores</div>
+      <div class="tip-body">Siempre es mejor ser honesto y declarar una condición más baja de lo que creés. Un comprador satisfecho te deja una buena reseña. Una disputa por condición incorrecta daña tu reputación permanentemente en la plataforma.</div>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tendencias — Singles.ar</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cream:  #f7f5f0;
+  --white:  #ffffff;
+  --navy:   #1a2744;
+  --navy2:  #243258;
+  --navy3:  #2e3f6e;
+  --slate:  #4a5578;
+  --slate2: #6b7a9e;
+  --mist:   #dde3ef;
+  --mist2:  #edf0f7;
+  --mist3:  #f3f5fa;
+  --gold:   #b5862a;
+  --gold2:  #d4a84b;
+  --gold3:  #f5e6c0;
+  --green:  #1a7a4a;
+  --green2: #edf7f2;
+  --green3: #b8dece;
+  --red:    #c0392b;
+  --red2:   #fdf0ee;
+  --red3:   #f0c8c3;
+  --blue:   #1e5fa8;
+  --blue2:  #eef4fd;
+  --blue3:  #bed5f0;
+  --amber:  #b45309;
+  --amber2: #fef9ee;
+  --amber3: #f0ddb0;
+  --border: #d8dde8;
+  --border2:#c8cedd;
+  --text:   #1a2030;
+  --text2:  #4a5578;
+  --text3:  #8a96b0;
+  --serif:  'Playfair Display', Georgia, serif;
+  --sans:   'DM Sans', system-ui, sans-serif;
+  --shadow-sm: 0 1px 3px rgba(26,39,68,0.08);
+  --shadow: 0 4px 16px rgba(26,39,68,0.10);
+  --shadow-lg: 0 12px 32px rgba(26,39,68,0.12);
+}
+
+body { font-family: var(--sans); background: var(--cream); color: var(--text); min-height: 100vh; }
+
+/* TOPBAR */
+.topbar { background: var(--navy); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+.logo { font-family: var(--serif); font-size: 17px; font-weight: 600; color: white; }
+.logo span { color: var(--gold2); }
+.nav-links { display: flex; gap: 24px; }
+.nav-link { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.5); text-decoration: none; letter-spacing: 0.03em; text-transform: uppercase; transition: color 0.15s; }
+.nav-link:hover, .nav-link.active { color: white; }
+.nav-link.active { color: var(--gold2); }
+
+/* HERO */
+.hero { background: var(--navy); padding: 44px 40px 40px; position: relative; overflow: hidden; }
+.hero::before { content:''; position:absolute; top:-80px; right:-80px; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle, rgba(181,134,42,0.1) 0%, transparent 70%); }
+.hero-inner { max-width: 1060px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.hero-left {}
+.eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold2); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.eyebrow::before { content:''; width:20px; height:1px; background:var(--gold2); }
+.hero h1 { font-family: var(--serif); font-size: 36px; font-weight: 700; color: white; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 8px; }
+.hero-sub { font-size: 14px; color: rgba(255,255,255,0.5); }
+.period-tabs { display: flex; gap: 4px; }
+.period-tab { font-size: 12px; font-weight: 500; padding: 7px 16px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.15s; }
+.period-tab:hover { color: white; border-color: rgba(255,255,255,0.3); }
+.period-tab.active { background: var(--gold); border-color: var(--gold); color: white; }
+
+/* MAIN */
+.main { max-width: 1060px; margin: 0 auto; padding: 32px 40px 80px; }
+
+/* SECTION */
+.section { margin-bottom: 48px; }
+.section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+.section-title-block {}
+.section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 4px; }
+.section-title { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--navy); letter-spacing: -0.01em; }
+.section-desc { font-size: 13px; color: var(--text3); margin-top: 2px; }
+.view-all { font-size: 12px; font-weight: 500; color: var(--slate2); text-decoration: none; display: flex; align-items: center; gap: 4px; transition: color 0.15s; }
+.view-all:hover { color: var(--navy); }
+
+/* CARD */
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); }
+.card-hover { transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s; cursor: pointer; }
+.card-hover:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--border2); }
+
+/* BADGE */
+.badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+.badge-poke  { background:#fff3e0; color:#b54000; border:1px solid #f5c89a; }
+.badge-magic { background:#f0eefa; color:#5b40b0; border:1px solid #c9baef; }
+.badge-op    { background:#fdeaea; color:#b02020; border:1px solid #f0b8b8; }
+.badge-green { background:var(--green2); color:var(--green); border:1px solid var(--green3); }
+.badge-blue  { background:var(--blue2); color:var(--blue); border:1px solid var(--blue3); }
+.badge-amber { background:var(--amber2); color:var(--amber); border:1px solid var(--amber3); }
+.badge-red   { background:var(--red2); color:var(--red); border:1px solid var(--red3); }
+.badge-navy  { background:var(--navy); color:white; }
+.badge-gold  { background:var(--gold3); color:var(--gold); border:1px solid #e8d0a0; }
+.badge-slate { background:var(--mist2); color:var(--slate); border:1px solid var(--mist); }
+
+/* IMG PH */
+.img-ph { background:var(--mist2); border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--text3); flex-shrink:0; }
+
+/* DIVIDER */
+.divider { height:1px; background:var(--border); }
+
+/* ── SECTION 1: TOP SALES ─────────────────────── */
+.top-sales-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+.sale-card { padding: 0; overflow: hidden; }
+.sale-rank-bar { background: var(--navy); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.rank-num { font-family: var(--serif); font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.2); }
+.rank-num.gold { color: var(--gold2); }
+.rank-num.silver { color: #c0c8d8; }
+.rank-num.bronze { color: #c87941; }
+.sale-trend { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.trend-up { color: #5ddc9a; }
+.trend-down { color: #ff8080; }
+.trend-new { color: var(--gold2); }
+.sale-body { padding: 14px 16px; }
+.sale-card-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.sale-info { flex: 1; }
+.sale-name { font-weight: 600; font-size: 14px; color: var(--navy); margin-bottom: 3px; line-height: 1.3; }
+.sale-set { font-size: 11px; color: var(--text3); }
+.sale-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sale-stat { background: var(--mist3); border-radius: 6px; padding: 8px 10px; }
+.sale-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 2px; }
+.sale-stat-val { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--navy); }
+
+/* ── SECTION 2: MOST WANTED (BUY ORDERS) ─────── */
+.wanted-list { display: flex; flex-direction: column; gap: 10px; }
+.wanted-item { padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
+.wanted-rank { font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--mist); width: 28px; flex-shrink: 0; text-align: center; }
+.wanted-img { }
+.wanted-info { flex: 1; }
+.wanted-name { font-weight: 600; font-size: 14px; color: var(--navy); margin-bottom: 4px; }
+.wanted-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.wanted-right { text-align: right; flex-shrink: 0; }
+.wanted-orders { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--blue); }
+.wanted-orders-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.wanted-max { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.demand-bar { height: 4px; background: var(--mist); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.demand-fill { height: 100%; background: linear-gradient(90deg, var(--blue) 0%, #5ba8ff 100%); border-radius: 2px; }
+
+/* ── SECTION 3: BACK IN STOCK ─────────────────── */
+.stock-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stock-card { padding: 14px; }
+.stock-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.stock-new-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: var(--green2); color: var(--green); border: 1px solid var(--green3); padding: 2px 7px; border-radius: 3px; }
+.stock-time { font-size: 10px; color: var(--text3); }
+.stock-img-wrap { display: flex; justify-content: center; margin-bottom: 10px; }
+.stock-name { font-weight: 600; font-size: 13px; color: var(--navy); margin-bottom: 3px; line-height: 1.3; }
+.stock-set { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.stock-footer { display: flex; align-items: center; justify-content: space-between; }
+.stock-price { font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--navy); }
+.stock-listings { font-size: 11px; color: var(--text3); }
+
+/* ── SECTION 4: PRICE MOVERS ──────────────────── */
+.movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.movers-col {}
+.movers-col-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.movers-col-title { font-size: 13px; font-weight: 600; }
+.mover-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+.mover-item:last-child { border-bottom: none; }
+.mover-item:hover { background: var(--mist3); }
+.mover-rank { font-size: 11px; font-weight: 600; color: var(--text3); width: 16px; }
+.mover-info { flex: 1; }
+.mover-name { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 2px; }
+.mover-set { font-size: 11px; color: var(--text3); }
+.mover-right { text-align: right; }
+.mover-change { font-family: var(--serif); font-size: 15px; font-weight: 700; }
+.mover-change.up { color: var(--green); }
+.mover-change.down { color: var(--red); }
+.mover-price { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+/* ── SECTION 5: MARKET PULSE (STATS ROW) ──────── */
+.pulse-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.pulse-card { padding: 18px 16px; text-align: center; }
+.pulse-icon { font-size: 24px; margin-bottom: 8px; }
+.pulse-val { font-family: var(--serif); font-size: 24px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+.pulse-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.pulse-change { font-size: 11px; margin-top: 4px; font-weight: 500; }
+
+/* ── SECTION 6: SELLER SPOTLIGHT ─────────────── */
+.spotlight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.spotlight-card { padding: 18px; text-align: center; }
+.spotlight-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--mist2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--navy); margin: 0 auto 10px; }
+.spotlight-name { font-weight: 600; font-size: 14px; color: var(--navy); margin-bottom: 4px; }
+.spotlight-stars { color: var(--gold); font-size: 13px; letter-spacing: 1px; margin-bottom: 6px; }
+.spotlight-stats { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.spotlight-stat { font-size: 11px; color: var(--text3); }
+.spotlight-stat strong { color: var(--text); }
+
+/* ── SECTION 7: RECENTLY COMPLETED ───────────── */
+.feed-list { display: flex; flex-direction: column; gap: 0; }
+.feed-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+.feed-item:last-child { border-bottom: none; }
+.feed-item:hover { background: var(--mist3); }
+.feed-time { font-size: 11px; color: var(--text3); width: 52px; flex-shrink: 0; }
+.feed-info { flex: 1; }
+.feed-name { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 2px; }
+.feed-meta { font-size: 11px; color: var(--text3); }
+.feed-price { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--navy); flex-shrink: 0; }
+.feed-type { flex-shrink: 0; }
+
+/* ANIMATIONS */
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.section { animation: fadeUp 0.4s ease both; }
+.section:nth-child(1) { animation-delay: 0.05s; }
+.section:nth-child(2) { animation-delay: 0.10s; }
+.section:nth-child(3) { animation-delay: 0.15s; }
+.section:nth-child(4) { animation-delay: 0.20s; }
+.section:nth-child(5) { animation-delay: 0.25s; }
+.section:nth-child(6) { animation-delay: 0.30s; }
+.section:nth-child(7) { animation-delay: 0.35s; }
+
+@media (max-width: 768px) {
+  .topbar { padding: 0 16px; }
+  .nav-links { display: none; }
+  .hero { padding: 32px 16px; }
+  .main { padding: 24px 16px 60px; }
+  .top-sales-grid { grid-template-columns: 1fr; }
+  .stock-grid { grid-template-columns: 1fr 1fr; }
+  .movers-grid { grid-template-columns: 1fr; }
+  .pulse-grid { grid-template-columns: 1fr 1fr; }
+  .spotlight-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="logo">Singles<span>.ar</span></div>
+  <div class="nav-links">
+    <a class="nav-link" href="#">Explorar</a>
+    <a class="nav-link active" href="#">Tendencias</a>
+    <a class="nav-link" href="#">Vender</a>
+    <a class="nav-link" href="#">Mi cuenta</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="eyebrow">Datos del mercado</div>
+      <h1>Tendencias del mercado</h1>
+      <div class="hero-sub">Lo que se compra, lo que se busca y lo que sube — en tiempo real.</div>
+    </div>
+    <div class="period-tabs">
+      <div class="period-tab active" onclick="setPeriod(this)">7 días</div>
+      <div class="period-tab" onclick="setPeriod(this)">30 días</div>
+      <div class="period-tab" onclick="setPeriod(this)">3 meses</div>
+    </div>
+  </div>
+</section>
+
+<!-- GAME FILTER BAR -->
+<div class="game-filter-bar">
+  <div class="game-filter-inner">
+    <span class="game-filter-label">Juego</span>
+    <div class="game-filter-tabs">
+      <div class="game-tab active" onclick="setGame(this,'all')">
+        <span class="game-tab-dot" style="background:var(--slate2)"></span>
+        Todos los juegos
+      </div>
+      <div class="game-tab" onclick="setGame(this,'pokemon')">
+        <span class="game-tab-dot" style="background:#e86c2c"></span>
+        Pokémon TCG
+      </div>
+      <div class="game-tab" onclick="setGame(this,'magic')">
+        <span class="game-tab-dot" style="background:#7b5ea7"></span>
+        Magic: The Gathering
+      </div>
+      <div class="game-tab" onclick="setGame(this,'onepiece')">
+        <span class="game-tab-dot" style="background:#c0392b"></span>
+        One Piece TCG
+      </div>
+    </div>
+    <div class="game-filter-count" id="filterCount">Mostrando todos los juegos</div>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- ── MARKET PULSE ─────────────────────────── -->
+  <div class="section">
+    <div class="pulse-grid">
+      <div class="card pulse-card">
+        <div class="pulse-icon">💰</div>
+        <div class="pulse-val">$284k</div>
+        <div class="pulse-label">Volumen total</div>
+        <div class="pulse-change up">↑ 12% vs período anterior</div>
+      </div>
+      <div class="card pulse-card">
+        <div class="pulse-icon">🃏</div>
+        <div class="pulse-val">347</div>
+        <div class="pulse-label">Transacciones</div>
+        <div class="pulse-change up">↑ 23%</div>
+      </div>
+      <div class="card pulse-card">
+        <div class="pulse-icon">🔍</div>
+        <div class="pulse-val">128</div>
+        <div class="pulse-label">Buy orders activos</div>
+        <div class="pulse-change up">↑ 8%</div>
+      </div>
+      <div class="card pulse-card">
+        <div class="pulse-icon">📦</div>
+        <div class="pulse-val">1.842</div>
+        <div class="pulse-label">Listings activos</div>
+        <div class="pulse-change up">↑ 156 nuevos</div>
+      </div>
+      <div class="card pulse-card">
+        <div class="pulse-icon">⭐</div>
+        <div class="pulse-val">4.8</div>
+        <div class="pulse-label">Rep. promedio</div>
+        <div class="pulse-change" style="color:var(--text3)">Sin cambios</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOP SALES ────────────────────────────── -->
+  <div class="section filterable-section">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-label">🔥 Lo más vendido</div>
+        <div class="section-title">Top ventas del período</div>
+        <div class="section-desc">Cartas con mayor cantidad de transacciones completadas</div>
+      </div>
+      <a class="view-all" href="#">Ver ranking completo →</a>
+    </div>
+    <div class="top-sales-grid">
+      <div class="empty-filter-state" style="display:none;grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);font-size:14px">Sin ventas para este juego en el período seleccionado.</div>
+
+      <!-- #1 -->
+      <div class="card card-hover sale-card" data-game="pokemon">
+        <div class="sale-rank-bar">
+          <span class="rank-num gold">#1</span>
+          <span class="sale-trend trend-new">★ NUEVO EN TOP</span>
+        </div>
+        <div class="sale-body">
+          <div class="sale-card-row">
+            <div class="img-ph" style="width:52px;height:72px;font-size:9px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            </div>
+            <div class="sale-info">
+              <div class="sale-name">Charizard VMAX Rainbow</div>
+              <div class="sale-set">Shining Fates · SHF 019/072</div>
+              <div style="margin-top:5px"><span class="badge badge-poke">Pokémon</span></div>
+            </div>
+          </div>
+          <div class="sale-stats">
+            <div class="sale-stat">
+              <div class="sale-stat-label">Ventas</div>
+              <div class="sale-stat-val">24</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Precio mediano</div>
+              <div class="sale-stat-val">$1.950</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Volumen total</div>
+              <div class="sale-stat-val">$46.8k</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Listings activos</div>
+              <div class="sale-stat-val">8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- #2 -->
+      <div class="card card-hover sale-card" data-game="magic">
+        <div class="sale-rank-bar">
+          <span class="rank-num silver">#2</span>
+          <span class="sale-trend trend-up">↑ desde #4</span>
+        </div>
+        <div class="sale-body">
+          <div class="sale-card-row">
+            <div class="img-ph" style="width:52px;height:72px;font-size:9px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            </div>
+            <div class="sale-info">
+              <div class="sale-name">Black Lotus</div>
+              <div class="sale-set">Alpha · #232</div>
+              <div style="margin-top:5px"><span class="badge badge-magic">Magic</span></div>
+            </div>
+          </div>
+          <div class="sale-stats">
+            <div class="sale-stat">
+              <div class="sale-stat-label">Ventas</div>
+              <div class="sale-stat-val">18</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Precio mediano</div>
+              <div class="sale-stat-val">$82.000</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Volumen total</div>
+              <div class="sale-stat-val">$1.47M</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Listings activos</div>
+              <div class="sale-stat-val">3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- #3 -->
+      <div class="card card-hover sale-card" data-game="onepiece">
+        <div class="sale-rank-bar">
+          <span class="rank-num bronze">#3</span>
+          <span class="sale-trend trend-down">↓ desde #1</span>
+        </div>
+        <div class="sale-body">
+          <div class="sale-card-row">
+            <div class="img-ph" style="width:52px;height:72px;font-size:9px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            </div>
+            <div class="sale-info">
+              <div class="sale-name">Monkey D. Luffy Alt Art</div>
+              <div class="sale-set">OP-01 · OP01-120</div>
+              <div style="margin-top:5px"><span class="badge badge-op">One Piece</span></div>
+            </div>
+          </div>
+          <div class="sale-stats">
+            <div class="sale-stat">
+              <div class="sale-stat-label">Ventas</div>
+              <div class="sale-stat-val">15</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Precio mediano</div>
+              <div class="sale-stat-val">$3.200</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Volumen total</div>
+              <div class="sale-stat-val">$48k</div>
+            </div>
+            <div class="sale-stat">
+              <div class="sale-stat-label">Listings activos</div>
+              <div class="sale-stat-val">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MOST WANTED ───────────────────────────── -->
+  <div class="section filterable-section">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-label">🎯 Más buscadas</div>
+        <div class="section-title">Cartas con más buy orders</div>
+        <div class="section-desc">Las cartas que los compradores quieren pero no encuentran al precio que buscan</div>
+      </div>
+      <a class="view-all" href="#">Ver todas →</a>
+    </div>
+    <div class="card wanted-list">
+      <div class="empty-filter-state" style="display:none;text-align:center;padding:40px;color:var(--text3);font-size:14px">Sin buy orders para este juego.</div>
+      <div class="wanted-item card-hover" data-game="pokemon">
+        <div class="wanted-rank">1</div>
+        <div class="img-ph wanted-img" style="width:40px;height:56px;font-size:9px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </div>
+        <div class="wanted-info">
+          <div class="wanted-name">Pikachu VMAX Rainbow</div>
+          <div class="wanted-meta">
+            <span class="badge badge-poke">Pokémon</span>
+            <span style="font-size:11px;color:var(--text3)">Vivid Voltage · V006/185</span>
+          </div>
+          <div class="demand-bar" style="margin-top:8px;width:180px">
+            <div class="demand-fill" style="width:92%"></div>
+          </div>
+        </div>
+        <div class="wanted-right">
+          <div class="wanted-orders">34</div>
+          <div class="wanted-orders-label">buy orders</div>
+          <div class="wanted-max">Mejor oferta: $2.800</div>
+        </div>
+      </div>
+      <div class="wanted-item card-hover" data-game="magic">
+        <div class="wanted-rank">2</div>
+        <div class="img-ph wanted-img" style="width:40px;height:56px;font-size:9px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </div>
+        <div class="wanted-info">
+          <div class="wanted-name">Mox Sapphire</div>
+          <div class="wanted-meta">
+            <span class="badge badge-magic">Magic</span>
+            <span style="font-size:11px;color:var(--text3)">Beta · #265</span>
+          </div>
+          <div class="demand-bar" style="margin-top:8px;width:180px">
+            <div class="demand-fill" style="width:75%"></div>
+          </div>
+        </div>
+        <div class="wanted-right">
+          <div class="wanted-orders">28</div>
+          <div class="wanted-orders-label">buy orders</div>
+          <div class="wanted-max">Mejor oferta: $44.000</div>
+        </div>
+      </div>
+      <div class="wanted-item card-hover" data-game="onepiece">
+        <div class="wanted-rank">3</div>
+        <div class="img-ph wanted-img" style="width:40px;height:56px;font-size:9px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </div>
+        <div class="wanted-info">
+          <div class="wanted-name">Roronoa Zoro Alt Art</div>
+          <div class="wanted-meta">
+            <span class="badge badge-op">One Piece</span>
+            <span style="font-size:11px;color:var(--text3)">OP-01 · OP01-118</span>
+          </div>
+          <div class="demand-bar" style="margin-top:8px;width:180px">
+            <div class="demand-fill" style="width:60%"></div>
+          </div>
+        </div>
+        <div class="wanted-right">
+          <div class="wanted-orders">22</div>
+          <div class="wanted-orders-label">buy orders</div>
+          <div class="wanted-max">Mejor oferta: $5.100</div>
+        </div>
+      </div>
+      <div class="wanted-item card-hover" data-game="pokemon">
+        <div class="wanted-rank">4</div>
+        <div class="img-ph wanted-img" style="width:40px;height:56px;font-size:9px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </div>
+        <div class="wanted-info">
+          <div class="wanted-name">Arceus VSTAR Alt Art</div>
+          <div class="wanted-meta">
+            <span class="badge badge-poke">Pokémon</span>
+            <span style="font-size:11px;color:var(--text3)">Brilliant Stars · TG14/30</span>
+          </div>
+          <div class="demand-bar" style="margin-top:8px;width:180px">
+            <div class="demand-fill" style="width:48%"></div>
+          </div>
+        </div>
+        <div class="wanted-right">
+          <div class="wanted-orders">17</div>
+          <div class="wanted-orders-label">buy orders</div>
+          <div class="wanted-max">Mejor oferta: $3.400</div>
+        </div>
+      </div>
+      <div class="wanted-item card-hover" data-game="magic">
+        <div class="wanted-rank">5</div>
+        <div class="img-ph wanted-img" style="width:40px;height:56px;font-size:9px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </div>
+        <div class="wanted-info">
+          <div class="wanted-name">Liliana of the Veil</div>
+          <div class="wanted-meta">
+            <span class="badge badge-magic">Magic</span>
+            <span style="font-size:11px;color:var(--text3)">Innistrad · #105</span>
+          </div>
+          <div class="demand-bar" style="margin-top:8px;width:180px">
+            <div class="demand-fill" style="width:38%"></div>
+          </div>
+        </div>
+        <div class="wanted-right">
+          <div class="wanted-orders">14</div>
+          <div class="wanted-orders-label">buy orders</div>
+          <div class="wanted-max">Mejor oferta: $8.200</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BACK IN STOCK ─────────────────────────── -->
+  <div class="section filterable-section">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-label">✨ Volvieron al stock</div>
+        <div class="section-title">Sin stock → con stock</div>
+        <div class="section-desc">Cartas que no tenían listings y acaban de aparecer</div>
+      </div>
+      <a class="view-all" href="#">Ver todas →</a>
+    </div>
+    <div class="stock-grid">
+      <div class="empty-filter-state" style="display:none;grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);font-size:14px">Sin stock reciente para este juego.</div>
+      <div class="card card-hover stock-card" data-game="pokemon">
+        <div class="stock-header">
+          <span class="stock-new-badge">Nuevo</span>
+          <span class="stock-time">hace 2h</span>
+        </div>
+        <div class="stock-img-wrap">
+          <div class="img-ph" style="width:60px;height:84px;font-size:9px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+        </div>
+        <div style="margin-bottom:6px"><span class="badge badge-poke">Pokémon</span></div>
+        <div class="stock-name">Mewtwo V Alt Art</div>
+        <div class="stock-set">Lost Origin · TG29/30</div>
+        <div class="stock-footer">
+          <span class="stock-price">$4.200</span>
+          <span class="stock-listings">1 listing</span>
+        </div>
+      </div>
+      <div class="card card-hover stock-card" data-game="magic">
+        <div class="stock-header">
+          <span class="stock-new-badge">Nuevo</span>
+          <span class="stock-time">hace 5h</span>
+        </div>
+        <div class="stock-img-wrap">
+          <div class="img-ph" style="width:60px;height:84px;font-size:9px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+        </div>
+        <div style="margin-bottom:6px"><span class="badge badge-magic">Magic</span></div>
+        <div class="stock-name">Force of Will</div>
+        <div class="stock-set">Alliances · #60a</div>
+        <div class="stock-footer">
+          <span class="stock-price">$12.500</span>
+          <span class="stock-listings">2 listings</span>
+        </div>
+      </div>
+      <div class="card card-hover stock-card" data-game="onepiece">
+        <div class="stock-header">
+          <span class="stock-new-badge">Nuevo</span>
+          <span class="stock-time">hace 8h</span>
+        </div>
+        <div class="stock-img-wrap">
+          <div class="img-ph" style="width:60px;height:84px;font-size:9px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+        </div>
+        <div style="margin-bottom:6px"><span class="badge badge-op">One Piece</span></div>
+        <div class="stock-name">Shanks Alt Art</div>
+        <div class="stock-set">OP-01 · OP01-119</div>
+        <div class="stock-footer">
+          <span class="stock-price">$6.800</span>
+          <span class="stock-listings">1 listing</span>
+        </div>
+      </div>
+      <div class="card card-hover stock-card" data-game="pokemon">
+        <div class="stock-header">
+          <span class="stock-new-badge">Nuevo</span>
+          <span class="stock-time">hace 12h</span>
+        </div>
+        <div class="stock-img-wrap">
+          <div class="img-ph" style="width:60px;height:84px;font-size:9px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+        </div>
+        <div style="margin-bottom:6px"><span class="badge badge-poke">Pokémon</span></div>
+        <div class="stock-name">Umbreon VMAX Alt Art</div>
+        <div class="stock-set">Evolving Skies · TG23/30</div>
+        <div class="stock-footer">
+          <span class="stock-price">$8.900</span>
+          <span class="stock-listings">1 listing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRICE MOVERS ───────────────────────────── -->
+  <div class="section filterable-section">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-label">📈 Movimientos de precio</div>
+        <div class="section-title">Mayores subidas y bajadas</div>
+        <div class="section-desc">Comparado con el período anterior en nuestra plataforma</div>
+      </div>
+    </div>
+    <div class="movers-grid">
+      <div class="card">
+        <div class="movers-col-header">
+          <span style="font-size:16px">📈</span>
+          <span class="movers-col-title" style="color:var(--green)">Mayores subidas</span>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">1</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Charizard ex SAR</div>
+            <div class="mover-set">Pokémon · Paldea Evolved</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change up">+48%</div>
+            <div class="mover-price">$5.200 → $7.700</div>
+          </div>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">2</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Dual Land — Tundra</div>
+            <div class="mover-set">Magic · Revised</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change up">+31%</div>
+            <div class="mover-price">$18k → $23.6k</div>
+          </div>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">3</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Nika Alt Art</div>
+            <div class="mover-set">One Piece · OP-04</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change up">+27%</div>
+            <div class="mover-price">$3.100 → $3.937</div>
+          </div>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">4</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Mewtwo VSTAR Rainbow</div>
+            <div class="mover-set">Pokémon · SWSH12</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change up">+19%</div>
+            <div class="mover-price">$2.800 → $3.332</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="movers-col-header">
+          <span style="font-size:16px">📉</span>
+          <span class="movers-col-title" style="color:var(--red)">Mayores bajadas</span>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">1</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Umbreon V Alt Art</div>
+            <div class="mover-set">Pokémon · Evolving Skies</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change down">−22%</div>
+            <div class="mover-price">$4.100 → $3.198</div>
+          </div>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">2</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Jace, the Mind Sculptor</div>
+            <div class="mover-set">Magic · Worldwake</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change down">−15%</div>
+            <div class="mover-price">$9.200 → $7.820</div>
+          </div>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">3</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Trafalgar Law Alt Art</div>
+            <div class="mover-set">One Piece · OP-02</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change down">−12%</div>
+            <div class="mover-price">$2.600 → $2.288</div>
+          </div>
+        </div>
+        <div class="mover-item">
+          <div class="mover-rank">4</div>
+          <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+          <div class="mover-info">
+            <div class="mover-name">Gengar VMAX Alt Art</div>
+            <div class="mover-set">Pokémon · Fusion Strike</div>
+          </div>
+          <div class="mover-right">
+            <div class="mover-change down">−9%</div>
+            <div class="mover-price">$3.300 → $3.003</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SELLER SPOTLIGHT ───────────────────────── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-label">⭐ Comunidad</div>
+        <div class="section-title">Vendedores destacados</div>
+        <div class="section-desc">Los vendedores con mejor reputación y más ventas del período</div>
+      </div>
+    </div>
+    <div class="spotlight-grid">
+      <div class="card card-hover spotlight-card">
+        <div class="spotlight-avatar" style="background:#fff3e0;color:#b54000">MG</div>
+        <div class="spotlight-name">MagiTrade_AR</div>
+        <div class="spotlight-stars">★★★★★</div>
+        <div class="spotlight-stats">
+          <span class="spotlight-stat"><strong>132</strong> ventas</span>
+          <span class="spotlight-stat">·</span>
+          <span class="spotlight-stat"><strong>4.9</strong> rep.</span>
+        </div>
+        <div style="margin-top:8px"><span class="badge badge-gold">Top vendedor</span></div>
+      </div>
+      <div class="card card-hover spotlight-card">
+        <div class="spotlight-avatar" style="background:#f0eefa;color:#5b40b0">PK</div>
+        <div class="spotlight-name">PokeColect_BsAs</div>
+        <div class="spotlight-stars">★★★★★</div>
+        <div class="spotlight-stats">
+          <span class="spotlight-stat"><strong>78</strong> ventas</span>
+          <span class="spotlight-stat">·</span>
+          <span class="spotlight-stat"><strong>4.8</strong> rep.</span>
+        </div>
+        <div style="margin-top:8px"><span class="badge badge-green">Verificado</span></div>
+      </div>
+      <div class="card card-hover spotlight-card">
+        <div class="spotlight-avatar" style="background:#fdeaea;color:#b02020">OP</div>
+        <div class="spotlight-name">OnePieceCards</div>
+        <div class="spotlight-stars">★★★★★</div>
+        <div class="spotlight-stats">
+          <span class="spotlight-stat"><strong>54</strong> ventas</span>
+          <span class="spotlight-stat">·</span>
+          <span class="spotlight-stat"><strong>4.9</strong> rep.</span>
+        </div>
+        <div style="margin-top:8px"><span class="badge badge-green">Verificado</span></div>
+      </div>
+      <div class="card card-hover spotlight-card">
+        <div class="spotlight-avatar">TC</div>
+        <div class="spotlight-name">TierraCards</div>
+        <div class="spotlight-stars">★★★★☆</div>
+        <div class="spotlight-stats">
+          <span class="spotlight-stat"><strong>41</strong> ventas</span>
+          <span class="spotlight-stat">·</span>
+          <span class="spotlight-stat"><strong>4.7</strong> rep.</span>
+        </div>
+        <div style="margin-top:8px"><span class="badge badge-slate">Activo</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LIVE FEED ───────────────────────────────── -->
+  <div class="section filterable-section">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-label">⚡ En vivo</div>
+        <div class="section-title">Últimas transacciones</div>
+        <div class="section-desc">Ventas completadas recientemente en la plataforma</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div>
+        <span style="font-size:11px;color:var(--text3)">En vivo</span>
+      </div>
+    </div>
+    <div class="card feed-list">
+      <div class="feed-item" data-game="pokemon">
+        <div class="feed-time">hace 3min</div>
+        <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+        <div class="feed-info">
+          <div class="feed-name">Charizard VMAX Rainbow</div>
+          <div class="feed-meta">Pokémon · Shining Fates · vendido por MagiTrade_AR</div>
+        </div>
+        <div class="feed-type"><span class="badge badge-green">Venta</span></div>
+        <div class="feed-price">$1.950</div>
+      </div>
+      <div class="feed-item" data-game="magic">
+        <div class="feed-time">hace 12min</div>
+        <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+        <div class="feed-info">
+          <div class="feed-name">Ancestral Recall</div>
+          <div class="feed-meta">Magic · Beta · vendido por TierraCards</div>
+        </div>
+        <div class="feed-type"><span class="badge badge-green">Venta</span></div>
+        <div class="feed-price">$28.000</div>
+      </div>
+      <div class="feed-item" data-game="onepiece">
+        <div class="feed-time">hace 28min</div>
+        <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+        <div class="feed-info">
+          <div class="feed-name">Monkey D. Luffy Alt Art</div>
+          <div class="feed-meta">One Piece · OP-01 · via buy order</div>
+        </div>
+        <div class="feed-type"><span class="badge badge-blue">Buy order</span></div>
+        <div class="feed-price">$3.100</div>
+      </div>
+      <div class="feed-item" data-game="pokemon">
+        <div class="feed-time">hace 45min</div>
+        <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+        <div class="feed-info">
+          <div class="feed-name">Pikachu VMAX Rainbow</div>
+          <div class="feed-meta">Pokémon · Vivid Voltage · vendido por PokeColect_BsAs</div>
+        </div>
+        <div class="feed-type"><span class="badge badge-green">Venta</span></div>
+        <div class="feed-price">$2.850</div>
+      </div>
+      <div class="feed-item" data-game="onepiece">
+        <div class="feed-time">hace 1h</div>
+        <div class="img-ph" style="width:32px;height:44px;flex-shrink:0;font-size:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+        <div class="feed-info">
+          <div class="feed-name">Roronoa Zoro Alt Art</div>
+          <div class="feed-meta">One Piece · OP-01 · canje por Shanks Alt Art</div>
+        </div>
+        <div class="feed-type"><span class="badge badge-amber">Trade</span></div>
+        <div class="feed-price">Canje</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* GAME FILTER BAR */
+.game-filter-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 52px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(26,39,68,0.06);
+}
+.game-filter-inner {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 48px;
+}
+.game-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.game-filter-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+.game-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text3);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.game-tab:hover { color: var(--text); background: var(--mist3); }
+.game-tab.active { color: var(--navy); background: var(--mist2); border-color: var(--border); font-weight: 600; }
+.game-tab-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.game-filter-count {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
+}
+
+/* Filtered out items */
+.game-filtered { display: none !important; }
+
+@media (max-width: 768px) {
+  .game-filter-inner { padding: 0 16px; overflow-x: auto; }
+  .game-filter-count { display: none; }
+}
+</style>
+
+<script>
+function setPeriod(el) {
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+let currentGame = 'all';
+
+function setGame(el, game) {
+  document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentGame = game;
+
+  const countEl = document.getElementById('filterCount');
+
+  // Items with data-game attributes get filtered
+  document.querySelectorAll('[data-game]').forEach(item => {
+    if (game === 'all' || item.dataset.game === game) {
+      item.classList.remove('game-filtered');
+    } else {
+      item.classList.add('game-filtered');
+    }
+  });
+
+  // Update count label
+  const labels = {
+    all: 'Mostrando todos los juegos',
+    pokemon: 'Filtrando: Pokémon TCG',
+    magic: 'Filtrando: Magic: The Gathering',
+    onepiece: 'Filtrando: One Piece TCG'
+  };
+  countEl.textContent = labels[game];
+
+  // If a section has all items filtered, hide the whole section
+  document.querySelectorAll('.filterable-section').forEach(section => {
+    const items = section.querySelectorAll('[data-game]');
+    const visible = Array.from(items).filter(i => !i.classList.contains('game-filtered'));
+    const emptyState = section.querySelector('.empty-filter-state');
+    if (items.length > 0 && visible.length === 0) {
+      if (emptyState) emptyState.style.display = 'block';
+    } else {
+      if (emptyState) emptyState.style.display = 'none';
+    }
+  });
+}
+</script>
+
+</body>
+</html>
