@@ -317,6 +317,7 @@ export interface Review {
   reviewee_id:    string;
   rating:         number;   // 1–5
   comment:        string | null;
+  auto_generated: boolean;  // true if assigned by the 72h auto-close cron, not the reviewer
   created_at:     string;
 }
 

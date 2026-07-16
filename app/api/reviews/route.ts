@@ -11,9 +11,14 @@ const reviewSchema = z.object({
   comment:       z.string().max(500).nullable().optional(),
 });
 
+const REVIEW_WINDOW_DAYS = 30;
+
 // ─── POST /api/reviews ────────────────────────────────────────────────────────
-// Validates: user is a participant, transaction is completed, hasn't reviewed yet.
-// Inserts review and recalculates reviewee's reputation_score.
+// Validates: user is a participant, transaction is completed, within the
+// review window. Upserts by (transaction_id, reviewer_id) — a second submit
+// from the same reviewer edits their existing review (e.g. correcting a
+// review that was auto-generated on their behalf) rather than being blocked
+// as a duplicate. Recalculates the reviewee's reputation_score either way.
 
 export async function POST(req: NextRequest) {
   const supabase = createClient();
@@ -59,19 +64,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Must be within 15-day review window
-  const REVIEW_WINDOW_DAYS = 15;
+  // Must be within the review window
   if (!tx.completed_at) {
     return NextResponse.json(
       { error: "La transacción no tiene fecha de finalización registrada." },
       { status: 422 }
     );
   }
-  const completedAt  = new Date(tx.completed_at);
+  const completedAt = new Date(tx.completed_at);
   const deadlineMs   = completedAt.getTime() + REVIEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   if (Date.now() > deadlineMs) {
     return NextResponse.json(
-      { error: "El período para dejar una reseña (15 días) ya expiró." },
+      { error: `El período para dejar una reseña (${REVIEW_WINDOW_DAYS} días) ya expiró.` },
       { status: 422 }
     );
   }
@@ -80,27 +84,25 @@ export async function POST(req: NextRequest) {
   // buyer reviews seller; seller reviews buyer
   const revieweeId = user.id === tx.buyer_id ? tx.seller_id : tx.buyer_id;
 
-  // ── Insert review (unique constraint handles duplicate) ──────────────────────
-  const { data: review, error: insertError } = await admin
+  // ── Upsert review — edits an existing one from the same reviewer ────────────
+  const { data: review, error: upsertError } = await admin
     .from("reviews")
-    .insert({
-      transaction_id: transactionId,
-      reviewer_id:    user.id,
-      reviewee_id:    revieweeId,
-      rating,
-      comment:        comment?.trim() || null,
-    })
+    .upsert(
+      {
+        transaction_id: transactionId,
+        reviewer_id:    user.id,
+        reviewee_id:    revieweeId,
+        rating,
+        comment:        comment?.trim() || null,
+        auto_generated: false, // a real submission always overrides an auto-generated one
+      },
+      { onConflict: "transaction_id,reviewer_id" }
+    )
     .select("id")
     .single();
 
-  if (insertError) {
-    if (insertError.code === "23505") { // unique_violation
-      return NextResponse.json(
-        { error: "Ya enviaste una reseña para esta transacción." },
-        { status: 409 }
-      );
-    }
-    console.error("[POST /api/reviews]", insertError);
+  if (upsertError) {
+    console.error("[POST /api/reviews]", upsertError);
     return NextResponse.json({ error: "Error al guardar la reseña." }, { status: 500 });
   }
 
@@ -120,19 +122,20 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
 
   if (transactionId) {
-    // Check if current user has already reviewed
+    // Return the current user's existing review for this transaction, if any,
+    // so the client can pre-fill an edit rather than just knowing "reviewed: true".
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ reviewed: false });
+    if (!user) return NextResponse.json({ data: null });
 
     const { data } = await admin
       .from("reviews")
-      .select("id")
+      .select("id, rating, comment, auto_generated")
       .eq("transaction_id", transactionId)
       .eq("reviewer_id", user.id)
       .maybeSingle();
 
-    return NextResponse.json({ reviewed: !!data });
+    return NextResponse.json({ data: data ?? null });
   }
 
   if (userId) {

@@ -49,6 +49,25 @@ export async function GET(req: NextRequest) {
         systemMessage: "✅ Se cumplieron las 72 horas del período de protección sin disputas. La transacción se cerró automáticamente como exitosa.",
       });
 
+      // The buyer never confirmed receipt, so there's no genuine feedback —
+      // default the seller's rating to 5 stars rather than leaving them
+      // unrated. Flagged auto_generated so the buyer can still correct it via
+      // ReviewForm within the (30-day) review window.
+      const { error: reviewErr } = await admin.from("reviews").insert({
+        transaction_id: tx.id,
+        reviewer_id:    tx.buyer_id,
+        reviewee_id:    tx.seller_id,
+        rating:         5,
+        comment:        null,
+        auto_generated: true,
+      });
+
+      if (reviewErr) {
+        console.error(`auto-complete: failed to auto-review transaction ${tx.id}:`, reviewErr.message);
+      } else {
+        await admin.rpc("recalculate_reputation", { target_id: tx.seller_id });
+      }
+
       await notifyMany([
         {
           user_id: tx.seller_id,

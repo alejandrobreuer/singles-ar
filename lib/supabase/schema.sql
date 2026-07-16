@@ -351,6 +351,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
   reviewee_id    uuid    NOT NULL REFERENCES public.profiles     ON DELETE CASCADE,
   rating         integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment        text    CHECK (length(comment) <= 500),
+  auto_generated boolean NOT NULL DEFAULT false, -- assigned by the 72h auto-close cron, not the reviewer
   created_at     timestamptz DEFAULT now() NOT NULL,
 
   UNIQUE (transaction_id, reviewer_id),   -- one review per party per transaction

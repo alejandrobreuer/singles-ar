@@ -106,7 +106,8 @@
       "Bash(echo \"EXIT CODE: $?\")",
       "Read(//tmp/**)",
       "PowerShell(cd \"C:\\\\Users\\\\aleja\\\\singles-ar\"; npx tsc --noEmit; Write-Output \"TSC EXIT: $LASTEXITCODE\")",
-      "PowerShell(cd \"C:\\\\Users\\\\aleja\\\\singles-ar\"; git show HEAD:supabase/migrations/005_chat.sql > $env:TEMP\\\\005_old.sql; git diff --no-index $env:TEMP\\\\005_old.sql \"supabase/migrations/005_chat-R.sql\")"
+      "PowerShell(cd \"C:\\\\Users\\\\aleja\\\\singles-ar\"; git show HEAD:supabase/migrations/005_chat.sql > $env:TEMP\\\\005_old.sql; git diff --no-index $env:TEMP\\\\005_old.sql \"supabase/migrations/005_chat-R.sql\")",
+      "PowerShell(cd \"C:\\\\Users\\\\aleja\\\\singles-ar\"; Test-Path .env.local; if \\(Test-Path .env.local\\) { \\(Get-Content .env.local | Measure-Object -Line\\).Lines; Select-String -Path .env.local -Pattern \"^[A-Z_]+\" | ForEach-Object { \\($_.Line -split '='\\)[0] } })"
     ]
   }
 }
