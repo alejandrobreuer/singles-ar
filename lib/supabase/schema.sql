@@ -160,7 +160,10 @@ CREATE TABLE IF NOT EXISTS public.listings (
   card_id      uuid        NOT NULL REFERENCES public.cards      ON DELETE RESTRICT,
   seller_id    uuid        NOT NULL REFERENCES public.profiles   ON DELETE CASCADE,
   listing_type text        NOT NULL CHECK (listing_type IN ('sale', 'trade')),
-  price        numeric     CHECK (price > 0),                -- required when listing_type = 'sale'
+  price        numeric     CHECK (price > 0),                -- required when listing_type = 'sale'; effective/final price (post-discount)
+  original_price numeric   CHECK (original_price > 0),        -- pre-discount price; null when no discount active
+  discount_type   text     CHECK (discount_type IN ('fixed', 'percentage')),
+  discount_value  numeric  CHECK (discount_value > 0),        -- ARS amount (fixed) or percent 0-100 (percentage)
   currency     text        NOT NULL DEFAULT 'ARS',
   condition    text        NOT NULL CHECK (condition IN ('NM', 'LP', 'MP', 'HP', 'DMG')),
   language     text        NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'es', 'pt', 'ja')),
@@ -177,7 +180,19 @@ CREATE TABLE IF NOT EXISTS public.listings (
   CONSTRAINT listing_sale_requires_price
     CHECK (listing_type <> 'sale' OR price IS NOT NULL),
   CONSTRAINT listing_trade_requires_trade_for
-    CHECK (listing_type <> 'trade' OR trade_for IS NOT NULL)
+    CHECK (listing_type <> 'trade' OR trade_for IS NOT NULL),
+  CONSTRAINT listing_discount_fields_paired
+    CHECK ((discount_type IS NULL) = (discount_value IS NULL)),
+  CONSTRAINT listing_discount_requires_original_price
+    CHECK (discount_type IS NULL OR original_price IS NOT NULL),
+  CONSTRAINT listing_discount_value_in_range
+    CHECK (
+      discount_type IS NULL
+      OR (discount_type = 'percentage' AND discount_value < 100)
+      OR (discount_type = 'fixed'      AND discount_value < original_price)
+    ),
+  CONSTRAINT listing_price_not_above_original
+    CHECK (original_price IS NULL OR price IS NULL OR price <= original_price)
 );
 
 CREATE INDEX IF NOT EXISTS idx_listings_card_status   ON public.listings (card_id, status);

@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 import { Avatar }          from "@/components/ui/avatar";
 import { Button }          from "@/components/ui/button";
 import { ConditionBadge }  from "@/components/ui/ConditionBadge";
+import { PriceDisplay }    from "@/components/pricing/PriceDisplay";
 import { formatARS }       from "@/lib/formatting";
-import type { Condition, ListingType, PublicProfile } from "@/types/database";
+import type { Condition, ListingType, DiscountType, PublicProfile } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,9 @@ export interface ListingCardData {
   id:           string;
   listing_type: ListingType;
   price:        number | null;
+  original_price: number | null;
+  discount_type:  DiscountType | null;
+  discount_value: number | null;
   condition:    Condition;
   quantity:     number;
   notes:        string | null;
@@ -131,12 +135,14 @@ export function ListingCard({
 
           {/* Price */}
           {isSale && listing.price != null ? (
-            <span className={cn(
-              "font-price text-xl",
-              isCheapest ? "text-accent-dark" : "text-text-primary"
-            )}>
-              {formatARS(listing.price)}
-            </span>
+            <PriceDisplay
+              price={listing.price}
+              originalPrice={listing.original_price}
+              discountType={listing.discount_type}
+              discountValue={listing.discount_value}
+              size="lg"
+              className={isCheapest && listing.discount_type == null ? "text-accent-dark" : undefined}
+            />
           ) : (
             <span className="text-sm font-medium font-sans text-text-secondary">
               Ver oferta →

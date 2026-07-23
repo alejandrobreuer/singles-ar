@@ -23,11 +23,12 @@ import { Divider }   from "@/components/ui/divider";
 import { Spinner }   from "@/components/ui/spinner";
 import { LocationPickerList } from "@/components/ui/LocationPickerList";
 import { LanguageBadge } from "@/components/ui/LanguageBadge";
+import { PriceDisplay } from "@/components/pricing/PriceDisplay";
 import { formatARS, formatARSNumber, parseARSInput } from "@/lib/formatting";
 import { listingLocationSummary } from "@/lib/listingLocation";
 import { LANGUAGES_BY_GAME, LANGUAGE_LABELS, LANGUAGE_FLAGS } from "@/lib/cardAttributes";
 import type {
-  Profile, ListingWithCard, BuyOrder, Game, LocationValue, CardLanguage,
+  Profile, ListingWithCard, BuyOrder, Game, LocationValue, CardLanguage, DiscountType,
 } from "@/types/database";
 import type {
   TransactionHistoryRow, WishlistRowWithStats,
@@ -247,6 +248,8 @@ export function ProfileClient({
   const [bulkPrice,     setBulkPrice]     = React.useState("");
   const [bulkLocations, setBulkLocations] = React.useState<LocationValue[]>([]);
   const [bulkLanguage,  setBulkLanguage]  = React.useState<CardLanguage | "">("");
+  const [bulkDiscountType,  setBulkDiscountType]  = React.useState<DiscountType>("percentage");
+  const [bulkDiscountValue, setBulkDiscountValue] = React.useState("");
   const [bulkSaving,    setBulkSaving]    = React.useState(false);
 
   const EDITABLE_STATUSES = new Set(["active", "reserved"]);
@@ -372,6 +375,74 @@ export function ProfileClient({
       if (skipped > 0) toast.error(`${skipped} publicación(es) no admiten ese idioma y fueron omitidas.`);
       if (okIds.size > 0) toast.success(`Idioma actualizado en ${okIds.size} publicación(es).`);
       setBulkLanguage("");
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function applyBulkDiscount() {
+    const valueNum = parseARSInput(bulkDiscountValue);
+    if (valueNum <= 0) return;
+    if (bulkDiscountType === "percentage" && valueNum >= 100) {
+      toast.error("El porcentaje debe ser menor a 100.");
+      return;
+    }
+
+    const targets = listings.filter((l) => selectedIds.has(l.id) && l.listing_type === "sale");
+    if (targets.length === 0) {
+      toast.error("Ninguna publicación de venta seleccionada.");
+      return;
+    }
+
+    setBulkSaving(true);
+    try {
+      const results = await Promise.all(targets.map((l) =>
+        fetch(`/api/listings/${l.id}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ discount_type: bulkDiscountType, discount_value: valueNum }),
+        }).then(async (r) => (r.ok ? (await r.json()).data : null))
+      ));
+
+      const updated = new Map(
+        targets.map((l, i) => [l.id, results[i]] as const).filter(([, v]) => v != null)
+      );
+      setListings((prev) => prev.map((l) => updated.has(l.id) ? { ...l, ...updated.get(l.id) } : l));
+
+      const failed = targets.length - updated.size;
+      if (failed > 0) toast.error(`No se pudo aplicar el descuento a ${failed} publicación(es).`);
+      if (updated.size > 0) toast.success(`Descuento aplicado a ${updated.size} publicación(es).`);
+      setBulkDiscountValue("");
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function removeBulkDiscount() {
+    const targets = listings.filter((l) => selectedIds.has(l.id) && l.discount_type != null);
+    if (targets.length === 0) {
+      toast.error("Ninguna publicación seleccionada tiene descuento activo.");
+      return;
+    }
+
+    setBulkSaving(true);
+    try {
+      const results = await Promise.all(targets.map((l) =>
+        fetch(`/api/listings/${l.id}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ discount_type: null, discount_value: null }),
+        }).then(async (r) => (r.ok ? (await r.json()).data : null))
+      ));
+
+      const updated = new Map(
+        targets.map((l, i) => [l.id, results[i]] as const).filter(([, v]) => v != null)
+      );
+      setListings((prev) => prev.map((l) => updated.has(l.id) ? { ...l, ...updated.get(l.id) } : l));
+
+      const failed = targets.length - updated.size;
+      if (failed > 0) toast.error(`No se pudo quitar el descuento de ${failed} publicación(es).`);
+      if (updated.size > 0) toast.success(`Descuento quitado de ${updated.size} publicación(es).`);
     } finally {
       setBulkSaving(false);
     }
@@ -621,6 +692,48 @@ export function ProfileClient({
                       </Button>
                     </div>
                   </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-2xs font-semibold font-sans text-text-muted uppercase tracking-wide">
+                      Descuento
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={bulkDiscountType}
+                        onChange={(e) => setBulkDiscountType(e.target.value as DiscountType)}
+                        className="h-9 px-2 rounded-lg border border-border bg-background font-sans text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                      >
+                        <option value="percentage">%</option>
+                        <option value="fixed">$ ARS</option>
+                      </select>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder={bulkDiscountType === "percentage" ? "Ej: 10" : "Ej: 1000"}
+                        value={bulkDiscountValue}
+                        onChange={(e) => setBulkDiscountValue(e.target.value.replace(/[^0-9.,]/g, ""))}
+                        className="w-24 h-9 px-2.5 rounded-lg border border-border bg-background font-sans text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={selectedIds.size === 0 || !bulkDiscountValue || bulkSaving}
+                        loading={bulkSaving}
+                        onClick={applyBulkDiscount}
+                      >
+                        Aplicar descuento
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={selectedIds.size === 0 || bulkSaving}
+                        loading={bulkSaving}
+                        onClick={removeBulkDiscount}
+                      >
+                        Quitar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -774,7 +887,13 @@ export function ProfileClient({
                                 className="w-24 h-8 px-2 rounded-md border border-border bg-background font-price text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
                               />
                             ) : (
-                              listing.price != null ? formatARS(listing.price) : "—"
+                              <PriceDisplay
+                                price={listing.price}
+                                originalPrice={listing.original_price}
+                                discountType={listing.discount_type}
+                                discountValue={listing.discount_value}
+                                size="sm"
+                              />
                             )}
                           </td>
                           {/* Estado */}

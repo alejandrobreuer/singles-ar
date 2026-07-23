@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { LANGUAGES_BY_GAME } from "@/lib/cardAttributes";
+import { computeDiscountedPrice } from "@/lib/pricing";
 import type { Game } from "@/types/database";
 
 // ─── GET /api/listings/[id] ───────────────────────────────────────────────────
@@ -60,7 +61,15 @@ const patchSchema = z.object({
     store_id:    z.string().uuid().nullable().optional(),
   })).max(5).optional(),
   status:           z.enum(["active", "reserved"]).optional(),
-}).strict();
+  discount_type:  z.enum(["fixed", "percentage"]).nullable().optional(),
+  discount_value: z.number().positive().nullable().optional(),
+}).strict().refine(
+  (d) => (d.discount_type === undefined || d.discount_type === null) === (d.discount_value === undefined || d.discount_value === null),
+  { message: "discount_type y discount_value deben enviarse juntos (o ambos null).", path: ["discount_value"] },
+).refine(
+  (d) => d.discount_type !== "percentage" || (d.discount_value != null && d.discount_value < 100),
+  { message: "El porcentaje de descuento debe ser menor a 100.", path: ["discount_value"] },
+);
 
 // ─── Ownership guard ──────────────────────────────────────────────────────────
 
@@ -68,7 +77,7 @@ async function getOwnedListing(userId: string, listingId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("listings")
-    .select("id, seller_id, status, cards ( game )")
+    .select("id, seller_id, status, price, original_price, discount_type, discount_value, cards ( game )")
     .eq("id", listingId)
     .single();
 
@@ -121,11 +130,48 @@ export async function PATCH(
     }
   }
 
-  const { locations, ...fields } = parsed.data;
+  const { locations, discount_type, discount_value, price: bodyPrice, ...restFields } = parsed.data;
+
+  let priceUpdate: Record<string, unknown> = {};
+
+  if (discount_type !== undefined && discount_type !== null) {
+    // Setting or editing a discount. Base is always the listing's own current
+    // original_price (if already discounted) or current price (first time) —
+    // never a client-supplied value, so re-applying a discount never compounds
+    // on top of a previous discount.
+    const base = listing.original_price ?? listing.price;
+    if (base == null) {
+      return NextResponse.json({ error: "No se puede aplicar un descuento a un listing sin precio." }, { status: 422 });
+    }
+    if (discount_type === "fixed" && discount_value! >= base) {
+      return NextResponse.json({ error: "El descuento no puede ser mayor o igual al precio original." }, { status: 422 });
+    }
+    const computed = computeDiscountedPrice(base, discount_type, discount_value!);
+    if (computed <= 0) {
+      return NextResponse.json({ error: "El descuento deja el precio en cero o negativo." }, { status: 422 });
+    }
+    priceUpdate = { original_price: base, discount_type, discount_value, price: computed };
+  } else if (discount_type === null) {
+    // Explicit removal — use the client-provided price if given (the seller may
+    // have edited it in the same request), else revert to the pre-discount price.
+    const base = listing.original_price ?? listing.price;
+    priceUpdate = { original_price: null, discount_type: null, discount_value: null, price: bodyPrice ?? base };
+  } else if (bodyPrice !== undefined) {
+    // Ordinary direct price edit (quick-edit / bulk price / full-edit "Precio de venta").
+    // If this listing currently has an active discount, a direct price write is an
+    // implicit "set the exact price I typed" — silently keeping stale discount
+    // metadata around would misrepresent the listing to buyers (still showing a
+    // strikethrough) and would resurrect the discount formula against a stale
+    // base on the next edit. So a bare `price` write always clears any discount.
+    priceUpdate = { price: bodyPrice };
+    if (listing.discount_type) {
+      priceUpdate = { ...priceUpdate, original_price: null, discount_type: null, discount_value: null };
+    }
+  }
 
   const { data: updated, error: updateError } = await supabase
     .from("listings")
-    .update({ ...fields, updated_at: new Date().toISOString() })
+    .update({ ...restFields, ...priceUpdate, updated_at: new Date().toISOString() })
     .eq("id", params.id)
     .select()
     .single();

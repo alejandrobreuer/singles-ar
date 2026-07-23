@@ -12,6 +12,7 @@ export type Condition       = "NM" | "LP" | "MP" | "HP" | "DMG";
 export type CardLanguage    = "en" | "es" | "pt" | "ja";
 export type ListingType     = "sale" | "trade";
 export type ListingStatus   = "active" | "reserved" | "sold" | "cancelled";
+export type DiscountType    = "fixed" | "percentage";
 export type BuyOrderStatus  = "active" | "reserved" | "filled" | "cancelled" | "expired";
 export type TransactionStatus =
   | "pending_buyer_confirmation"  // seller accepted buy order, waiting for buyer to pay (24h window)
@@ -183,7 +184,10 @@ export interface Listing {
   card_id:      string;
   seller_id:    string;
   listing_type: ListingType;
-  price:        number | null;   // required when listing_type = 'sale'
+  price:        number | null;   // required when listing_type = 'sale'; effective/final price (post-discount)
+  original_price: number | null; // pre-discount price; null when no discount active
+  discount_type:  DiscountType | null;
+  discount_value: number | null; // ARS amount (fixed) or percent 0-100 (percentage)
   currency:     string;
   condition:    Condition;
   language:     CardLanguage;    // physical print language of the seller's copy

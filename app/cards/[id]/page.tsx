@@ -8,8 +8,9 @@ import {
 } from "lucide-react";
 import { createClient }       from "@/lib/supabase/server";
 import { createAdminClient }  from "@/lib/supabase/admin";
-import { setLabel }           from "@/lib/formatting";
+import { setLabel, formatARS } from "@/lib/formatting";
 import { SellerNameLink }     from "@/components/seller/SellerNameLink";
+import { PriceDisplay }       from "@/components/pricing/PriceDisplay";
 import { Badge }              from "@/components/ui/badge";
 import { Button }             from "@/components/ui/button";
 import { Divider }            from "@/components/ui/divider";
@@ -92,12 +93,6 @@ const RARITY_LABELS: Record<string, string> = {
   mythic:   "Mítica",
   special:  "Especial",
 };
-
-function formatARS(price: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency", currency: "ARS", maximumFractionDigits: 0,
-  }).format(price);
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -283,7 +278,13 @@ export default async function CardDetailPage({
                   {lowestListing && (
                     <div className="flex flex-col">
                       <span className="text-2xs text-text-muted font-sans uppercase tracking-wide">Precio más bajo</span>
-                      <span className="text-lg font-price text-text-primary">{lowestListing.price != null ? formatARS(lowestListing.price) : "—"}</span>
+                      <PriceDisplay
+                        price={lowestListing.price}
+                        originalPrice={lowestListing.original_price}
+                        discountType={lowestListing.discount_type}
+                        discountValue={lowestListing.discount_value}
+                        size="lg"
+                      />
                     </div>
                   )}
                   {highestBuyOrder && (
@@ -376,9 +377,13 @@ export default async function CardDetailPage({
               {lowestListing && (
                 <div className="bg-secondary rounded-lg px-4 py-3 mb-4">
                   <p className="text-xs text-text-muted font-sans mb-0.5">Precio más bajo en Card Stash</p>
-                  <p className="font-price text-xl text-text-primary">
-                    {lowestListing.price != null ? formatARS(lowestListing.price) : "—"}
-                  </p>
+                  <PriceDisplay
+                    price={lowestListing.price}
+                    originalPrice={lowestListing.original_price}
+                    discountType={lowestListing.discount_type}
+                    discountValue={lowestListing.discount_value}
+                    size="xl"
+                  />
                   <p className="text-xs text-text-muted font-sans mt-0.5">
                     {lowestListing.condition} ·{" "}
                     <SellerNameLink listingId={lowestListing.id} sellerId={lowestListing.seller_id} />

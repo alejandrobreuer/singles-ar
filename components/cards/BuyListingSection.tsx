@@ -10,15 +10,11 @@ import { Avatar }          from "@/components/ui/avatar";
 import { ConditionBadge }  from "@/components/ui/ConditionBadge";
 import { LanguageBadge }   from "@/components/ui/LanguageBadge";
 import { SellerNameLink }  from "@/components/seller/SellerNameLink";
+import { PriceDisplay }    from "@/components/pricing/PriceDisplay";
 import { fantasyName }     from "@/lib/fantasy-name";
+import { formatARS }       from "@/lib/formatting";
 import { listingLocationLabels } from "@/lib/listingLocation";
 import type { Card, ListingWithSeller } from "@/types/database";
-
-function formatARS(price: number): string {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency", currency: "ARS", maximumFractionDigits: 0,
-  }).format(price);
-}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -151,9 +147,14 @@ function BuyableListingRow({
         )}
 
         {/* Price */}
-        <span className="shrink-0 font-price text-base text-text-primary">
-          {listing.price != null ? formatARS(listing.price) : "—"}
-        </span>
+        <PriceDisplay
+          price={listing.price}
+          originalPrice={listing.original_price}
+          discountType={listing.discount_type}
+          discountValue={listing.discount_value}
+          size="lg"
+          className="shrink-0"
+        />
 
         {/* Buy button / reserved */}
         {isReserved ? (

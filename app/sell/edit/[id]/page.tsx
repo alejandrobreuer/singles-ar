@@ -14,10 +14,11 @@ import { CONDITIONS, CONDITION_DETAILS, ConditionGuideModal, ConditionConfirmMod
 import { LanguageSelector }      from "@/components/sell/LanguageSelector";
 import { HoverTooltip }          from "@/components/ui/HoverTooltip";
 import { toast }                 from "sonner";
-import { parseARSInput, formatARSNumber } from "@/lib/formatting";
+import { parseARSInput, formatARSNumber, formatARS } from "@/lib/formatting";
 import { DEFAULT_SETTINGS }      from "@/lib/priceValidation";
 import { LocationPickerList }    from "@/components/ui/LocationPickerList";
-import type { Condition, CardLanguage, Game, ListingType, AdminSettings, LocationValue } from "@/types/database";
+import { computeDiscountedPrice } from "@/lib/pricing";
+import type { Condition, CardLanguage, Game, ListingType, AdminSettings, LocationValue, DiscountType } from "@/types/database";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,13 @@ export default function EditListingPage() {
   const [locations,       setLocations]       = React.useState<LocationValue[]>([]);
   const [tradeFor,        setTradeFor]        = React.useState("");
   const [priceDiff,   setPriceDiff]   = React.useState("");
+
+  // ── Discount state ────────────────────────────────────────────────────────
+  const [wasDiscounted,    setWasDiscounted]    = React.useState(false); // discount active on load
+  const [hasDiscount,      setHasDiscount]      = React.useState(false); // checkbox state
+  const [discountType,     setDiscountType]     = React.useState<DiscountType>("percentage");
+  const [discountValueRaw, setDiscountValueRaw] = React.useState("");
+  const [originalPrice,    setOriginalPrice]    = React.useState<number | null>(null);
 
   // ── Settings & price ref ──────────────────────────────────────────────────
   const [settings,    setSettings]    = React.useState<AdminSettings>(DEFAULT_SETTINGS as unknown as AdminSettings);
@@ -75,7 +83,8 @@ export default function EditListingPage() {
         setListingType(listing.listing_type ?? "sale");
         setCondition(listing.condition ?? "NM");
         setLanguage(listing.language ?? "es");
-        setPriceRaw(listing.price != null ? String(listing.price) : "");
+        const basePriceForInput = listing.original_price ?? listing.price;
+        setPriceRaw(basePriceForInput != null ? String(basePriceForInput) : "");
         setQuantity(String(listing.quantity ?? 1));
         setNotes(listing.notes ?? "");
         setLocations(
@@ -88,6 +97,11 @@ export default function EditListingPage() {
         );
         setTradeFor(listing.trade_for ?? "");
         setPriceDiff(listing.price_diff != null ? String(listing.price_diff) : "");
+        setOriginalPrice(listing.original_price ?? null);
+        setWasDiscounted(listing.discount_type != null);
+        setHasDiscount(listing.discount_type != null);
+        setDiscountType(listing.discount_type ?? "percentage");
+        setDiscountValueRaw(listing.discount_value != null ? String(listing.discount_value) : "");
 
         // Card info (joined)
         const card = listing.cards ?? listing.card ?? null;
@@ -116,27 +130,56 @@ export default function EditListingPage() {
 
   const priceARS     = parseARSInput(priceRaw);
   const priceDiffNum = priceDiff ? parseARSInput(priceDiff) : null;
-  const isValid      = listingType === "trade" ? tradeFor.trim().length > 0 : priceARS > 0;
+
+  const discountBase     = originalPrice ?? priceARS;
+  const discountValueNum = discountValueRaw ? parseARSInput(discountValueRaw) : 0;
+  const discountPreview  = hasDiscount && discountValueNum > 0
+    ? computeDiscountedPrice(discountBase, discountType, discountValueNum)
+    : null;
+  const isDiscountValid  = !hasDiscount || (
+    discountValueNum > 0
+    && (discountType === "fixed" ? discountValueNum < discountBase : discountValueNum < 100)
+    && discountPreview != null && discountPreview > 0
+  );
+
+  const isValid = listingType === "trade"
+    ? tradeFor.trim().length > 0
+    : (hasDiscount ? isDiscountValid && discountBase > 0 : priceARS > 0);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
     try {
+      const payload: Record<string, unknown> = {
+        listing_type: listingType,
+        condition,
+        language,
+        quantity:   parseInt(quantity, 10) || 1,
+        notes:            notes.trim() || null,
+        trade_for:        listingType === "trade" ? tradeFor.trim() : null,
+        price_diff:       listingType === "trade" ? priceDiffNum : null,
+        locations:        locations.filter((l) => l.province_id),
+      };
+
+      if (listingType !== "sale") {
+        payload.price = null;
+      } else if (hasDiscount) {
+        payload.discount_type  = discountType;
+        payload.discount_value = discountValueNum;
+      } else {
+        payload.price = priceARS;
+        if (wasDiscounted) {
+          // Seller turned the discount off — clear the discount metadata too.
+          payload.discount_type  = null;
+          payload.discount_value = null;
+        }
+      }
+
       const res = await fetch(`/api/listings/${id}`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listing_type: listingType,
-          condition,
-          language,
-          price:      listingType === "sale" ? priceARS : null,
-          quantity:   parseInt(quantity, 10) || 1,
-          notes:            notes.trim() || null,
-          trade_for:        listingType === "trade" ? tradeFor.trim() : null,
-          price_diff:       listingType === "trade" ? priceDiffNum : null,
-          locations:        locations.filter((l) => l.province_id),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json();
@@ -303,29 +346,86 @@ export default function EditListingPage() {
             {/* Sale fields */}
             {listingType === "sale" && (
               <div className="flex flex-col gap-4">
-                <Input
-                  label="Precio de venta (ARS)"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Ej: 15000"
-                  value={priceRaw}
-                  onChange={(e) => setPriceRaw(e.target.value.replace(/[^0-9.,]/g, ""))}
-                  leftAddon={<span className="text-sm font-sans font-medium text-text-muted">$</span>}
-                  rightAddon={
-                    priceARS > 0
-                      ? <span className="text-xs text-text-muted font-sans whitespace-nowrap">{formatARSNumber(priceARS)} ARS</span>
-                      : undefined
-                  }
-                />
-                {priceARS > 0 && (
+                {!hasDiscount ? (
+                  <Input
+                    label="Precio de venta (ARS)"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 15000"
+                    value={priceRaw}
+                    onChange={(e) => setPriceRaw(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    leftAddon={<span className="text-sm font-sans font-medium text-text-muted">$</span>}
+                    rightAddon={
+                      priceARS > 0
+                        ? <span className="text-xs text-text-muted font-sans whitespace-nowrap">{formatARSNumber(priceARS)} ARS</span>
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-text-primary font-sans">Precio original (ARS)</label>
+                    <div className="h-10 px-3 flex items-center rounded-lg border border-border bg-secondary/50 font-price text-sm text-text-secondary">
+                      {formatARS(discountBase)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Discount toggle */}
+                <label className="flex items-center gap-2 text-sm font-medium text-text-primary font-sans cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hasDiscount}
+                    onChange={(e) => setHasDiscount(e.target.checked)}
+                    className="size-4 rounded border-border accent-primary"
+                  />
+                  Aplicar descuento
+                </label>
+
+                {hasDiscount && (
+                  <div className="flex flex-col gap-2 rounded-lg border border-border bg-secondary/30 p-3">
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={discountType}
+                        onChange={(e) => setDiscountType(e.target.value as DiscountType)}
+                        className="h-9 px-2 rounded-lg border border-border bg-background font-sans text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                      >
+                        <option value="percentage">%</option>
+                        <option value="fixed">$ ARS</option>
+                      </select>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder={discountType === "percentage" ? "Ej: 10" : "Ej: 1000"}
+                        value={discountValueRaw}
+                        onChange={(e) => setDiscountValueRaw(e.target.value.replace(/[^0-9.,]/g, ""))}
+                        className="w-32 h-9 px-2.5 rounded-lg border border-border bg-background font-sans text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/50"
+                      />
+                    </div>
+                    {discountValueRaw && !isDiscountValid && (
+                      <p className="text-xs text-error font-sans">
+                        {discountType === "percentage"
+                          ? "El porcentaje debe ser mayor a 0 y menor a 100."
+                          : "El descuento debe ser mayor a 0 y menor al precio original."}
+                      </p>
+                    )}
+                    {discountPreview != null && isDiscountValid && (
+                      <p className="text-sm font-sans text-text-secondary">
+                        Precio final: <span className="font-price font-semibold text-success">{formatARS(discountPreview)}</span>
+                        {" "}<span className="line-through text-text-muted">{formatARS(discountBase)}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {(hasDiscount ? discountPreview : priceARS) != null && (hasDiscount ? discountPreview! : priceARS) > 0 && (
                   <>
                     <PriceValidator
-                      priceARS={priceARS}
+                      priceARS={hasDiscount ? discountPreview! : priceARS}
                       platformMedianARS={cardPriceUSD != null ? cardPriceUSD * usdToARS : null}
                       transactionCount={0}
                     />
                     <CommissionBreakdown
-                      priceARS={priceARS}
+                      priceARS={hasDiscount ? discountPreview! : priceARS}
                       platformFeePercent={settings.platform_commission_percent}
                     />
                   </>
