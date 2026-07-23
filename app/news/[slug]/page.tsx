@@ -1,6 +1,8 @@
 import * as React from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllNewsSlugs, getNewsPostBySlug } from "@/lib/news";
 import type { NewsTag } from "@/lib/news";
@@ -83,6 +85,13 @@ export default function NewsPostPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 mx-auto w-full max-w-2xl px-4 sm:px-6 py-12">
+        <Link
+          href="/news"
+          className="inline-flex items-center gap-1.5 text-sm font-sans text-text-muted hover:text-text-primary mb-5 no-underline"
+        >
+          <ArrowLeft size={14} />
+          Volver a Novedades
+        </Link>
         <Badge variant={TAG_VARIANT[post.tag]} size="sm" className="mb-3">
           {TAG_LABEL[post.tag]}
         </Badge>
