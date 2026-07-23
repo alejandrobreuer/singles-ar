@@ -91,6 +91,29 @@ export async function POST(
     if (error) console.error(`resolve-dispute: side effect failed for ${tx.id}:`, error.message);
   }
 
+  // Resolving in the seller's favour closes the transaction the same way the
+  // 72h auto-close cron does, but outside that cron's query (it only looks at
+  // status='delivered') — so it needs the same fallback: the buyer disputed
+  // and lost, so no real review is coming; default to 5 stars rather than
+  // leaving the seller permanently unrated. auto_generated lets the buyer
+  // still correct it later via ReviewForm.
+  if (resolution === "seller") {
+    const { error: reviewErr } = await admin.from("reviews").insert({
+      transaction_id: tx.id,
+      reviewer_id:    tx.buyer_id,
+      reviewee_id:    tx.seller_id,
+      rating:         5,
+      comment:        null,
+      auto_generated: true,
+    });
+
+    if (reviewErr) {
+      console.error(`resolve-dispute: failed to auto-review transaction ${tx.id}:`, reviewErr.message);
+    } else {
+      await admin.rpc("recalculate_reputation", { target_id: tx.seller_id });
+    }
+  }
+
   console.log(`[dispute] Resolved ${params.id} in favour of ${resolution}`);
 
   return NextResponse.json({ ok: true, resolution, finalStatus });
