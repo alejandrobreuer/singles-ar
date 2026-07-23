@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { Game } from "@/types/database";
+import { applyCardFilters } from "@/lib/cardFilters";
 
 // ─── GET /api/cards/search ────────────────────────────────────────────────────
 // Query params:
@@ -33,26 +33,7 @@ export async function GET(req: NextRequest) {
     .range(from, to)
     .order("name", { ascending: true });
 
-  // Search by name or card ID (external_id e.g. "OP01-077")
-  if (q) {
-    query = query.or(`name.ilike.%${q}%,external_id.ilike.%${q}%`);
-  }
-
-  if (game && ["magic", "pokemon", "onepiece"].includes(game)) {
-    query = query.eq("game", game as Game);
-  }
-
-  if (set) {
-    query = query.ilike("set_code", set);
-  }
-
-  if (rarities.length) {
-    query = query.or(rarities.map((r) => `rarity.ilike.${r}`).join(","));
-  }
-
-  if (colors.length) {
-    query = query.or(colors.map((c) => `color.ilike.%${c}%`).join(","));
-  }
+  query = applyCardFilters(query, { game, set, rarity: rarities, color: colors, q });
 
   const { data, count, error } = await query;
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, ChevronDown, LogOut, User, Package, ShieldCheck, Search, Wallet } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Package, ShieldCheck, Search, Wallet, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Session } from "@supabase/supabase-js";
@@ -238,8 +238,9 @@ function UserMenu({ user, isAdmin, onLogout }: UserMenuProps) {
 
           <Divider className="my-1" />
 
-          <DropdownItem href="/profile"  icon={<User size={14} />}    label="Mi cuenta"    onClick={() => setOpen(false)} />
-          <DropdownItem href="/sell"     icon={<Package size={14} />} label="Vender carta" onClick={() => setOpen(false)} />
+          <DropdownItem href="/profile"    icon={<User size={14} />}   label="Mi cuenta"    onClick={() => setOpen(false)} />
+          <DropdownItem href="/collection" icon={<Layers size={14} />} label="Mi colección" onClick={() => setOpen(false)} />
+          <DropdownItem href="/sell"       icon={<Package size={14} />} label="Vender carta" onClick={() => setOpen(false)} />
           <DropdownItem href="/profile?tab=configuracion" icon={<Wallet size={14} />} label="Conectar MP" onClick={() => setOpen(false)} />
           {isAdmin && (
             <DropdownItem href="/admin" icon={<ShieldCheck size={14} />} label="Panel de Admin" onClick={() => setOpen(false)} />

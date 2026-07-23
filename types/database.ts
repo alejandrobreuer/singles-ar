@@ -344,6 +344,30 @@ export interface WishlistWithCard extends WishlistItem {
 }
 
 
+// ─── Collection ───────────────────────────────────────────────────────────────
+
+export interface CollectionItem {
+  id:         string;
+  user_id:    string;
+  card_id:    string;
+  quantity:   number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CollectionItemWithCard extends CollectionItem {
+  cards: Pick<Card, "id" | "name" | "image_url" | "set_name" | "set_code" | "rarity" | "game">;
+}
+
+/** One row from get_collection_progress(p_user_id, p_game). */
+export interface CollectionProgressRow {
+  set_code: string;
+  set_name: string | null;
+  total:    number;
+  owned:    number;
+}
+
+
 // ─── Price History ────────────────────────────────────────────────────────────
 
 export interface PriceHistory {

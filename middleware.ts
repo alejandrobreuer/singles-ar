@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // ─── Protected route prefixes ─────────────────────────────────────────────────
 
 // Exact paths that require auth
-const PROTECTED_EXACT = ["/profile", "/orders", "/accept-terms"];
+const PROTECTED_EXACT = ["/profile", "/orders", "/accept-terms", "/collection"];
 
 // Prefix paths that require auth (all sub-paths protected)
 const PROTECTED_PREFIX = ["/sell", "/chat", "/listings", "/buy-orders"];

@@ -391,6 +391,30 @@ CREATE INDEX IF NOT EXISTS idx_wishlist_user ON public.wishlist (user_id);
 CREATE INDEX IF NOT EXISTS idx_wishlist_card ON public.wishlist (card_id);
 
 
+-- ─── Collection ───────────────────────────────────────────────────────────────
+-- Per-user "I own this card" tracking. Ownership is row-existence (like
+-- wishlist); quantity is metadata on top, not a separate Y/N flag.
+
+CREATE TABLE IF NOT EXISTS public.collection_items (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid        NOT NULL REFERENCES public.profiles ON DELETE CASCADE,
+  card_id    uuid        NOT NULL REFERENCES public.cards    ON DELETE CASCADE,
+  quantity   int         NOT NULL DEFAULT 1 CHECK (quantity >= 1),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  UNIQUE (user_id, card_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_collection_items_user ON public.collection_items (user_id);
+CREATE INDEX IF NOT EXISTS idx_collection_items_card ON public.collection_items (card_id);
+
+-- Supports get_collection_progress() below at catalog scale — neither
+-- idx_cards_game nor idx_cards_set_code alone covers a (game, set_code)
+-- grouped count efficiently.
+CREATE INDEX IF NOT EXISTS idx_cards_game_set ON public.cards (game, set_code);
+
+
 -- ─── Price History ────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.price_history (
@@ -563,6 +587,10 @@ CREATE OR REPLACE TRIGGER trg_cards_updated_at
   BEFORE UPDATE ON public.cards
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
+CREATE OR REPLACE TRIGGER trg_collection_items_updated_at
+  BEFORE UPDATE ON public.collection_items
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
 
 -- ─── Auto-create profile on signup ───────────────────────────────────────────
 
@@ -702,6 +730,28 @@ LANGUAGE sql STABLE SECURITY DEFINER AS $$
   ORDER  BY color;
 $$;
 
+-- Per-set collection progress: one row per set in the game, with total cards
+-- in that set and how many the given user owns (0 if none). SECURITY DEFINER +
+-- explicit p_user_id (not auth.uid()) because it's called via the admin client,
+-- same convention as get_filter_sets/get_filter_rarities/get_filter_colors.
+CREATE OR REPLACE FUNCTION public.get_collection_progress(p_user_id uuid, p_game text)
+RETURNS TABLE(set_code text, set_name text, total int, owned int)
+LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT
+    c.set_code,
+    min(c.set_name)      AS set_name,
+    count(*)::int         AS total,
+    count(ci.id)::int      AS owned
+  FROM public.cards c
+  LEFT JOIN public.collection_items ci
+    ON ci.card_id = c.id
+   AND ci.user_id = p_user_id
+  WHERE c.game = p_game
+    AND c.set_code IS NOT NULL
+  GROUP BY c.set_code
+  ORDER BY c.set_code;
+$$;
+
 
 -- =============================================================================
 -- VIEWS
@@ -758,7 +808,8 @@ ALTER TABLE public.buy_orders    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wishlist      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wishlist         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.collection_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
 
@@ -897,6 +948,27 @@ CREATE POLICY "wishlist_owner_insert"
 
 CREATE POLICY "wishlist_owner_delete"
   ON public.wishlist FOR DELETE
+  USING (auth.uid() = user_id);
+
+
+-- ─── collection_items ─────────────────────────────────────────────────────────
+
+CREATE POLICY "collection_items_owner_read"
+  ON public.collection_items FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "collection_items_owner_insert"
+  ON public.collection_items FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Collection needs UPDATE (quantity changes) — wishlist never required this.
+CREATE POLICY "collection_items_owner_update"
+  ON public.collection_items FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "collection_items_owner_delete"
+  ON public.collection_items FOR DELETE
   USING (auth.uid() = user_id);
 
 
