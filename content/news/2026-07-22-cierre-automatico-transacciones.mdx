@@ -1,0 +1,10 @@
+---
+title: "Arreglamos el cierre automático de transacciones"
+date: "2026-07-22"
+summary: "Los vendedores ya reciben su calificación automática incluso cuando una disputa se resuelve a su favor."
+tag: "fix"
+---
+
+Corregimos un caso donde, si una disputa se resolvía a favor del vendedor, la transacción se cerraba correctamente pero el vendedor se quedaba sin calificación.
+
+Ahora, igual que cuando una transacción se cierra sola tras las 72 horas de protección sin disputas, el vendedor recibe automáticamente 5 estrellas en este caso también.
