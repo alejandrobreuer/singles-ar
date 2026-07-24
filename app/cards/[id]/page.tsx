@@ -230,7 +230,7 @@ export default async function CardDetailPage({
           <div className="flex flex-col gap-6">
 
             {/* ── Card image + metadata row ──────────────────────────────── */}
-            <div className="flex gap-6 items-start">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
               {/* Image */}
               <div className="shrink-0 w-44 sm:w-52">
                 <CardImageZoom src={card.image_url ?? null} alt={card.name} />

@@ -112,7 +112,7 @@ function BuyableListingRow({
         : "border-border bg-surface hover:bg-secondary/60",
     )}>
       {/* Main row */}
-      <div className="flex items-center gap-4 px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:flex-nowrap">
         {/* Condition */}
         <ConditionBadge condition={listing.condition} />
         <LanguageBadge language={listing.language} />

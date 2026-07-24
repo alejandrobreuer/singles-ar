@@ -113,6 +113,222 @@ function Empty({ icon, text, cta }: { icon: React.ReactNode; text: string; cta?:
   );
 }
 
+// ─── Mobile card fallbacks (md:hidden — desktop keeps the <table>s) ───────────
+
+function ListingMobileCard({
+  listing, massEditMode, checkboxEligible, selected, onToggleSelect, onCancel,
+}: {
+  listing:          ListingWithCard;
+  massEditMode:     boolean;
+  checkboxEligible: boolean;
+  selected:         boolean;
+  onToggleSelect:   () => void;
+  onCancel:         () => void;
+}) {
+  const card = listing.cards as { id: string; name: string; image_url: string | null; set_name: string | null; set_code: string | null; game: Game } | null;
+  const info = LISTING_STATUS_LABEL[listing.status] ?? { label: listing.status, variant: "slate" as const };
+  const locationSummary = listingLocationSummary(listing);
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-3 flex flex-col gap-2.5">
+      <div className="flex items-start gap-2.5">
+        {massEditMode && checkboxEligible && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="mt-1 size-4 rounded border-border accent-primary shrink-0"
+          />
+        )}
+        <CardThumb imageUrl={card?.image_url ?? null} name={card?.name ?? "?"} />
+        <div className="min-w-0 flex-1">
+          <Link href={card ? `/cards/${card.id}` : "#"} className="text-sm font-medium text-text-primary hover:text-primary transition-colors truncate block">
+            {card?.name ?? "—"}
+          </Link>
+          <div className="flex items-center gap-1.5 mt-1">
+            {card?.game && <Badge variant={GAME_VARIANT[card.game]} size="sm" />}
+            {listing.listing_type === "trade"
+              ? <Badge variant="amber" size="sm">Trade</Badge>
+              : <Badge variant="navy"  size="sm">Venta</Badge>
+            }
+          </div>
+        </div>
+        <Badge variant={info.variant} size="sm" className="shrink-0">{info.label}</Badge>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs font-sans">
+        <div>
+          <span className="text-text-muted">Set: </span>
+          <span className="text-text-secondary">{card?.set_code ?? card?.set_name ?? "—"}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-text-muted">Idioma:</span>
+          <LanguageBadge language={listing.language} />
+        </div>
+        <div className="col-span-2">
+          <span className="text-text-muted">Ubicación: </span>
+          <span className="text-text-secondary">{locationSummary ?? "—"}</span>
+        </div>
+        <div className="col-span-2">
+          <PriceDisplay
+            price={listing.price}
+            originalPrice={listing.original_price}
+            discountType={listing.discount_type}
+            discountValue={listing.discount_value}
+            size="sm"
+          />
+        </div>
+      </div>
+
+      {listing.status === "active" && (
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
+          <Link
+            href={`/sell/edit/${listing.id}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans text-text-secondary hover:text-primary hover:bg-primary/5 transition-colors no-underline"
+          >
+            <Edit2 size={13} /> Editar
+          </Link>
+          <ConfirmAction title="Cancelar publicación" onConfirm={onCancel}>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans text-text-secondary hover:text-error hover:bg-error-subtle transition-colors"
+            >
+              <Trash2 size={13} /> Cancelar
+            </button>
+          </ConfirmAction>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BuyOrderMobileCard({
+  order, daysLeft, isExpiring, canRenew, canCancel, pendingTxId, onRenew, onCancel,
+}: {
+  order:       BuyOrder & { cards: { id: string; name: string; image_url: string | null; set_name: string | null; set_code: string | null; rarity: string | null; color: string | null; game: Game } };
+  daysLeft:    number;
+  isExpiring:  boolean;
+  canRenew:    boolean;
+  canCancel:   boolean;
+  pendingTxId: string | undefined;
+  onRenew:     () => void;
+  onCancel:    () => void;
+}) {
+  const card = order.cards as { id: string; name: string; image_url: string | null; game: Game } | null;
+  const hasActions = Boolean(pendingTxId || canRenew || canCancel);
+
+  return (
+    <div className={cn(
+      "rounded-xl border border-border bg-surface p-3 flex flex-col gap-2.5",
+      isExpiring  && "bg-warning/5",
+      pendingTxId && "bg-amber-50/50"
+    )}>
+      <div className="flex items-center gap-2.5">
+        <CardThumb imageUrl={card?.image_url ?? null} name={card?.name ?? "?"} />
+        <div className="min-w-0 flex-1">
+          <Link href={card ? `/cards/${card.id}` : "#"} className="text-sm font-medium text-text-primary hover:text-primary transition-colors truncate block">
+            {card?.name ?? "—"}
+          </Link>
+          {card?.game && <Badge variant={GAME_VARIANT[card.game]} size="sm" className="mt-1" />}
+        </div>
+        <span className="font-price text-success text-sm shrink-0">{formatARS(order.price)}</span>
+      </div>
+
+      <div className="flex items-center justify-between text-xs font-sans">
+        <span className={isExpiring ? "text-warning font-semibold" : "text-text-muted"}>
+          {daysLeft > 0
+            ? `Vence en ${daysLeft}d`
+            : <span className="text-error">Vencido</span>
+          }
+          {isExpiring && <span className="ml-1">⚠</span>}
+        </span>
+        {pendingTxId ? (
+          <span className="inline-flex items-center gap-1 text-2xs font-semibold font-sans px-2 py-0.5 rounded-full border border-amber-400/60 bg-amber-100 text-amber-700 animate-pulse">
+            ⚡ Requiere confirmación
+          </span>
+        ) : (
+          <Badge variant={
+            order.status === "active"   ? "green" :
+            order.status === "reserved" ? "amber" :
+            order.status === "filled"   ? "navy"  :
+            order.status === "expired"  ? "red"   : "slate"
+          } size="sm">
+            {{ active: "Activo", reserved: "Reservado", filled: "Completado", cancelled: "Cancelado", expired: "Vencido" }[order.status] ?? order.status}
+          </Badge>
+        )}
+      </div>
+
+      {hasActions && (
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
+          {pendingTxId ? (
+            <Link href={`/chat/${pendingTxId}`} className="flex-1 no-underline">
+              <Button variant="primary" size="sm" className="w-full" rightIcon={<ChevronRight size={12} />}>
+                Ir al chat
+              </Button>
+            </Link>
+          ) : (
+            <>
+              {canRenew && (
+                <button
+                  onClick={onRenew}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans text-text-secondary hover:text-primary hover:bg-primary/5 transition-colors"
+                >
+                  <RefreshCw size={13} /> Renovar
+                </button>
+              )}
+              {canCancel && (
+                <ConfirmAction title="Cancelar orden" onConfirm={onCancel}>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-sans text-text-secondary hover:text-error hover:bg-error-subtle transition-colors"
+                  >
+                    <Trash2 size={13} /> Cancelar
+                  </button>
+                </ConfirmAction>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistorialMobileCard({
+  tx, currentUserId, onClick,
+}: {
+  tx:            TransactionHistoryRow;
+  currentUserId: string;
+  onClick:       () => void;
+}) {
+  const isBuyer = tx.buyer_id === currentUserId;
+  const info    = TX_STATUS_LABEL[tx.status] ?? { label: tx.status, variant: "slate" as const };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left rounded-xl border border-border bg-surface p-3 flex items-center gap-2.5 hover:bg-secondary/30 transition-colors"
+    >
+      <CardThumb imageUrl={tx.card.image_url} name={tx.card.name} />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium font-sans text-text-primary truncate">{tx.card.name}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <Avatar src={tx.counterpart.avatar_url} name={tx.counterpart.username} size="sm" />
+          <span className="text-xs text-text-secondary font-sans truncate">{tx.counterpart.username}</span>
+        </div>
+        <p className="text-2xs text-text-muted font-sans mt-0.5">{format(new Date(tx.created_at), "dd/MM/yyyy")}</p>
+      </div>
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <span className={cn("font-price text-sm", isBuyer ? "text-error" : "text-success")}>
+          {isBuyer ? "−" : "+"}{formatARS(tx.price)}
+        </span>
+        <Badge variant={info.variant} size="sm">{info.label}</Badge>
+      </div>
+    </button>
+  );
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ProfileClientProps {
@@ -754,7 +970,8 @@ export function ProfileClient({
                     <Empty icon={<Package size={28} />} text="Ninguna publicación coincide con los filtros." />
                   </div>
                 ) : (
-              <div className="overflow-x-auto">
+              <>
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm font-sans">
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
@@ -954,6 +1171,22 @@ export function ProfileClient({
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile card view */}
+              <div className="md:hidden flex flex-col gap-2.5 p-3">
+                {sortedListings.map((listing) => (
+                  <ListingMobileCard
+                    key={listing.id}
+                    listing={listing}
+                    massEditMode={massEditMode}
+                    checkboxEligible={EDITABLE_STATUSES.has(listing.status)}
+                    selected={selectedIds.has(listing.id)}
+                    onToggleSelect={() => toggleSelected(listing.id)}
+                    onCancel={() => cancelListing(listing.id)}
+                  />
+                ))}
+              </div>
+              </>
                 )}
               </>
             )}
@@ -990,7 +1223,8 @@ export function ProfileClient({
                     <Empty icon={<TrendingUp size={28} />} text="Ninguna orden coincide con los filtros." />
                   </div>
                 ) : (
-              <div className="overflow-x-auto">
+              <>
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm font-sans">
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
@@ -1096,6 +1330,34 @@ export function ProfileClient({
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile card view */}
+              <div className="md:hidden flex flex-col gap-2.5 p-3">
+                {buyOrderFilters.filtered.map((order) => {
+                  const daysLeft    = differenceInDays(new Date(order.expires_at), new Date());
+                  const isExpiring  = daysLeft <= 3 && order.status === "active";
+                  const canRenew    = ["active", "expired"].includes(order.status);
+                  const canCancel   = order.status === "active";
+                  const pendingTxId = order.status === "reserved"
+                    ? reservedOrderTransactions[order.id]
+                    : undefined;
+
+                  return (
+                    <BuyOrderMobileCard
+                      key={order.id}
+                      order={order}
+                      daysLeft={daysLeft}
+                      isExpiring={isExpiring}
+                      canRenew={canRenew}
+                      canCancel={canCancel}
+                      pendingTxId={pendingTxId}
+                      onRenew={() => renewBuyOrder(order.id, 30)}
+                      onCancel={() => cancelBuyOrder(order.id)}
+                    />
+                  );
+                })}
+              </div>
+              </>
                 )}
               </>
             )}
@@ -1126,7 +1388,7 @@ export function ProfileClient({
                       {/* Remove button */}
                       <button
                         onClick={() => removeFromWishlist(item.card_id)}
-                        className="absolute top-2 right-2 z-10 p-1 rounded-full bg-surface/80 backdrop-blur-sm text-text-muted hover:text-error hover:bg-error-subtle transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-2 right-2 z-10 p-1 rounded-full bg-surface/80 backdrop-blur-sm text-text-muted hover:text-error hover:bg-error-subtle transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                         title="Quitar de wishlist"
                       >
                         <X size={12} />
@@ -1190,7 +1452,8 @@ export function ProfileClient({
               />
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm font-sans">
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
@@ -1246,6 +1509,19 @@ export function ProfileClient({
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile card view */}
+              <div className="md:hidden flex flex-col gap-2.5 p-3">
+                {transactions.map((tx) => (
+                  <HistorialMobileCard
+                    key={tx.id}
+                    tx={tx}
+                    currentUserId={currentUserId}
+                    onClick={() => router.push(`/chat/${tx.id}`)}
+                  />
+                ))}
+              </div>
+              </>
             )}
           </div>
         )}
