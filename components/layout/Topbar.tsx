@@ -431,6 +431,17 @@ export function Topbar() {
           {/* Right: Search + Auth — pushed to far right */}
           <div className="ml-auto flex items-center gap-2">
             <NavSearch />
+
+            {/* Mobile hamburger — before the avatar/auth controls on mobile */}
+            <button
+              className="md:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-primary/5 transition-colors"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+
             {!authReady ? (
               <div className="hidden md:flex items-center gap-2">
                 <div className="w-20 h-8 rounded-lg bg-secondary animate-pulse" />
@@ -451,16 +462,6 @@ export function Topbar() {
                 </Button>
               </div>
             )}
-
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-primary/5 transition-colors"
-              onClick={() => setMobileOpen((o) => !o)}
-              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
           </div>
         </div>
       </div>
