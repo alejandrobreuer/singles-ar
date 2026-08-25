@@ -53,6 +53,7 @@ const GAME_VARIANT: Record<Game, React.ComponentProps<typeof Badge>["variant"]> 
   magic:    "magic",
   pokemon:  "poke",
   onepiece: "op",
+  dbz:      "dbz",
 };
 
 const LISTING_STATUS_LABEL: Record<string, { label: string; variant: React.ComponentProps<typeof Badge>["variant"] }> = {

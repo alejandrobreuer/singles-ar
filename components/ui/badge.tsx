@@ -13,7 +13,8 @@ type BadgeVariant =
   | "slate"
   | "poke"
   | "magic"
-  | "op";
+  | "op"
+  | "dbz";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
@@ -38,6 +39,7 @@ const variants: Record<BadgeVariant, string> = {
   poke:  "bg-yellow-100 text-yellow-800",
   magic: "bg-violet-100 text-violet-800",
   op:    "bg-red-100 text-red-800",
+  dbz:   "bg-orange-100 text-orange-800",
 };
 
 const dotColors: Record<BadgeVariant, string> = {
@@ -51,6 +53,7 @@ const dotColors: Record<BadgeVariant, string> = {
   poke:  "bg-yellow-500",
   magic: "bg-violet-500",
   op:    "bg-red-500",
+  dbz:   "bg-orange-500",
 };
 
 const sizes = {
@@ -64,6 +67,7 @@ const defaultLabels: Partial<Record<BadgeVariant, string>> = {
   poke:  "Pokémon",
   magic: "Magic",
   op:    "One Piece",
+  dbz:   "Dragon Ball",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

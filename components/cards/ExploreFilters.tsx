@@ -41,6 +41,7 @@ const GAME_OPTIONS = [
   { value: "onepiece", label: "One Piece",         badge: "op"    as const },
   { value: "magic",    label: "Magic",             badge: "magic" as const },
   { value: "pokemon",  label: "Pokémon",           badge: "poke"  as const },
+  { value: "dbz",      label: "Dragon Ball",        badge: "dbz"   as const },
 ];
 
 const SORT_OPTIONS = [

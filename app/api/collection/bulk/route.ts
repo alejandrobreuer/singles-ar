@@ -7,7 +7,7 @@ import { applyCardFilters }  from "@/lib/cardFilters";
 const bulkSchema = z.union([
   z.object({ card_ids: z.array(z.string().uuid()).min(1).max(500) }),
   z.object({
-    game:   z.enum(["magic", "pokemon", "onepiece"]),
+    game:   z.enum(["magic", "pokemon", "onepiece", "dbz"]),
     set:    z.string().optional(),
     rarity: z.array(z.string()).optional(),
     color:  z.array(z.string()).optional(),

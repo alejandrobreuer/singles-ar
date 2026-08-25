@@ -5,7 +5,7 @@ import { applyCardFilters } from "@/lib/cardFilters";
 // ─── GET /api/cards/search ────────────────────────────────────────────────────
 // Query params:
 //   q      — search term (name / set)
-//   game   — filter by game ('magic' | 'pokemon' | 'onepiece')
+//   game   — filter by game ('magic' | 'pokemon' | 'onepiece' | 'dbz')
 //   set    — filter by set_code
 //   rarity — comma-separated list of rarities (OR'd together)
 //   color  — comma-separated list of colors/types (OR'd together)

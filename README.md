@@ -1,6 +1,6 @@
 # Singles.ar
 
-Marketplace de cartas TCG (Magic, Pokémon, One Piece) para Argentina.
+Marketplace de cartas TCG (Magic, Pokémon, One Piece, Dragon Ball) para Argentina.
 Pagos via MercadoPago Marketplace, chat en tiempo real, buy orders, sistema de reputación.
 
 ---
@@ -41,6 +41,7 @@ Completá `.env.local` con los siguientes valores:
 | `MP_WEBHOOK_SECRET` | Secret configurado en MP Dashboard → Webhooks |
 | `TCGPLAYER_CLIENT_ID` | Client ID de TCGPlayer API |
 | `TCGPLAYER_CLIENT_SECRET` | Client secret de TCGPlayer API |
+| `APITCG_API_KEY` | API key de [apitcg.com/platform](https://apitcg.com/platform), usada para sincronizar cartas de Dragon Ball |
 | `CRON_SECRET` | String aleatorio para proteger los endpoints de cron |
 | `NEXT_PUBLIC_APP_URL` | URL pública del sitio (`https://singles.ar` en prod) |
 | `ADMIN_USER_IDS` | UUIDs de Supabase separados por coma de los admins |

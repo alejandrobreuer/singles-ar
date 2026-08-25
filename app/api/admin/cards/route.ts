@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
 const createSchema = z.object({
   name:         z.string().min(1).max(200),
-  game:         z.enum(["magic", "pokemon", "onepiece"]),
+  game:         z.enum(["magic", "pokemon", "onepiece", "dbz"]),
   set_name:     z.string().max(200).optional(),
   set_code:     z.string().max(20).optional(),
   card_number:  z.string().max(20).optional(),

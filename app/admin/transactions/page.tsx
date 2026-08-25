@@ -143,7 +143,7 @@ export default async function AdminTransactionsPage({
 
         {/* Game filter */}
         <div className="flex gap-1.5 ml-auto">
-          {[["", "Todos"], ["magic", "MTG"], ["pokemon", "Pokémon"], ["onepiece", "One Piece"]].map(([g, label]) => (
+          {[["", "Todos"], ["magic", "MTG"], ["pokemon", "Pokémon"], ["onepiece", "One Piece"], ["dbz", "Dragon Ball"]].map(([g, label]) => (
             <a
               key={g}
               href={filterUrl({ game: g })}

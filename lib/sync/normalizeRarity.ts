@@ -3,6 +3,8 @@
 
 const RARITY_MAP: Record<string, string> = {
   // ── One Piece TCG (OPTCG API returns abbreviations) ───────────────────────
+  // Also covers Dragon Ball Super: Fusion World (apitcg.com uses the same
+  // C/UC/R/SR/L/SEC/SP/P abbreviations).
   "C":    "Common",
   "UC":   "Uncommon",
   "R":    "Rare",

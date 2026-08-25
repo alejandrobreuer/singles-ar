@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CollectionAddClient } from "@/components/collection/CollectionAddClient";
 import type { Game } from "@/types/database";
 
-const VALID_GAMES: Game[] = ["magic", "pokemon", "onepiece"];
+const VALID_GAMES: Game[] = ["magic", "pokemon", "onepiece", "dbz"];
 
 export default async function CollectionAddPage({
   searchParams,

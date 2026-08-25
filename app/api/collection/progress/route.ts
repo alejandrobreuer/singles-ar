@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const VALID_GAMES = ["magic", "pokemon", "onepiece"];
+const VALID_GAMES = ["magic", "pokemon", "onepiece", "dbz"];
 
 // ─── GET /api/collection/progress?game=X ───────────────────────────────────────
 // Per-set ownership progress for the current user: how many cards of each set

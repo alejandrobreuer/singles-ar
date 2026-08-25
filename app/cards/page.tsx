@@ -71,7 +71,7 @@ async function fetchCards(
   }
 
   if (q)       query = query.or(`name.ilike.%${q}%,external_id.ilike.%${q}%`);
-  if (game && (["magic", "pokemon", "onepiece"] as string[]).includes(game))
+  if (game && (["magic", "pokemon", "onepiece", "dbz"] as string[]).includes(game))
                query = query.eq("game", game as Game);
   if (set)          query = query.ilike("set_code", set);
   if (rarities.length) query = query.or(rarities.map((r) => `rarity.ilike.${r}`).join(","));
@@ -264,6 +264,7 @@ const GAME_LABELS: Record<string, string> = {
   magic:    "Magic: the Gathering",
   pokemon:  "Pokémon TCG",
   onepiece: "One Piece TCG",
+  dbz:      "Dragon Ball Super TCG",
 };
 
 function activeLabel(game: string, set: string, rarities: string[], colors: string[]) {

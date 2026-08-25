@@ -24,12 +24,14 @@ const GAME_VARIANT: Record<Game, React.ComponentProps<typeof Badge>["variant"]> 
   magic:    "magic",
   pokemon:  "poke",
   onepiece: "op",
+  dbz:      "dbz",
 };
 
 const GAME_LABEL: Record<Game, string> = {
   magic:    "Magic",
   pokemon:  "Pokémon",
   onepiece: "One Piece",
+  dbz:      "Dragon Ball",
 };
 
 function toggle<T>(list: T[], value: T, onChange: (v: T[]) => void) {

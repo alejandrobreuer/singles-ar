@@ -81,6 +81,7 @@ const GAME_LABELS: Record<Game, string> = {
   magic:    "MTG",
   pokemon:  "Pokémon",
   onepiece: "One Piece",
+  dbz:      "Dragon Ball",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

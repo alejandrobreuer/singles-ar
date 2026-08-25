@@ -63,7 +63,7 @@ COMMENT ON COLUMN public.profiles.reputation_score IS '0–100 scale. Recalculat
 CREATE TABLE IF NOT EXISTS public.cards (
   id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   external_id         text        NOT NULL,                   -- ID from source API (unique per game)
-  game                text        NOT NULL CHECK (game IN ('magic', 'pokemon', 'onepiece')),
+  game                text        NOT NULL CHECK (game IN ('magic', 'pokemon', 'onepiece', 'dbz')),
   name                text        NOT NULL,
   set_name            text,
   set_code            text,

@@ -33,6 +33,7 @@ const GAME_LABELS: Record<string, string> = {
   magic:    "MTG",
   pokemon:  "Pokémon",
   onepiece: "One Piece",
+  dbz:      "Dragon Ball",
 };
 
 // ─── Image Override Modal ─────────────────────────────────────────────────────
@@ -199,6 +200,7 @@ function CreateCardModal({ onClose }: { onClose: () => void }) {
               <option value="magic">Magic: The Gathering</option>
               <option value="pokemon">Pokémon</option>
               <option value="onepiece">One Piece</option>
+              <option value="dbz">Dragon Ball</option>
             </select>
           </div>
           {fields.map((f) => (
@@ -247,9 +249,10 @@ export function AdminCardsClient({ cards, total, page, limit, q, game }: Props) 
   const [syncingOP,   setSyncingOP]   = React.useState(false);
   const [syncingMTG,  setSyncingMTG]  = React.useState(false);
   const [syncingPoke, setSyncingPoke] = React.useState(false);
+  const [syncingDBZ,  setSyncingDBZ]  = React.useState(false);
   const [syncMsg, setSyncMsg]         = React.useState<{ ok: boolean; text: string } | null>(null);
   const totalPages = Math.ceil(total / limit);
-  const anySyncing = syncingOP || syncingMTG || syncingPoke;
+  const anySyncing = syncingOP || syncingMTG || syncingPoke || syncingDBZ;
 
   async function syncRequest(url: string): Promise<{ ok: boolean; text: string }> {
     const res  = await fetch(url, { method: "POST" });
@@ -304,6 +307,20 @@ export function AdminCardsClient({ cards, total, page, limit, q, game }: Props) 
     }
   }
 
+  async function handleSyncDBZ() {
+    setSyncingDBZ(true);
+    setSyncMsg(null);
+    try {
+      const msg = await syncRequest("/api/admin/sync/dbz");
+      setSyncMsg(msg);
+      if (msg.ok) router.refresh();
+    } catch (e) {
+      setSyncMsg({ ok: false, text: `Error de red: ${e instanceof Error ? e.message : String(e)}` });
+    } finally {
+      setSyncingDBZ(false);
+    }
+  }
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -339,6 +356,7 @@ export function AdminCardsClient({ cards, total, page, limit, q, game }: Props) 
           <option value="magic">MTG</option>
           <option value="pokemon">Pokémon</option>
           <option value="onepiece">One Piece</option>
+          <option value="dbz">Dragon Ball</option>
         </select>
         <button
           type="submit"
@@ -380,6 +398,15 @@ export function AdminCardsClient({ cards, total, page, limit, q, game }: Props) 
         >
           <RefreshCw size={14} className={syncingPoke ? "animate-spin" : ""} />
           Pokémon Sync
+        </button>
+        <button
+          type="button"
+          onClick={handleSyncDBZ}
+          disabled={anySyncing}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface border border-border text-sm font-medium font-sans text-text-primary hover:bg-secondary transition-colors disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={syncingDBZ ? "animate-spin" : ""} />
+          Dragon Ball Sync
         </button>
       </form>
 

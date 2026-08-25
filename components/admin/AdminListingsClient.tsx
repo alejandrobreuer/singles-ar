@@ -55,12 +55,14 @@ const GAME_STYLES: Record<Game, string> = {
   magic:    "bg-blue-500/10 text-blue-400",
   pokemon:  "bg-yellow-500/10 text-yellow-500",
   onepiece: "bg-red-500/10 text-red-400",
+  dbz:      "bg-orange-500/10 text-orange-400",
 };
 
 const GAME_LABELS: Record<Game, string> = {
   magic:    "MTG",
   pokemon:  "Pokémon",
   onepiece: "One Piece",
+  dbz:      "Dragon Ball",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

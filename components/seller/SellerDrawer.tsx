@@ -39,6 +39,7 @@ const GAME_FILTERS: { value: Game | "all"; label: string }[] = [
   { value: "magic",    label: "Magic" },
   { value: "pokemon",  label: "Pokémon" },
   { value: "onepiece", label: "OP" },
+  { value: "dbz",      label: "DBZ" },
 ];
 
 const MONTHS_ES = [
@@ -222,7 +223,11 @@ export function SellerDrawer() {
                     )}
                     <LanguageBadge language={listing.language} />
                     <Badge
-                      variant={listing.cards.game === "magic" ? "magic" : listing.cards.game === "pokemon" ? "poke" : "op"}
+                      variant={
+                        listing.cards.game === "magic"   ? "magic" :
+                        listing.cards.game === "pokemon" ? "poke"  :
+                        listing.cards.game === "dbz"     ? "dbz"   : "op"
+                      }
                       size="sm"
                     />
                   </div>

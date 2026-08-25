@@ -58,12 +58,14 @@ const GAME_LABEL: Record<Game, string> = {
   magic:    "Magic",
   pokemon:  "Pokémon",
   onepiece: "One Piece",
+  dbz:      "Dragon Ball",
 };
 
 const GAME_COLOR: Record<Game, string> = {
   magic:    "bg-purple-100 text-purple-700",
   pokemon:  "bg-yellow-100 text-yellow-700",
   onepiece: "bg-red-100 text-red-700",
+  dbz:      "bg-orange-100 text-orange-700",
 };
 
 function formatExpiry(iso: string) {
@@ -176,6 +178,7 @@ function OrdersControls({ search, game, sort, onSearch, onGame, onSort }: Orders
         <option value="magic">Magic</option>
         <option value="pokemon">Pokémon</option>
         <option value="onepiece">One Piece</option>
+        <option value="dbz">Dragon Ball</option>
       </select>
 
       {/* Sort */}
@@ -310,6 +313,7 @@ function TrendingCardsContent({ cards }: { cards: TrendingCard[] }) {
           <option value="magic">Magic</option>
           <option value="pokemon">Pokémon</option>
           <option value="onepiece">One Piece</option>
+          <option value="dbz">Dragon Ball</option>
         </select>
         <select
           value={sort}
@@ -471,6 +475,7 @@ function PriceMoversContent({
           <option value="magic">Magic</option>
           <option value="pokemon">Pokémon</option>
           <option value="onepiece">One Piece</option>
+          <option value="dbz">Dragon Ball</option>
         </select>
         <select
           value={sort}

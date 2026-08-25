@@ -15,6 +15,7 @@ const GAMES = [
   { value: "pokemon",  label: "Pokémon TCG",            dot: "#e86c2c" },
   { value: "magic",    label: "Magic: The Gathering",   dot: "#7b5ea7" },
   { value: "onepiece", label: "One Piece TCG",          dot: "#c0392b" },
+  { value: "dbz",      label: "Dragon Ball Super TCG",  dot: "#e08a1e" },
 ] as const;
 
 const PERIODS: { value: TrendPeriod; label: string }[] = [
@@ -28,6 +29,7 @@ const GAME_LABELS: Record<string, string> = {
   pokemon:  "Filtrando: Pokémon TCG",
   magic:    "Filtrando: Magic: The Gathering",
   onepiece: "Filtrando: One Piece TCG",
+  dbz:      "Filtrando: Dragon Ball Super TCG",
 };
 
 export function FilterBar({ currentGame, currentPeriod }: FilterBarProps) {

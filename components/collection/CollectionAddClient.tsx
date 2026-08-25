@@ -15,9 +15,10 @@ import type { Game, CardSearchResult, CollectionItemWithCard } from "@/types/dat
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GAME_TABS: { game: Game; label: string; badge: React.ComponentProps<typeof Badge>["variant"] }[] = [
-  { game: "onepiece", label: "One Piece", badge: "op" },
-  { game: "magic",    label: "Magic",     badge: "magic" },
-  { game: "pokemon",  label: "Pokémon",   badge: "poke" },
+  { game: "onepiece", label: "One Piece",   badge: "op" },
+  { game: "magic",    label: "Magic",       badge: "magic" },
+  { game: "pokemon",  label: "Pokémon",     badge: "poke" },
+  { game: "dbz",      label: "Dragon Ball", badge: "dbz" },
 ];
 
 interface FilterOptions {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient }      from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const VALID_GAMES = ["magic", "pokemon", "onepiece"];
+const VALID_GAMES = ["magic", "pokemon", "onepiece", "dbz"];
 
 const addSchema = z.object({
   card_id:  z.string().uuid(),

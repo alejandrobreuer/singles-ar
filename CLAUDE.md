@@ -17,7 +17,7 @@ npx tsc --noEmit
 
 ## Architecture
 
-**Singles.ar** is a P2P TCG (Magic, Pokémon, One Piece) marketplace for Argentina. Next.js 14 App Router, Supabase (Postgres + Realtime + Storage), MercadoPago Marketplace split payments.
+**Singles.ar** is a P2P TCG (Magic, Pokémon, One Piece, Dragon Ball) marketplace for Argentina. Next.js 14 App Router, Supabase (Postgres + Realtime + Storage), MercadoPago Marketplace split payments.
 
 ### Supabase client pattern
 

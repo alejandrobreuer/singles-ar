@@ -8,6 +8,7 @@ export const LANGUAGES_BY_GAME: Record<Game, CardLanguage[]> = {
   pokemon:  ["es", "pt", "en", "ja"],
   onepiece: ["en", "ja"],
   magic:    ["es", "pt", "en", "ja"],
+  dbz:      ["en"],
 };
 
 export const LANGUAGE_LABELS: Record<CardLanguage, string> = {
@@ -33,7 +34,7 @@ export const RARITY_DESCRIPTIONS: Record<string, string> = {
   "Super Rare":   "Con foil especial. ~1 cada 3 sobres.",
   "Mythic Rare":  "La rareza más alta en Magic. ~1 por cada 8 rares.",
   "Secret Rare":  "Rareza oculta. Muy difícil de conseguir.",
-  "Leader":       "Carta de Líder — tipo especial en One Piece TCG.",
+  "Leader":       "Carta de Líder — tipo especial en One Piece TCG y Dragon Ball.",
   "Promo":        "Carta promocional de torneos o eventos especiales.",
   "Special":      "Edición especial limitada.",
   "Bonus":        "Carta bonus incluida en productos especiales.",
@@ -49,6 +50,8 @@ export const COLOR_DESCRIPTIONS: Record<string, string> = {
   // One Piece exclusives
   "Purple":     "Morado — Efectos de contador y manipulación.",
   "Yellow":     "Amarillo — Manipulación de vidas y efectos tardíos.",
+  // Note: Dragon Ball Fusion World's 5 colors (Red, Blue, Green, Yellow, Black)
+  // reuse the shared White/Blue/Black/Red/Green + Yellow entries above.
   // Pokémon types
   "Fire":       "Fuego — Fuerte contra Planta y Acero.",
   "Water":      "Agua — Fuerte contra Fuego y Tierra.",

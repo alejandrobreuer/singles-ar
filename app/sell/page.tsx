@@ -46,12 +46,14 @@ const GAME_OPTIONS: Array<{ game: Game; label: string; sublabel: string; accent:
   { game: "onepiece", label: "One Piece",        sublabel: "Card Game",     accent: "bg-red-50 border-red-200 hover:border-red-400 text-red-900",     badge: "op" },
   { game: "magic",    label: "Magic",            sublabel: "the Gathering", accent: "bg-purple-50 border-purple-200 hover:border-purple-400 text-purple-900", badge: "magic" },
   { game: "pokemon",  label: "Pokémon",          sublabel: "TCG",           accent: "bg-yellow-50 border-yellow-200 hover:border-yellow-400 text-yellow-900", badge: "poke" },
+  { game: "dbz",      label: "Dragon Ball",      sublabel: "Fusion World", accent: "bg-orange-50 border-orange-200 hover:border-orange-400 text-orange-900", badge: "dbz" },
 ];
 
 const GAME_LABEL: Record<Game, string> = {
   onepiece: "One Piece",
   magic:    "Magic: the Gathering",
   pokemon:  "Pokémon TCG",
+  dbz:      "Dragon Ball Super TCG",
 };
 
 interface FilterOptions {
@@ -1086,7 +1088,7 @@ function SelectedCardRecap({
   onChangeCard: () => void;
 }) {
   const GAME_LABELS: Record<string, string> = {
-    magic: "Magic", pokemon: "Pokémon", onepiece: "One Piece",
+    magic: "Magic", pokemon: "Pokémon", onepiece: "One Piece", dbz: "Dragon Ball",
   };
 
   return (

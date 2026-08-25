@@ -44,6 +44,7 @@ const GAME_VARIANT: Record<Game, React.ComponentProps<typeof Badge>["variant"]> 
   magic:    "magic",
   pokemon:  "poke",
   onepiece: "op",
+  dbz:      "dbz",
 };
 
 // ─── Tab switcher (client-only tabs, no URL param needed) ─────────────────────

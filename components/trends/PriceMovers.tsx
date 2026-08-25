@@ -35,7 +35,7 @@ function MoverRow({ item, direction }: { item: PriceMoverItem; direction: "up" |
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-text-primary truncate mb-0.5">{item.card.name}</div>
           <div className="text-2xs text-text-muted font-sans">
-            {item.card.game === "pokemon" ? "Pokémon" : item.card.game === "magic" ? "Magic" : "One Piece"}
+            {item.card.game === "pokemon" ? "Pokémon" : item.card.game === "magic" ? "Magic" : item.card.game === "dbz" ? "Dragon Ball" : "One Piece"}
             {item.card.set_name ? ` · ${item.card.set_name}` : ""}
           </div>
         </div>

@@ -21,6 +21,7 @@ const GAME_BADGE: Record<Game, React.ComponentProps<typeof Badge>["variant"]> = 
   magic:    "magic",
   pokemon:  "poke",
   onepiece: "op",
+  dbz:      "dbz",
 };
 
 function formatARS(price: number): string {

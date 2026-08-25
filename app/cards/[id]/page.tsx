@@ -78,12 +78,14 @@ const GAME_LABELS: Record<Game, string> = {
   magic:    "Magic: The Gathering",
   pokemon:  "Pokémon TCG",
   onepiece: "One Piece TCG",
+  dbz:      "Dragon Ball Super TCG",
 };
 
 const GAME_BADGE_VARIANT: Record<Game, React.ComponentProps<typeof Badge>["variant"]> = {
   magic:    "magic",
   pokemon:  "poke",
   onepiece: "op",
+  dbz:      "dbz",
 };
 
 const RARITY_LABELS: Record<string, string> = {

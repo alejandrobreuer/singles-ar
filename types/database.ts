@@ -7,7 +7,7 @@
 // ENUMS
 // =============================================================================
 
-export type Game            = "magic" | "pokemon" | "onepiece";
+export type Game            = "magic" | "pokemon" | "onepiece" | "dbz";
 export type Condition       = "NM" | "LP" | "MP" | "HP" | "DMG";
 export type CardLanguage    = "en" | "es" | "pt" | "ja";
 export type ListingType     = "sale" | "trade";

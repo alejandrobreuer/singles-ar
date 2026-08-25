@@ -36,7 +36,7 @@ import { LiveFeed }              from "@/components/trends/LiveFeed";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const VALID_PERIODS: TrendPeriod[] = ["7d", "30d", "3m"];
-const VALID_GAMES = ["all", "pokemon", "magic", "onepiece"] as const;
+const VALID_GAMES = ["all", "pokemon", "magic", "onepiece", "dbz"] as const;
 
 // ─── Section shell ────────────────────────────────────────────────────────────
 

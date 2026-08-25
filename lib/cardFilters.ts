@@ -22,7 +22,7 @@ export function applyCardFilters<T extends {
     result = result.or(`name.ilike.%${q}%,external_id.ilike.%${q}%`);
   }
 
-  if (game && ["magic", "pokemon", "onepiece"].includes(game)) {
+  if (game && ["magic", "pokemon", "onepiece", "dbz"].includes(game)) {
     result = result.eq("game", game);
   }
 

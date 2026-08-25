@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const game = searchParams.get("game") ?? "";
 
-  if (!["magic", "pokemon", "onepiece"].includes(game)) {
+  if (!["magic", "pokemon", "onepiece", "dbz"].includes(game)) {
     return NextResponse.json({ error: "game param required" }, { status: 400 });
   }
 
