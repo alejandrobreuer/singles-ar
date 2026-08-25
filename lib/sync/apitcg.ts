@@ -6,22 +6,23 @@ import { normalizeRarity }   from "@/lib/sync/normalizeRarity";
 // Requires an API key: sign up at https://apitcg.com/platform, then set
 // APITCG_API_KEY in the environment. Sent as the `x-api-key` header.
 //
-// Endpoint: GET /api/products?tcg=dragon-ball-super-fusion-world&type=card
+// Endpoint: GET https://api.apitcg.com/api/products?tcg=dragon-ball-super-fusion-world&type=card
+// (note: the real API lives on the api.apitcg.com subdomain — www.apitcg.com is
+// just the marketing/docs site and does not serve this route)
 // Response envelope: { success, data: Product[], total }
 //
 // Products carry a fixed set of fields (name, images, set, code…) plus a
-// free-form `attributes` map whose keys vary per game (see openapi.json at
-// docs.apitcg.com). For Dragon Ball, the data mirrors the community
-// dragon-ball-fusion-tcg-data repo, so we read attribute keys defensively
-// (a couple of casing variants each) and fall back to null rather than throw
-// if apitcg ever renames one.
+// free-form `attributes` map whose keys vary per game (documented in
+// openapi.json at docs.apitcg.com — confirmed "Rarity" and "Color" for this
+// game). Attribute lookup still falls back across a couple of casing
+// variants and returns null rather than throwing if a key is ever renamed.
 
 interface ApiTcgProduct {
   _id:        string | number;
   name:       string;
   code?:      string;
   cardNumber?: string;
-  images?:    { small?: string; medium?: string; large?: string };
+  images?:    { small?: string; medium?: string; large?: string }[];
   set?:       { _id?: string; name?: string; code?: string } | string;
   attributes?: Record<string, string>;
   updatedAt?: string;
@@ -78,7 +79,7 @@ function toCardRow(p: ApiTcgProduct): CardRow {
     card_number: p.cardNumber ?? p.code ?? null,
     rarity:      normalizeRarity(rawRarity),
     color,
-    image_url:   p.images?.large ?? p.images?.medium ?? p.images?.small ?? null,
+    image_url:   p.images?.[0]?.large ?? p.images?.[0]?.medium ?? p.images?.[0]?.small ?? null,
     game:        "dbz",
     lang:        "en",
     updated_at:  new Date().toISOString(),
@@ -86,7 +87,7 @@ function toCardRow(p: ApiTcgProduct): CardRow {
 }
 
 async function fetchPage(apiKey: string, page: number, limit: number): Promise<ApiTcgResponse> {
-  const url = new URL("https://www.apitcg.com/api/products");
+  const url = new URL("https://api.apitcg.com/api/products");
   url.searchParams.set("tcg",   "dragon-ball-super-fusion-world");
   url.searchParams.set("type",  "card");
   url.searchParams.set("limit", String(limit));
